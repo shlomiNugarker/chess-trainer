@@ -24,6 +24,19 @@ export const REPERTOIRES: Repertoire[] = [
     ],
   },
   {
+    id: 'italian',
+    name: 'פתיחה איטלקית (לבן)',
+    userColor: 'w',
+    lines: [
+      { name: 'ג׳וקו פיאניסימו — ראשי', moves: 'e4 e5 Nf3 Nc6 Bc4 Bc5 c3 Nf6 d3 d6 O-O O-O Re1 a6 Bb3 Ba7 h3 h6 Nbd2' },
+      { name: 'ג׳וקו פיאניסימו מול ...a6 מוקדם', moves: 'e4 e5 Nf3 Nc6 Bc4 Bc5 c3 Nf6 d3 a6 O-O d6 a4 Ba7 Re1 O-O h3' },
+      { name: 'שני הפרשים מול ...Bc5', moves: 'e4 e5 Nf3 Nc6 Bc4 Nf6 d3 Bc5 c3 d6 O-O O-O Re1 a6 Bb3 Ba7 h3' },
+      { name: 'שני הפרשים מול ...Be7', moves: 'e4 e5 Nf3 Nc6 Bc4 Nf6 d3 Be7 O-O O-O Re1 d6 c3 Na5 Bb5 a6 Ba4 b5 Bc2 c5 Nbd2' },
+      { name: 'שני הפרשים מול ...h6', moves: 'e4 e5 Nf3 Nc6 Bc4 Nf6 d3 h6 O-O d6 c3 g6 Re1 Bg7 h3 O-O Nbd2' },
+      { name: 'הגנה הונגרית (...Be7)', moves: 'e4 e5 Nf3 Nc6 Bc4 Be7 d4 d6 d5 Nb8 Bd3 Nf6 c4 O-O Nc3' },
+    ],
+  },
+  {
     id: 'caro',
     name: 'קארו-קאן (שחור)',
     userColor: 'b',
