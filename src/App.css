@@ -6,9 +6,36 @@
   color: #1d1d1f;
 }
 
-header h1 {
-  margin: 0 0 12px;
-  font-size: 24px;
+a { color: #1f6feb; }
+
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #e3e3e8;
+}
+
+.tabs h1 {
+  margin: 0 0 0 16px;
+  font-size: 22px;
+}
+
+.tab {
+  border: none;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  background: none;
+  padding: 10px 14px;
+  font-size: 15px;
+  color: #555;
+}
+
+.tab.active {
+  color: #1d1d1f;
+  font-weight: 600;
+  border-bottom-color: #1f6feb;
 }
 
 .controls {
@@ -129,6 +156,216 @@ button.primary {
   color: #777;
   font-size: 13px;
 }
+
+/* ---------- review ---------- */
+
+.review {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.search {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.search label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: #555;
+}
+
+.search input {
+  font-size: 15px;
+  padding: 7px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  width: 220px;
+}
+
+.card {
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid #e3e3e8;
+}
+
+.card h2 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.card h3 {
+  margin: 14px 0 6px;
+  font-size: 14px;
+}
+
+.tips {
+  border-color: #b8cdf5;
+  background: #f4f8ff;
+}
+
+.tips ol {
+  margin: 0;
+  padding-inline-start: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tips p { margin: 4px 0 6px; }
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.tile {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #f1f1f4;
+}
+
+.tile-value {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 13px;
+}
+
+.chip.active {
+  background: #1d1d1f;
+  border-color: #1d1d1f;
+  color: #fff;
+}
+
+button.small {
+  padding: 3px 10px;
+  font-size: 12px;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: minmax(90px, 40%) 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+  font-size: 13px;
+}
+
+.bar-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bar {
+  height: 8px;
+  border-radius: 4px;
+  background: #ececf1;
+  overflow: hidden;
+}
+
+.bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: #1f6feb;
+}
+
+.bar-value {
+  color: #555;
+  font-variant-numeric: tabular-nums;
+  min-width: 70px;
+  text-align: left;
+}
+
+.opening {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.opening .bar-row { flex: 1; }
+.opening.weak .bar-label { color: #c62828; font-weight: 600; }
+.opening.weak .bar-fill { background: #e06464; }
+
+.progress {
+  height: 6px;
+  margin-top: 8px;
+  border-radius: 3px;
+  background: #ececf1;
+  overflow: hidden;
+}
+
+.progress > div {
+  height: 100%;
+  background: #1f6feb;
+  transition: width 0.2s;
+}
+
+.chart {
+  position: relative;
+}
+
+.chart svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.chart .grid { stroke: #ececf1; stroke-width: 1; }
+.chart .axis { fill: #777; font-size: 11px; }
+.chart .line { fill: none; stroke: #1f6feb; stroke-width: 2; stroke-linejoin: round; }
+.chart .crosshair { stroke: #999; stroke-width: 1; stroke-dasharray: 3 3; }
+.chart .dot { fill: #1f6feb; stroke: #fff; stroke-width: 2; }
+
+.chart .tooltip {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #1d1d1f;
+  color: #fff;
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.worst {
+  margin: 0 0 10px;
+  padding-inline-start: 18px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* ---------- drill ---------- */
+
+.notice-ok { background: #e7f5ea; }
+.drill-empty { text-align: center; padding: 40px 16px; }
 
 @media (max-width: 800px) {
   main { flex-direction: column; }

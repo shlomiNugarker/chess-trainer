@@ -7,8 +7,6 @@ export type Analysis = {
   mate: number | null; // mate in N from side-to-move perspective
 };
 
-const ENGINE_URL = `${import.meta.env.BASE_URL}engine/stockfish-19-lite-single.js`;
-
 export class Engine {
   private worker: Worker;
   private queue: Promise<unknown> = Promise.resolve();
@@ -16,7 +14,8 @@ export class Engine {
   private ready: Promise<void>;
 
   constructor() {
-    this.worker = new Worker(ENGINE_URL);
+    // resolved here, not at module load, so pure helpers in this file also run under Node (scripts/)
+    this.worker = new Worker(`${import.meta.env.BASE_URL}engine/stockfish-19-lite-single.js`);
     this.worker.onmessage = (e: MessageEvent) => {
       const line = typeof e.data === 'string' ? e.data : String(e.data);
       this.listener?.(line);
