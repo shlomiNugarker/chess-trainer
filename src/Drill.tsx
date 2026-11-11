@@ -5,6 +5,7 @@ import { Engine, winPercent } from './engine';
 import { MAX_BOX, dueMistakes, loadMistakes, recordReview, type Mistake } from './mistakes';
 import { REPERTOIRES } from './repertoire';
 import { GREEN_ARROW, ltr, sanToUci, uciToArrow } from './chessUtils';
+import { useClickToMove } from './useClickToMove';
 
 /** An alternative move that loses less than this (win%) also counts as correct for engine-found mistakes. */
 const ALT_TOLERANCE = 10;
@@ -63,6 +64,12 @@ export default function Drill() {
     return true;
   };
 
+  const { onSquareClick, clickStyles } = useClickToMove(
+    fen,
+    (color) => !!current && !answer && !checking && color === current.fen.split(' ')[1],
+    (from, to) => onPieceDrop({ sourceSquare: from, targetSquare: to }),
+  );
+
   const reveal = () => {
     if (!current || answer) return;
     recordReview(current, false);
@@ -105,6 +112,8 @@ export default function Drill() {
             position: fen,
             boardOrientation: toMove === 'w' ? 'white' : 'black',
             onPieceDrop,
+            onSquareClick,
+            squareStyles: clickStyles,
             arrows,
             allowDrawingArrows: false,
             canDragPiece: ({ piece }) => !answer && !checking && piece.pieceType[0] === toMove,

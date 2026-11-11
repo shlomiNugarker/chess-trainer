@@ -1,11 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Chess, type Move } from 'chess.js';
 import { Chessboard, type Arrow } from 'react-chessboard';
-import { Engine, winPercent } from './engine';
+import { Engine, whiteWinPercent, winPercent } from './engine';
 import { REPERTOIRES, buildBook, posKey } from './repertoire';
 import { loadMistakes, saveMistake } from './mistakes';
 import { BLUE_ARROW, GREEN_ARROW, judge, ltr, sanToUci, uciToArrow, uciToSan } from './chessUtils';
 import { useStored } from './storage';
+import { LEARN_UNTIL, clearLearned, learnMove, loadLearned } from './learned';
+import EvalBar from './EvalBar';
+import { useClickToMove } from './useClickToMove';
+
+/** Below this win% loss a non-best move is not worth a remark. */
+const MIN_REMARK_DROP = 2;
+
+const BOOK_END_NOTICE = `סוף הקו בספר. עד מהלך ${LEARN_UNTIL} המחשב משחק את המהלכים הכי טובים, ואתה לומד את ההמשך — המהלכים הנכונים נשמרים לפעם הבאה.`;
 
 type Mode = 'train' | 'play'; // opening training, or a regular game against the engine
 type Phase = 'book' | 'free';
@@ -45,9 +53,17 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
   const rep = REPERTOIRES.find((r) => r.id === storedRepId) ?? REPERTOIRES[0];
   const repId = rep.id;
   const book = useMemo(() => buildBook(rep), [rep]);
+  const [learnedVersion, setLearnedVersion] = useState(0); // bump to re-read the learned store
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const learned = useMemo(() => loadLearned(repId), [repId, learnedVersion]);
 
   const [skill, setSkill] = useStored('skill', 3);
   const [threshold, setThreshold] = useStored('threshold', 20);
+  const [showEval, setShowEval] = useStored('show-eval', true);
+  const [settingsOpen, setSettingsOpen] = useState(false); // phones: settings fold away to keep the board on screen
+  const showEvalRef = useRef(showEval);
+  showEvalRef.current = showEval;
+  const [evalWhite, setEvalWhite] = useState<number | null>(null); // White's win%, null = unknown
 
   const gameRef = useRef(new Chess());
   const [fen, setFen] = useState(gameRef.current.fen());
@@ -90,9 +106,14 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
 
   const startPreAnalysis = useCallback(() => {
     const g = gameRef.current;
-    if (!coach.current || g.isGameOver() || modeRef.current === 'play') return; // no coach in play mode
+    // play mode has no coach; it still analyzes when the win-chance bar is shown
+    if (!coach.current || g.isGameOver() || (modeRef.current === 'play' && !showEvalRef.current)) return;
     const key = g.fen();
-    preAnalysis.current = { key, promise: coach.current.analyze(key) };
+    const promise = coach.current.analyze(key);
+    preAnalysis.current = { key, promise };
+    promise.then((a) => {
+      if (gameRef.current.fen() === key) setEvalWhite(whiteWinPercent(a, key));
+    });
   }, []);
 
   const finishIfOver = useCallback(() => {
@@ -107,7 +128,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
     return true;
   }, [userColor]);
 
-  /** Opponent's turn: book reply if we're still in the line, otherwise the weakened engine. */
+  /** Opponent's turn: book reply if we're still in the line, otherwise the engine (full strength until LEARN_UNTIL). */
   const opponentMove = useCallback(
     async (currentPhase: Phase) => {
       const g = gameRef.current;
@@ -122,7 +143,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
         if (replies?.length) san = replies[Math.floor(Math.random() * replies.length)];
         else {
           nextPhase = 'free';
-          setNotice('סוף הקו בספר — מכאן משחקים חופשי, והמאמן ממשיך לבדוק אותך.');
+          setNotice(BOOK_END_NOTICE);
         }
       }
 
@@ -132,7 +153,9 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
       if (san) {
         g.move(san);
       } else {
-        const res = await opponent.current!.analyze(g.fen(), 'movetime 400');
+        // in training, the opening continues at full strength so lines repeat and can be learned
+        const strong = modeRef.current === 'train' && g.moveNumber() <= LEARN_UNTIL;
+        const res = await (strong ? coach.current! : opponent.current!).analyze(g.fen(), 'movetime 400');
         if (id !== gameId.current) return;
         g.move({ from: res.bestMove.slice(0, 2), to: res.bestMove.slice(2, 4), promotion: res.bestMove[4] ?? 'q' });
       }
@@ -142,7 +165,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
       // Still in book but the line ends on our move? Then free play starts now.
       if (nextPhase === 'book' && !book.get(posKey(g.fen()))?.length) {
         setPhase('free');
-        setNotice('סוף הקו בספר — מכאן משחקים חופשי, והמאמן ממשיך לבדוק אותך.');
+        setNotice(BOOK_END_NOTICE);
       }
       setStatus('user');
       startPreAnalysis();
@@ -159,13 +182,17 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
       setFeedback(null);
       setNotice('');
       setHint(null);
+      setEvalWhite(null);
       sync();
       opponent.current?.newGame();
       if (m === 'play') {
         const c: Color = cc === 'random' ? (Math.random() < 0.5 ? 'w' : 'b') : cc;
         setPlayColor(c);
         if (c === 'b') opponentMove('free');
-        else setStatus('user');
+        else {
+          setStatus('user');
+          startPreAnalysis(); // feeds the win-chance bar
+        }
         return;
       }
       const r = REPERTOIRES.find((x) => x.id === repertoireId)!;
@@ -213,12 +240,15 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
       }
       const id = gameId.current;
       const key = posKey(fenBefore);
-      const expected = phase === 'book' ? book.get(key) : undefined;
+      const bookMoves = phase === 'book' ? book.get(key) : undefined;
+      // after the book: a move learned in an earlier game is checked just like a book move
+      const learnedMove = bookMoves?.length ? undefined : learned[key];
+      const expected = bookMoves?.length ? bookMoves : learnedMove ? [learnedMove] : undefined;
 
       if (expected?.length) {
         if (expected.includes(move.san)) {
-          setNotice('');
-          opponentMove('book');
+          setNotice(learnedMove ? `זכרת! ✓ ${ltr(move.san)} הוא המהלך שלמדת כאן.` : '');
+          opponentMove(learnedMove ? 'free' : 'book');
           return;
         }
         const correct = expected[0];
@@ -226,8 +256,10 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
         setMistakeCount(loadMistakes().length);
         setFeedback({
           kind: 'book',
-          title: 'יצאת מהקו',
-          text: `בקו שלך משחקים כאן ${expected.map(ltr).join(' או ')}. שיחקת ${ltr(move.san)}.`,
+          title: learnedMove ? 'שכחת את המהלך' : 'יצאת מהקו',
+          text: learnedMove
+            ? `במשחק קודם למדת שכאן המהלך הטוב ביותר הוא ${ltr(correct)}. שיחקת ${ltr(move.san)}.`
+            : `בקו שלך משחקים כאן ${expected.map(ltr).join(' או ')}. שיחקת ${ltr(move.san)}.`,
           correctUci: sanToUci(fenBefore, correct),
           playedSan: move.san,
         });
@@ -243,19 +275,26 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
           : await coach.current!.analyze(fenBefore);
       if (id !== gameId.current) return;
 
+      const bestSan = uciToSan(fenBefore, pre.bestMove);
+      // still in the opening: remember the best move here, so next time it is checked like the book
+      if (Number(fenBefore.split(' ')[5]) <= LEARN_UNTIL && learnMove(rep.id, fenBefore, bestSan)) {
+        setLearnedVersion((v) => v + 1);
+      }
+
       if (pre.bestMove === move.from + move.to + (move.promotion ?? '')) {
+        setNotice(`✓ ${ltr(move.san)} — המהלך הטוב ביותר.`);
         opponentMove('free');
         return;
       }
       const post = await coach.current!.analyze(gameRef.current.fen());
       if (id !== gameId.current) return;
+      setEvalWhite(whiteWinPercent(post, gameRef.current.fen()));
 
       const before = winPercent(pre);
       const after = 100 - winPercent(post); // post is from the opponent's perspective
       const drop = before - after;
 
       if (drop >= threshold) {
-        const bestSan = uciToSan(fenBefore, pre.bestMove);
         saveMistake({ fen: fenBefore, played: move.san, correct: bestSan, source: 'engine', repertoire: rep.id, drop });
         setMistakeCount(loadMistakes().length);
         setFeedback({
@@ -267,10 +306,16 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
         });
         setStatus('paused');
       } else {
+        // not a mistake — but still show what the best move was, without stopping
+        setNotice(
+          drop >= MIN_REMARK_DROP
+            ? `המהלך הטוב ביותר היה ${ltr(bestSan)} (המהלך שלך איבד ${ltr(Math.round(drop) + '%')}).`
+            : `✓ ${ltr(move.san)} — מהלך טוב (הטוב ביותר: ${ltr(bestSan)}).`,
+        );
         opponentMove('free');
       }
     },
-    [book, mode, opponentMove, phase, rep.id, threshold],
+    [book, learned, mode, opponentMove, phase, rep.id, threshold],
   );
 
   const onPieceDrop = ({ sourceSquare, targetSquare }: { sourceSquare: string; targetSquare: string | null }) => {
@@ -289,6 +334,12 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
     checkUserMove(fenBefore, move);
     return true;
   };
+
+  const { onSquareClick, clickStyles } = useClickToMove(
+    fen,
+    (color) => status === 'user' && color === userColor,
+    (from, to) => onPieceDrop({ sourceSquare: from, targetSquare: to }),
+  );
 
   const retry = () => {
     gameRef.current.undo();
@@ -325,7 +376,9 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
   const showHint = async () => {
     if (status !== 'user') return;
     const g = gameRef.current;
-    const expected = phase === 'book' ? book.get(posKey(g.fen())) : undefined;
+    const key = posKey(g.fen());
+    const bookMoves = phase === 'book' ? book.get(key) : undefined;
+    const expected = bookMoves?.length ? bookMoves : mode === 'train' && learned[key] ? [learned[key]] : undefined;
     if (expected?.length) {
       setHint(uciToArrow(sanToUci(g.fen(), expected[0]), BLUE_ARROW));
       return;
@@ -344,6 +397,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
     squareStyles[last.from] = { background: 'rgba(255, 210, 0, 0.35)' };
     squareStyles[last.to] = { background: feedback ? 'rgba(230, 60, 60, 0.45)' : 'rgba(255, 210, 0, 0.45)' };
   }
+  Object.assign(squareStyles, clickStyles);
 
   const statusText: Record<Status, string> = {
     user: 'התור שלך',
@@ -361,7 +415,10 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
   return (
     <div>
       <header>
-        <div className="controls">
+        <button className="settings-toggle" onClick={() => setSettingsOpen((o) => !o)} aria-expanded={settingsOpen}>
+          ⚙ {mode === 'play' ? 'משחק רגיל' : rep.name} · רמה {skill} {settingsOpen ? '▴' : '▾'}
+        </button>
+        <div className={settingsOpen ? 'controls open' : 'controls'}>
           <label>
             מצב
             <select
@@ -409,8 +466,15 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
             </label>
           )}
           <label>
-            רמת המחשב ({skill})
+            <span>
+              רמת המחשב ({skill})
+              {mode === 'train' && <span className="muted"> · ממהלך {LEARN_UNTIL + 1}</span>}
+            </span>
             <input type="range" min={0} max={20} value={skill} onChange={(e) => setSkill(Number(e.target.value))} />
+          </label>
+          <label className="checkbox">
+            <input type="checkbox" checked={showEval} onChange={(e) => setShowEval(e.target.checked)} />
+            הצג מד סיכויים
           </label>
           {mode === 'train' && (
             <label>
@@ -426,20 +490,24 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
       </header>
 
       <main>
-        <div className="board" dir="ltr">
+        <div className="board-wrap" dir="ltr">
+          {showEval && <EvalBar white={evalWhite} orientation={userColor === 'w' ? 'white' : 'black'} />}
+          <div className="board">
           <Chessboard
             options={{
               id: 'trainer',
-            showAnimations: active, // a hidden board has no size to animate with (react-chessboard throws)
-            position: fen,
+              showAnimations: active, // a hidden board has no size to animate with (react-chessboard throws)
+              position: fen,
               boardOrientation: userColor === 'w' ? 'white' : 'black',
               onPieceDrop,
+              onSquareClick,
               arrows,
               squareStyles,
               allowDrawingArrows: false,
               canDragPiece: ({ piece }) => status === 'user' && piece.pieceType[0] === userColor,
             }}
           />
+          </div>
         </div>
 
         <aside>
@@ -474,6 +542,22 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
             {movePairs.length ? movePairs.join('  ') : '—'}
           </div>
 
+          {mode === 'train' && (
+            <div className="muted learned">
+              מהלכים שלמדת בפתיחה הזו (מעבר לספר): {Object.keys(learned).length}
+              {Object.keys(learned).length > 0 && (
+                <button
+                  className="small"
+                  onClick={() => {
+                    clearLearned(repId);
+                    setLearnedVersion((v) => v + 1);
+                  }}
+                >
+                  אפס
+                </button>
+              )}
+            </div>
+          )}
           {mode === 'train' && <div className="muted">טעויות שנשמרו לחזרה: {mistakeCount}</div>}
         </aside>
       </main>

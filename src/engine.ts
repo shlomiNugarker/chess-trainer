@@ -87,3 +87,9 @@ export function winPercent(a: Pick<Analysis, 'cp' | 'mate'>): number {
   const cp = Math.max(-1000, Math.min(1000, a.cp ?? 0));
   return 50 + 50 * (2 / (1 + Math.exp(-0.00368208 * cp)) - 1);
 }
+
+/** Win% for White, from an analysis whose score is from the side-to-move's perspective in `fen`. */
+export function whiteWinPercent(a: Pick<Analysis, 'cp' | 'mate'>, fen: string): number {
+  const w = winPercent(a);
+  return fen.split(' ')[1] === 'w' ? w : 100 - w;
+}
