@@ -5,6 +5,7 @@ export type Analysis = {
   bestMove: string; // UCI, e.g. "e2e4"
   cp: number | null; // centipawns from side-to-move perspective
   mate: number | null; // mate in N from side-to-move perspective
+  pv: string[]; // principal variation in UCI, starting with bestMove
 };
 
 export class Engine {
@@ -59,6 +60,7 @@ export class Engine {
     let cp: number | null = null;
     let mate: number | null = null;
     let bestMove = '';
+    let pv: string[] = [];
     await this.exec(
       [`position fen ${fen}`, `go ${go}`],
       (l) => l.startsWith('bestmove'),
@@ -69,11 +71,14 @@ export class Engine {
             if (m[1] === 'cp') { cp = Number(m[2]); mate = null; }
             else { mate = Number(m[2]); cp = null; }
           }
+          const p = l.match(/ pv (.+)$/);
+          if (p) pv = p[1].trim().split(/\s+/);
         }
         if (l.startsWith('bestmove')) bestMove = l.split(' ')[1];
       },
     );
-    return { bestMove, cp, mate };
+    // the last full info line normally ends in bestmove's line; if not, keep just the move itself
+    return { bestMove, cp, mate, pv: pv[0] === bestMove ? pv : bestMove ? [bestMove] : [] };
   }
 
   terminate() {

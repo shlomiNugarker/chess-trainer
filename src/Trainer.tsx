@@ -4,7 +4,7 @@ import { Chessboard, type Arrow } from 'react-chessboard';
 import { Engine, whiteWinPercent, winPercent } from './engine';
 import { REPERTOIRES, buildBook, posKey } from './repertoire';
 import { loadMistakes, saveMistake } from './mistakes';
-import { BLUE_ARROW, GREEN_ARROW, judge, ltr, sanToUci, uciToArrow, uciToSan } from './chessUtils';
+import { BLUE_ARROW, GREEN_ARROW, judge, ltr, pvToSan, sanToUci, uciToArrow, uciToSan } from './chessUtils';
 import { useStored } from './storage';
 import { LEARN_UNTIL, clearLearned, learnMove, loadLearned } from './learned';
 import EvalBar from './EvalBar';
@@ -13,7 +13,7 @@ import { useClickToMove } from './useClickToMove';
 /** Below this win% loss a non-best move is not worth a remark. */
 const MIN_REMARK_DROP = 2;
 
-const BOOK_END_NOTICE = `סוף הקו בספר. עד מהלך ${LEARN_UNTIL} המחשב משחק את המהלכים הכי טובים, ואתה לומד את ההמשך — המהלכים הנכונים נשמרים לפעם הבאה.`;
+const BOOK_END_NOTICE = `סוף הקו בספר. עד מהלך ${LEARN_UNTIL} המחשב משחק את המהלכים הכי טובים, וכל מהלך שלך נבדק — אם יש טוב יותר, תקבל תיקון ותוכל לנסות שוב. המהלכים נשמרים לפעם הבאה.`;
 
 type Mode = 'train' | 'play'; // opening training, or a regular game against the engine
 type Phase = 'book' | 'free';
@@ -60,6 +60,10 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
   const [skill, setSkill] = useStored('skill', 3);
   const [threshold, setThreshold] = useStored('threshold', 20);
   const [showEval, setShowEval] = useStored('show-eval', true);
+  const [correctAll, setCorrectAll] = useStored('correct-all', true); // learning zone: correct every worse move
+  // learned positions met in this game: posKey -> remembered on the first try?
+  const [remembered, setRemembered] = useState<Record<string, boolean>>({});
+  const learnedThisGame = useRef(new Set<string>()); // just taught — answering them right is not "remembering"
   const [settingsOpen, setSettingsOpen] = useState(false); // phones: settings fold away to keep the board on screen
   const showEvalRef = useRef(showEval);
   showEvalRef.current = showEval;
@@ -183,6 +187,8 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
       setNotice('');
       setHint(null);
       setEvalWhite(null);
+      setRemembered({});
+      learnedThisGame.current = new Set();
       sync();
       opponent.current?.newGame();
       if (m === 'play') {
@@ -246,8 +252,19 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
       const expected = bookMoves?.length ? bookMoves : learnedMove ? [learnedMove] : undefined;
 
       if (expected?.length) {
+        // first try at a learned position counts toward "remembered N of M" (a retry does not)
+        const fresh = learnedThisGame.current.has(key);
+        const tally =
+          learnedMove && !fresh && !(key in remembered) ? { ...remembered, [key]: expected.includes(move.san) } : remembered;
+        if (tally !== remembered) setRemembered(tally);
         if (expected.includes(move.san)) {
-          setNotice(learnedMove ? `זכרת! ✓ ${ltr(move.san)} הוא המהלך שלמדת כאן.` : '');
+          const hits = Object.values(tally).filter(Boolean).length;
+          const seen = Object.keys(tally).length;
+          setNotice(
+            !learnedMove ? ''
+              : fresh ? `✓ ${ltr(move.san)} — נכון. בפעם הבאה שתגיע לכאן תצטרך לזכור אותו.`
+              : `זכרת! ✓ ${ltr(move.san)} הוא המהלך שלמדת כאן. (זכרת ${hits} מתוך ${seen} עמדות שלמדת, במשחק הזה)`,
+          );
           opponentMove(learnedMove ? 'free' : 'book');
           return;
         }
@@ -276,12 +293,17 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
       if (id !== gameId.current) return;
 
       const bestSan = uciToSan(fenBefore, pre.bestMove);
-      // still in the opening: remember the best move here, so next time it is checked like the book
-      if (Number(fenBefore.split(' ')[5]) <= LEARN_UNTIL && learnMove(rep.id, fenBefore, bestSan)) {
-        setLearnedVersion((v) => v + 1);
-      }
+      const inLearningZone = Number(fenBefore.split(' ')[5]) <= LEARN_UNTIL;
+      // still in the opening: remember the move for this position, so next time it is checked like the book
+      const learn = (san: string) => {
+        if (inLearningZone && learnMove(rep.id, fenBefore, san)) {
+          learnedThisGame.current.add(key);
+          setLearnedVersion((v) => v + 1);
+        }
+      };
 
       if (pre.bestMove === move.from + move.to + (move.promotion ?? '')) {
+        learn(bestSan);
         setNotice(`✓ ${ltr(move.san)} — המהלך הטוב ביותר.`);
         opponentMove('free');
         return;
@@ -293,14 +315,22 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
       const before = winPercent(pre);
       const after = 100 - winPercent(post); // post is from the opponent's perspective
       const drop = before - after;
+      // an equally good move of your own is easier to remember than the engine's
+      learn(drop < MIN_REMARK_DROP ? move.san : bestSan);
 
-      if (drop >= threshold) {
+      // in the learning zone every clearly worse move gets corrected, not just mistakes above the threshold
+      const stopAt = inLearningZone && correctAll ? MIN_REMARK_DROP : threshold;
+      if (drop >= stopAt) {
         saveMistake({ fen: fenBefore, played: move.san, correct: bestSan, source: 'engine', repertoire: rep.id, drop });
         setMistakeCount(loadMistakes().length);
+        const line = pvToSan(fenBefore, pre.pv);
         setFeedback({
           kind: 'engine',
-          title: `${judge(drop)}: ${ltr(move.san)}`,
-          text: `סיכויי הניצחון שלך ירדו מ-${ltr(Math.round(before) + '%')} ל-${ltr(Math.round(after) + '%')}. המהלך הטוב ביותר היה ${ltr(bestSan)}.`,
+          title: drop >= 10 ? `${judge(drop)}: ${ltr(move.san)}` : `אפשר טוב יותר: ${ltr(bestSan)}`,
+          text:
+            `המהלך הטוב ביותר: ${ltr(bestSan)} (המהלך שלך איבד ${ltr(Math.round(drop) + '%')}; ` +
+            `סיכויי הניצחון שלך: ${ltr(Math.round(before) + '%')} ← ${ltr(Math.round(after) + '%')}).` +
+            (line.includes(' ') ? ` ההמשך: ${ltr(line)}` : ''),
           correctUci: pre.bestMove,
           playedSan: move.san,
         });
@@ -315,7 +345,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
         opponentMove('free');
       }
     },
-    [book, learned, mode, opponentMove, phase, rep.id, threshold],
+    [book, correctAll, learned, mode, opponentMove, phase, remembered, rep.id, threshold],
   );
 
   const onPieceDrop = ({ sourceSquare, targetSquare }: { sourceSquare: string; targetSquare: string | null }) => {
@@ -477,8 +507,14 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
             הצג מד סיכויים
           </label>
           {mode === 'train' && (
+            <label className="checkbox">
+              <input type="checkbox" checked={correctAll} onChange={(e) => setCorrectAll(e.target.checked)} />
+              תיקון בכל מהלך עד מהלך {LEARN_UNTIL}
+            </label>
+          )}
+          {mode === 'train' && (
             <label>
-              מתי לעצור
+              {correctAll ? `מתי לעצור (ממהלך ${LEARN_UNTIL + 1})` : 'מתי לעצור'}
               <select value={threshold} onChange={(e) => setThreshold(Number(e.target.value))}>
                 {THRESHOLDS.map((t) => (
                   <option key={t.value} value={t.value}>{t.label}</option>

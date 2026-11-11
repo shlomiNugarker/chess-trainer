@@ -26,5 +26,19 @@ export const uciToSan = (fen: string, uci: string) => {
   }
 };
 
+/** First `plies` moves of a UCI line as SAN, e.g. "Bd3 c5 c3 Nc6". Stops quietly at an illegal move. */
+export const pvToSan = (fen: string, pv: string[], plies = 4) => {
+  const c = new Chess(fen);
+  const out: string[] = [];
+  for (const uci of pv.slice(0, plies)) {
+    try {
+      out.push(c.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] ?? 'q' }).san);
+    } catch {
+      break;
+    }
+  }
+  return out.join(' ');
+};
+
 export const GREEN_ARROW = 'rgba(0, 160, 60, 0.85)';
 export const BLUE_ARROW = 'rgba(0, 120, 255, 0.7)';
