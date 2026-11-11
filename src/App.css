@@ -451,6 +451,56 @@ aside {
   color: var(--accent);
 }
 
+/* ---------- learn ---------- */
+
+.learn-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin-bottom: 16px;
+}
+
+.learn-header select { min-width: 240px; padding: 9px 12px; }
+
+.learn-move { display: flex; flex-direction: column; gap: 6px; min-height: 112px; }
+.learn-move-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.learn-move-head strong { font-size: 18px; font-family: var(--mono); direction: ltr; }
+.learn-move p { color: var(--text); font-size: 15px; }
+.learn-move p.muted { color: var(--text-3); font-size: 13px; }
+
+.stepper {
+  display: grid;
+  grid-template-columns: auto 1fr 1fr auto;
+  gap: 8px;
+}
+
+.stepper button { padding: 11px 12px; }
+
+.actions.actions-2 { grid-template-columns: 1fr 1fr; }
+
+/* in the learn page every move is a button that jumps there */
+.moves button.move {
+  padding: 1px 6px;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: var(--text-2);
+  font: inherit;
+  text-align: start;
+}
+
+.moves button.move:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
+.moves button.move:disabled { opacity: 1; cursor: default; }
+.moves button.move.mine { color: var(--text); }
+.moves button.move.last { background: rgba(95, 179, 107, 0.22); color: var(--text); font-weight: 700; }
+.moves button.move.noted::after { content: '•'; color: var(--accent); margin-inline-start: 3px; }
+
+.branches h3,
+.idea h3 { margin: 0 0 8px; }
+.branches .chip { font-family: var(--font); }
+.idea p { color: var(--text-2); font-size: 14px; }
+
 /* ---------- review ---------- */
 
 .review { display: flex; flex-direction: column; gap: 16px; }
@@ -778,6 +828,19 @@ aside {
   .moves::-webkit-scrollbar { display: none; }
   .moves li { display: inline-flex; gap: 4px; }
   .move { padding: 1px 4px; }
+
+  /* learn */
+  .learn-header { gap: 8px; margin-bottom: 8px; }
+  .learn-header .chips { flex-wrap: nowrap; overflow-x: auto; width: 100%; scrollbar-width: none; }
+  .learn-header .chips::-webkit-scrollbar { display: none; }
+  .learn-header .chip { flex: none; }
+  .learn-header select { width: 100%; min-width: 0; }
+  .learn-move { min-height: 0; }
+  .learn-move-head strong { font-size: 16px; }
+  .learn-move p { font-size: 14px; }
+  .stepper { order: -1; } /* the step buttons right under the board, so stepping never needs scrolling */
+  .stepper button { min-height: 48px; }
+  .actions.actions-2 button { flex-direction: row; min-height: 46px; font-size: 13px; }
 
   /* review */
   .search { padding: 12px; }

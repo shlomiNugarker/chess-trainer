@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import Trainer, { type TrainRequest } from './Trainer';
 import Review from './Review';
 import Drill from './Drill';
+import Learn from './Learn';
 import { MISTAKES_CHANGED, dueMistakes } from './mistakes';
 import './App.css';
 
-type Screen = 'play' | 'review' | 'drill';
+type Screen = 'play' | 'learn' | 'review' | 'drill';
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('play');
@@ -24,6 +25,7 @@ export default function App() {
 
   const tabs: { id: Screen; label: string; icon: string; badge?: number }[] = [
     { id: 'play', label: 'שחק', icon: '♟' },
+    { id: 'learn', label: 'למד', icon: '📖' },
     { id: 'review', label: 'הסקירה שלי', icon: '▦' },
     { id: 'drill', label: 'חזרה', icon: '↻', badge: due },
   ];
@@ -66,6 +68,14 @@ export default function App() {
           onDrill={() => setScreen('drill')}
         />
       </div>
+      {screen === 'learn' && (
+        <Learn
+          onTrain={(repertoireId) => {
+            setTrainRequest({ repertoireId, nonce: Date.now() });
+            setScreen('play');
+          }}
+        />
+      )}
       {screen === 'drill' && <Drill />}
     </div>
   );

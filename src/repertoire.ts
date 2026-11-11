@@ -1,13 +1,17 @@
-import { Chess } from 'chess.js';
+import { Chess, type Move } from 'chess.js';
 
 // A repertoire is a set of lines (SAN, from the initial position).
 // Lines are merged into a position-keyed book, so transpositions just work.
+// `idea` is the plan of the line in one or two sentences; `notes` explain single moves,
+// keyed by move label: "2.Bf4" for White, "4...Qb6" for Black (checked by scripts/check-lines.ts).
+
+export type Line = { name: string; moves: string; idea?: string; notes?: Record<string, string> };
 
 export type Repertoire = {
   id: string;
   name: string;
   userColor: 'w' | 'b';
-  lines: { name: string; moves: string }[];
+  lines: Line[];
 };
 
 export const REPERTOIRES: Repertoire[] = [
@@ -16,11 +20,62 @@ export const REPERTOIRES: Repertoire[] = [
     name: 'מערכת לונדון (לבן)',
     userColor: 'w',
     lines: [
-      { name: 'ראשי מול ...d5 ו-...c5', moves: 'd4 d5 Bf4 Nf6 e3 e6 Nf3 c5 c3 Nc6 Nbd2 Bd6 Bg3 O-O Bd3' },
-      { name: 'מול ...Nf6 ו-...e6', moves: 'd4 Nf6 Bf4 e6 e3 c5 c3 Nc6 Nd2 d5 Ngf3 Bd6 Bg3 O-O Bd3' },
-      { name: 'מול ...Qb6 מוקדם', moves: 'd4 d5 Bf4 c5 e3 Nc6 c3 Qb6 Qb3 e6 Nd2 Nf6 Ngf3' },
-      { name: 'מול מבנה הודי-מלכותי', moves: 'd4 Nf6 Bf4 g6 e3 Bg7 Nf3 O-O Be2 d6 h3 c5 c3' },
-      { name: 'מול ...Bf5', moves: 'd4 d5 Bf4 Bf5 e3 e6 c4 Nf6 Nc3 Bb4 Qb3' },
+      {
+        name: 'ראשי מול ...d5 ו-...c5',
+        moves: 'd4 d5 Bf4 Nf6 e3 e6 Nf3 c5 c3 Nc6 Nbd2 Bd6 Bg3 O-O Bd3',
+        idea: 'המבנה הקלאסי של הלונדון: רגלים ב-c3, d4 ו-e3, הרץ יוצא ל-f4 לפני e3, והמלך מצריח מהר. לבן משחק בבטחה, ומאוחר יותר מחפש Ne5 או התקפה באגף המלך.',
+        notes: {
+          '2.Bf4': 'הרץ יוצא לפני e3 — אחרת הוא נכלא מאחורי הרגלים. זה סימן ההיכר של הלונדון.',
+          '3.e3': 'מחזק את d4 ופותח את הדרך לרץ השני.',
+          '4...c5': 'שחור תוקף את המרכז — התגובה הנפוצה מול הלונדון.',
+          '5.c3': 'משולש הרגלים c3-d4-e3: מול ...c5 המרכז של לבן נשאר יציב.',
+          '6.Nbd2': 'הפרש הולך ל-d2 ולא ל-c3, כי הרגל ב-c3. מכאן הוא תומך ב-e4 ויכול להגיע ל-f3.',
+          '7.Bg3': 'מול ...Bd6 לבן לא מחליף ברצון: הנסיגה ל-g3 שומרת על הרץ, ואם שחור מחליף — קו ה-h נפתח לצריח.',
+          '8.Bd3': 'הרץ מכוון אל h7, ליד המלך השחור. אחר כך מצריחים ושוקלים Ne5 או Qe2 ו-e4.',
+        },
+      },
+      {
+        name: 'מול ...Nf6 ו-...e6',
+        moves: 'd4 Nf6 Bf4 e6 e3 c5 c3 Nc6 Nd2 d5 Ngf3 Bd6 Bg3 O-O Bd3',
+        idea: 'אותו מבנה מגיע גם מסדר מהלכים אחר. בסוף הקו העמדה זהה לקו הראשי — זה היתרון של הלונדון: אותה תוכנית כמעט מול הכל.',
+        notes: {
+          '2.Bf4': 'גם מול ...Nf6 — הרץ יוצא קודם.',
+          '4.c3': 'שוב משולש c3-d4-e3 מול ...c5.',
+          '5.Nd2': 'הפרש של b1 יוצא ל-d2; הפרש של g1 יגיע ל-f3 בעוד מהלך.',
+          '8.Bd3': 'אותה עמדה כמו בקו הראשי (טרנספוזיציה).',
+        },
+      },
+      {
+        name: 'מול ...Qb6 מוקדם',
+        moves: 'd4 d5 Bf4 c5 e3 Nc6 c3 Qb6 Qb3 e6 Nd2 Nf6 Ngf3',
+        idea: 'אחרי שהרץ עזב את c1, הרגל ב-b2 לא מוגן ושחור תוקף אותו עם המלכה. התשובה הפשוטה: Qb3 — מגינים על b2 ומציעים להחליף מלכות.',
+        notes: {
+          '4...Qb6': 'האיום: ...Qxb2. הרץ ב-f4 כבר לא שומר על b2.',
+          '5.Qb3': 'מגן על b2 ומציע החלפה. אם שחור מחליף ב-b3, לבן מכה axb3 ומקבל קו a פתוח לצריח.',
+          '6.Nd2': 'פיתוח פשוט; הפרש תומך במרכז ויכול לעבור ל-f3 אם צריך.',
+        },
+      },
+      {
+        name: 'מול מבנה הודי-מלכותי',
+        moves: 'd4 Nf6 Bf4 g6 e3 Bg7 Nf3 O-O Be2 d6 h3 c5 c3',
+        idea: 'מול ...g6 ו-...Bg7 הרץ של שחור לוחץ על האלכסון הארוך. לבן משחק בצניעות: Be2, h3 ו-c3 — שומר על הרץ ב-f4 ועל מרכז יציב.',
+        notes: {
+          '2...g6': 'שחור מתכוון להוציא את הרץ ל-g7 (פיאנקטו).',
+          '5.Be2': 'שחור הצריח מאחורי g6, אז לרץ אין מטרה ב-h7 — e2 הוא שדה בטוח ופשוט.',
+          '6.h3': 'נותן לרץ ב-f4 מקום נסיגה ל-h2, ומונע ...Ng4 או ...Bg4.',
+          '7.c3': 'מול ...c5 — שוב מבנה c3-d4-e3 יציב.',
+        },
+      },
+      {
+        name: 'מול ...Bf5',
+        moves: 'd4 d5 Bf4 Bf5 e3 e6 c4 Nf6 Nc3 Bb4 Qb3',
+        idea: 'כששחור מעתיק את הרץ ל-f5, הנקודה b7 נשארת בלי הגנה של הרץ. לבן משחק c4 ו-Qb3 כדי ללחוץ על b7 ועל d5.',
+        notes: {
+          '2...Bf5': 'שחור מוציא גם הוא את הרץ — אבל עכשיו הרץ לא שומר על b7.',
+          '4.c4': 'פותח את המשחק נגד d5, לפני ששחור מסדר את האגף.',
+          '6.Qb3': 'תוקף את b7 ואת הרץ ב-b4 בבת אחת — החולשה שנוצרה אחרי ...Bf5.',
+        },
+      },
     ],
   },
   {
@@ -28,12 +83,71 @@ export const REPERTOIRES: Repertoire[] = [
     name: 'פתיחה איטלקית (לבן)',
     userColor: 'w',
     lines: [
-      { name: 'ג׳וקו פיאניסימו — ראשי', moves: 'e4 e5 Nf3 Nc6 Bc4 Bc5 c3 Nf6 d3 d6 O-O O-O Re1 a6 Bb3 Ba7 h3 h6 Nbd2' },
-      { name: 'ג׳וקו פיאניסימו מול ...a6 מוקדם', moves: 'e4 e5 Nf3 Nc6 Bc4 Bc5 c3 Nf6 d3 a6 O-O d6 a4 Ba7 Re1 O-O h3' },
-      { name: 'שני הפרשים מול ...Bc5', moves: 'e4 e5 Nf3 Nc6 Bc4 Nf6 d3 Bc5 c3 d6 O-O O-O Re1 a6 Bb3 Ba7 h3' },
-      { name: 'שני הפרשים מול ...Be7', moves: 'e4 e5 Nf3 Nc6 Bc4 Nf6 d3 Be7 O-O O-O Re1 d6 c3 Na5 Bb5 a6 Ba4 b5 Bc2 c5 Nbd2' },
-      { name: 'שני הפרשים מול ...h6', moves: 'e4 e5 Nf3 Nc6 Bc4 Nf6 d3 h6 O-O d6 c3 g6 Re1 Bg7 h3 O-O Nbd2' },
-      { name: 'הגנה הונגרית (...Be7)', moves: 'e4 e5 Nf3 Nc6 Bc4 Be7 d4 d6 d5 Nb8 Bd3 Nf6 c4 O-O Nc3' },
+      {
+        name: 'ג׳וקו פיאניסימו — ראשי',
+        moves: 'e4 e5 Nf3 Nc6 Bc4 Bc5 c3 Nf6 d3 d6 O-O O-O Re1 a6 Bb3 Ba7 h3 h6 Nbd2',
+        idea: 'האיטלקית השקטה: c3 ו-d3, מרכז יציב ותמרון איטי. לבן מכין את d4 לרגע הנכון, ובינתיים מעביר את הפרש בדרך Nbd2-f1-g3.',
+        notes: {
+          '3.Bc4': 'הרץ מכוון אל f7 — הנקודה החלשה של שחור בפתיחה.',
+          '4.c3': 'מכין את d4 בעתיד.',
+          '5.d3': 'מגן על e4 ברוגע; d4 יבוא כשהכלים מוכנים.',
+          '7.Re1': 'מגן על e4 ומפנה את f1 לפרש.',
+          '8.Bb3': 'נסיגה מראש: מול ...b5 או ...d5 הרץ היה מותקף עם טמפו.',
+          '9.h3': 'מונע ...Bg4 ו-...Ng4.',
+          '10.Nbd2': 'הפרש בדרך ל-f1 ואז ל-g3 — התמרון הקלאסי של העמדה.',
+        },
+      },
+      {
+        name: 'ג׳וקו פיאניסימו מול ...a6 מוקדם',
+        moves: 'e4 e5 Nf3 Nc6 Bc4 Bc5 c3 Nf6 d3 a6 O-O d6 a4 Ba7 Re1 O-O h3',
+        idea: '...a6 מכין ...b5 שירדוף את הרץ. a4 של לבן מונע את זה ותופס שטח באגף המלכה.',
+        notes: {
+          '5...a6': 'מכין ...b5 ו-...Ba7.',
+          '7.a4': 'מונע ...b5 — הרץ נשאר ב-c4.',
+          '9.h3': 'מונע ...Bg4 ו-...Ng4, כמו בקו הראשי.',
+        },
+      },
+      {
+        name: 'שני הפרשים מול ...Bc5',
+        moves: 'e4 e5 Nf3 Nc6 Bc4 Nf6 d3 Bc5 c3 d6 O-O O-O Re1 a6 Bb3 Ba7 h3',
+        idea: 'מול ...Nf6 לבן בוחר ב-d3 השקט ומגיע לאותו מבנה כמו בקו הראשי של הג׳וקו פיאניסימו.',
+        notes: {
+          '4.d3': 'מגן על e4 בלי להיכנס לקווים החדים (Ng5 או d4).',
+          '9.h3': 'אותה עמדה כמו בקו הראשי לפני ...h6 ו-Nbd2 (טרנספוזיציה).',
+        },
+      },
+      {
+        name: 'שני הפרשים מול ...Be7',
+        moves: 'e4 e5 Nf3 Nc6 Bc4 Nf6 d3 Be7 O-O O-O Re1 d6 c3 Na5 Bb5 a6 Ba4 b5 Bc2 c5 Nbd2',
+        idea: 'מול ...Be7 השקט לבן ממשיך במבנה c3-d3. כש-...Na5 רודף את הרץ, הוא נסוג עד c2 — שם הוא שומר על e4 ומכוון אל המלך.',
+        notes: {
+          '7...Na5': 'הפרש תוקף את הרץ ומאיים להחליף אותו.',
+          '8.Bb5': 'נסיגה ל-b5 ולא ל-b3, כדי לא לתת לפרש להחליף את הרץ.',
+          '10.Bc2': 'הרץ מגיע ל-c2 — את המקום הזה c3 הכין.',
+          '11.Nbd2': 'הפרש בדרך ל-f1 ו-g3.',
+        },
+      },
+      {
+        name: 'שני הפרשים מול ...h6',
+        moves: 'e4 e5 Nf3 Nc6 Bc4 Nf6 d3 h6 O-O d6 c3 g6 Re1 Bg7 h3 O-O Nbd2',
+        idea: 'שחור מונע Ng5 ו-Bg5 עם ...h6 ומוציא את הרץ ל-g7. לבן ממשיך באותה תוכנית: c3, Re1, h3 ו-Nbd2.',
+        notes: {
+          '4...h6': 'מונע Ng5 ו-Bg5.',
+          '6...g6': 'שחור בוחר בפיאנקטו של הרץ.',
+          '8.h3': 'מונע ...Ng4 ו-...Bg4.',
+        },
+      },
+      {
+        name: 'הגנה הונגרית (...Be7)',
+        moves: 'e4 e5 Nf3 Nc6 Bc4 Be7 d4 d6 d5 Nb8 Bd3 Nf6 c4 O-O Nc3',
+        idea: '...Be7 פסיבי, ולכן לבן תופס את המרכז מיד: d4 ואחריו d5 שדוחק את הפרש. לבן מקבל הרבה שטח.',
+        notes: {
+          '4.d4': 'מול ...Be7 הפסיבי — תופסים את המרכז מיד.',
+          '5.d5': 'דוחק את הפרש ותופס שטח.',
+          '6.Bd3': 'הרץ חוזר לתמוך ב-e4, כדי לפנות מקום ל-c4.',
+          '7.c4': 'מבנה רגלים חזק: c4-d5-e4.',
+        },
+      },
     ],
   },
   {
@@ -41,18 +155,91 @@ export const REPERTOIRES: Repertoire[] = [
     name: 'קארו-קאן (שחור)',
     userColor: 'b',
     lines: [
-      { name: 'קלאסי', moves: 'e4 c6 d4 d5 Nc3 dxe4 Nxe4 Bf5 Ng3 Bg6 h4 h6 Nf3 Nd7 h5 Bh7 Bd3 Bxd3 Qxd3 e6' },
-      { name: 'קלאסי דרך Nd2', moves: 'e4 c6 d4 d5 Nd2 dxe4 Nxe4 Bf5 Ng3 Bg6 Nf3 Nd7' },
-      { name: 'שיטת ההתקדמות', moves: 'e4 c6 d4 d5 e5 Bf5 Nf3 e6 Be2 Nd7 O-O Ne7 Nbd2 h6' },
-      { name: 'שיטת ההחלפה', moves: 'e4 c6 d4 d5 exd5 cxd5 Bd3 Nc6 c3 Nf6 Bf4 Bg4 Qb3 Qd7 Nd2 e6 Ngf3 Bd6' },
-      { name: 'פנוב', moves: 'e4 c6 d4 d5 exd5 cxd5 c4 Nf6 Nc3 e6 Nf3 Bb4 cxd5 Nxd5 Qc2 Nc6' },
-      { name: 'שני הפרשים', moves: 'e4 c6 Nf3 d5 Nc3 Bg4 h3 Bxf3 Qxf3 e6 d4 dxe4 Nxe4 Nd7 c3 Ngf6 Bd3' },
+      {
+        name: 'קלאסי',
+        moves: 'e4 c6 d4 d5 Nc3 dxe4 Nxe4 Bf5 Ng3 Bg6 h4 h6 Nf3 Nd7 h5 Bh7 Bd3 Bxd3 Qxd3 e6',
+        idea: 'שחור מחליף במרכז ומוציא את הרץ של c8 לפני ...e6 — כך הוא לא נכלא. מבנה רגלים יציב מאוד, ומשחק פשוט.',
+        notes: {
+          '1...c6': 'מכין ...d5 עם תמיכה של רגל — המרכז של שחור יהיה יציב.',
+          '3...dxe4': 'מחליף במרכז; עכשיו הרץ ב-c8 יכול לצאת.',
+          '4...Bf5': 'הרעיון המרכזי של הקארו-קאן: הרץ יוצא לפני ...e6.',
+          '5...Bg6': 'הרץ נסוג אבל נשאר פעיל.',
+          '6...h6': 'מול h4-h5 שחור משאיר לרץ מקום ב-h7.',
+          '7...Nd7': 'מונע Ne5 ומכין ...Ngf6.',
+          '9...Bxd3': 'מחליף את הרץ הפעיל של לבן.',
+          '10...e6': 'עכשיו ...e6 בבטחה — הרץ כבר הוחלף. בהמשך ...Ngf6, ...Be7 או ...Qc7, והצרחה.',
+        },
+      },
+      {
+        name: 'קלאסי דרך Nd2',
+        moves: 'e4 c6 d4 d5 Nd2 dxe4 Nxe4 Bf5 Ng3 Bg6 Nf3 Nd7',
+        idea: 'Nd2 של לבן במקום Nc3 לא משנה הרבה: אחרי ...dxe4 מגיעים לאותה תוכנית כמו בקלאסי.',
+        notes: {
+          '3...dxe4': 'גם מול Nd2 — מחליפים במרכז.',
+          '4...Bf5': 'הרץ יוצא לפני ...e6.',
+          '6...Nd7': 'מונע Ne5 ומכין ...Ngf6.',
+        },
+      },
+      {
+        name: 'שיטת ההתקדמות',
+        moves: 'e4 c6 d4 d5 e5 Bf5 Nf3 e6 Be2 Nd7 O-O Ne7 Nbd2 h6',
+        idea: 'לבן נועל את המרכז עם e5. שחור מוציא את הרץ ל-f5, מחוץ לשרשרת הרגלים, ומתכונן ל-...c5 שתוקף את בסיס השרשרת.',
+        notes: {
+          '3...Bf5': 'שוב — הרץ יוצא לפני ...e6.',
+          '5...Nd7': 'הפרש ל-d7 תומך ב-...c5 ובלחץ על e5.',
+          '6...Ne7': 'השדה f6 תפוס על ידי הרגל ב-e5, אז הפרש יוצא ל-e7 — משם ל-g6 או c6.',
+          '7...h6': 'נותן לרץ מקום ב-h7 אם לבן ירדוף אותו עם Nh4.',
+        },
+      },
+      {
+        name: 'שיטת ההחלפה',
+        moves: 'e4 c6 d4 d5 exd5 cxd5 Bd3 Nc6 c3 Nf6 Bf4 Bg4 Qb3 Qd7 Nd2 e6 Ngf3 Bd6',
+        idea: 'המבנה סימטרי ושקט. שחור מוציא את הרץ ל-g4 לפני ...e6, ומול Qb3 מגן על b7 עם ...Qd7.',
+        notes: {
+          '3...cxd5': 'מכים לכיוון המרכז.',
+          '6...Bg4': 'הרץ יוצא לפני ...e6 — אותו עיקרון של הקארו-קאן.',
+          '7...Qd7': 'מגן על b7.',
+          '9...Bd6': 'מציע להחליף את הרץ הפעיל של לבן ב-f4.',
+        },
+      },
+      {
+        name: 'פנוב',
+        moves: 'e4 c6 d4 d5 exd5 cxd5 c4 Nf6 Nc3 e6 Nf3 Bb4 cxd5 Nxd5 Qc2 Nc6',
+        idea: 'לבן משחק c4 ובסוף נשאר עם רגל מבודד ב-d4. שחור משחק ...e6 ו-...Bb4, ולוחץ על d4 ועל c3.',
+        notes: {
+          '5...e6': 'מבנה בטוח; הרץ יוצא ל-b4.',
+          '6...Bb4': 'מצמיד את הפרש ב-c3 ומגביר את הלחץ על המרכז.',
+          '7...Nxd5': 'הפרש מגיע לשדה מרכזי חזק, מול הרגל המבודד.',
+          '8...Nc6': 'עוד לחץ על d4 — המטרה של שחור בעמדה.',
+        },
+      },
+      {
+        name: 'שני הפרשים',
+        moves: 'e4 c6 Nf3 d5 Nc3 Bg4 h3 Bxf3 Qxf3 e6 d4 dxe4 Nxe4 Nd7 c3 Ngf6 Bd3',
+        idea: 'לבן משחק עם שני פרשים במקום d4. שחור מצמיד את הפרש ב-f3 ומחליף אותו — מוותר על זוג הרצים, אבל מקבל מבנה יציב ופיתוח מהיר.',
+        notes: {
+          '3...Bg4': 'מצמיד את הפרש למלכה.',
+          '4...Bxf3': 'מחליף מיד — הנסיגה ...Bh5 מסובכת יותר.',
+          '5...e6': 'מבנה סולידי; הרץ השני יוצא ל-e7 או d6.',
+          '7...Nd7': 'מכין ...Ngf6 כדי להחליף את הפרש החזק של לבן ב-e4.',
+        },
+      },
     ],
   },
 ];
 
 /** Position key: board, side, castling, en-passant (ignores move counters). */
 export const posKey = (fen: string) => fen.split(' ').slice(0, 4).join(' ');
+
+/** "2.Bf4" for White's move at ply 2, "4...Qb6" for Black's at ply 7 (ply counted from 0). */
+export const moveLabel = (ply: number, san: string) =>
+  ply % 2 === 0 ? `${ply / 2 + 1}.${san}` : `${(ply - 1) / 2 + 1}...${san}`;
+
+/** The line's moves with the position before and after each one. */
+export function lineMoves(moves: string): Move[] {
+  const c = new Chess();
+  return moves.split(/\s+/).map((san) => c.move(san));
+}
 
 export type Book = Map<string, string[]>; // posKey -> SAN moves seen in repertoire
 
