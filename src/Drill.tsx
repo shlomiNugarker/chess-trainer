@@ -64,7 +64,7 @@ export default function Drill() {
     return true;
   };
 
-  const { onSquareClick, clickStyles } = useClickToMove(
+  const { onSquareClick, onDrop, clickStyles } = useClickToMove(
     fen,
     (color) => !!current && !answer && !checking && color === current.fen.split(' ')[1],
     (from, to) => onPieceDrop({ sourceSquare: from, targetSquare: to }),
@@ -113,7 +113,7 @@ export default function Drill() {
             id: 'drill',
             position: fen,
             boardOrientation: toMove === 'w' ? 'white' : 'black',
-            onPieceDrop,
+            onPieceDrop: ({ sourceSquare, targetSquare }) => onDrop(sourceSquare, targetSquare),
             onSquareClick,
             squareStyles: clickStyles,
             arrows,

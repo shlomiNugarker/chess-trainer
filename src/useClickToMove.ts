@@ -29,6 +29,19 @@ export function useClickToMove(
     setSelected(own && selected !== square ? square : null);
   };
 
+  /**
+   * Use as the board's drop handler. A drag that ends on its own square is really a tap
+   * (a finger always moves a little), so it selects the piece instead of being a failed move.
+   */
+  const onDrop = (from: string, to: string | null) => {
+    if (!to || to === from) {
+      const piece = new Chess(fen).get(from as Square);
+      setSelected(piece && canSelect(piece.color) && selected !== from ? from : null);
+      return false;
+    }
+    return onMove(from, to);
+  };
+
   const styles: Record<string, CSSProperties> = {};
   if (selected) {
     styles[selected] = SELECTED;
@@ -41,5 +54,5 @@ export function useClickToMove(
     }
   }
 
-  return { onSquareClick, clickStyles: styles, clearSelection: () => setSelected(null) };
+  return { onSquareClick, onDrop, clickStyles: styles, clearSelection: () => setSelected(null) };
 }

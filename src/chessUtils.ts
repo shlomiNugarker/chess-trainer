@@ -48,6 +48,8 @@ export const WRONG_MOVE = 'rgba(224, 108, 95, 0.6)';
 
 /** Square colors and frame, spread into react-chessboard options. */
 export const BOARD_THEME = {
+  // a drag starts only after the finger really moves; with the default (1px) every tap on a phone became a drag
+  dragActivationDistance: 8,
   darkSquareStyle: { backgroundColor: '#739552' },
   lightSquareStyle: { backgroundColor: '#ebecd0' },
   boardStyle: { borderRadius: '8px', overflow: 'hidden', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)' },

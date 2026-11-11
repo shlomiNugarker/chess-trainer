@@ -375,7 +375,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
     return true;
   };
 
-  const { onSquareClick, clickStyles } = useClickToMove(
+  const { onSquareClick, onDrop, clickStyles } = useClickToMove(
     fen,
     (color) => status === 'user' && color === userColor,
     (from, to) => onPieceDrop({ sourceSquare: from, targetSquare: to }),
@@ -562,7 +562,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
                 showAnimations: active, // a hidden board has no size to animate with (react-chessboard throws)
                 position: fen,
                 boardOrientation: userColor === 'w' ? 'white' : 'black',
-                onPieceDrop,
+                onPieceDrop: ({ sourceSquare, targetSquare }) => onDrop(sourceSquare, targetSquare),
                 onSquareClick,
                 arrows,
                 squareStyles,
