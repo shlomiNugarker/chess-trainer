@@ -63,6 +63,8 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
   const [correctAll, setCorrectAll] = useStored('correct-all', true); // learning zone: correct every worse move
   // learned positions met in this game: posKey -> remembered on the first try?
   const [remembered, setRemembered] = useState<Record<string, boolean>>({});
+  // last user move that was playable but not best: lets the user go back and play the better move
+  const [undoable, setUndoable] = useState<{ ply: number; bestUci: string; bestSan: string } | null>(null);
   const learnedThisGame = useRef(new Set<string>()); // just taught — answering them right is not "remembering"
   const [settingsOpen, setSettingsOpen] = useState(false); // phones: settings fold away to keep the board on screen
   const showEvalRef = useRef(showEval);
@@ -188,6 +190,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
       setHint(null);
       setEvalWhite(null);
       setRemembered({});
+      setUndoable(null);
       learnedThisGame.current = new Set();
       sync();
       opponent.current?.newGame();
@@ -336,12 +339,15 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
         });
         setStatus('paused');
       } else {
-        // not a mistake — but still show what the best move was, without stopping
+        // not a mistake — still show the best move without stopping, and offer to go back and play it
         setNotice(
           drop >= MIN_REMARK_DROP
             ? `המהלך הטוב ביותר היה ${ltr(bestSan)} (המהלך שלך איבד ${ltr(Math.round(drop) + '%')}).`
             : `✓ ${ltr(move.san)} — מהלך טוב (הטוב ביותר: ${ltr(bestSan)}).`,
         );
+        if (drop >= MIN_REMARK_DROP) {
+          setUndoable({ ply: gameRef.current.history().length - 1, bestUci: pre.bestMove, bestSan });
+        }
         opponentMove('free');
       }
     },
@@ -360,6 +366,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
       return false;
     }
     setHint(null);
+    setUndoable(null);
     sync();
     checkUserMove(fenBefore, move);
     return true;
@@ -375,6 +382,20 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
     gameRef.current.undo();
     setFeedback(null);
     sync();
+    setStatus('user');
+    startPreAnalysis();
+  };
+
+  /** Go back to before the last (not-best) move — even if the opponent already replied — and show the better one. */
+  const goBack = () => {
+    if (!undoable) return;
+    const g = gameRef.current;
+    gameId.current++; // drop an opponent reply that may still be on its way
+    while (g.history().length > undoable.ply) g.undo();
+    sync();
+    setHint(uciToArrow(undoable.bestUci, GREEN_ARROW));
+    setNotice(`חזרת אחורה. שחק את ${ltr(undoable.bestSan)} — החץ הירוק מראה אותו.`);
+    setUndoable(null);
     setStatus('user');
     startPreAnalysis();
   };
@@ -398,6 +419,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
     sync();
     setStatus('user');
     setNotice('');
+    setUndoable(null);
     // back inside the book?
     if (mode === 'train' && book.get(posKey(g.fen()))?.length) setPhase('book');
     startPreAnalysis();
@@ -566,7 +588,16 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
             </div>
           )}
 
-          {notice && !feedback && <div className="notice">{notice}</div>}
+          {notice && !feedback && (
+            <div className="notice">
+              {notice}
+              {undoable && (
+                <div className="buttons">
+                  <button className="primary" onClick={goBack}>↩ חזור ונסה את {ltr(undoable.bestSan)}</button>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="buttons">
             <button onClick={showHint} disabled={status !== 'user'}>רמז</button>

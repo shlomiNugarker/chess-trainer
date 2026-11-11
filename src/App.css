@@ -178,6 +178,8 @@ aside {
   font-size: 14px;
 }
 
+.notice .buttons { margin-top: 8px; }
+
 .buttons {
   display: flex;
   flex-wrap: wrap;
