@@ -40,5 +40,17 @@ export const pvToSan = (fen: string, pv: string[], plies = 4) => {
   return out.join(' ');
 };
 
-export const GREEN_ARROW = 'rgba(0, 160, 60, 0.85)';
-export const BLUE_ARROW = 'rgba(0, 120, 255, 0.7)';
+// ---- board look (shared by every board in the app) ----
+export const GREEN_ARROW = 'rgba(95, 179, 107, 0.9)'; // the right move
+export const BLUE_ARROW = 'rgba(106, 167, 232, 0.85)'; // a hint
+export const LAST_MOVE = 'rgba(246, 246, 105, 0.5)';
+export const WRONG_MOVE = 'rgba(224, 108, 95, 0.6)';
+
+/** Square colors and frame, spread into react-chessboard options. */
+export const BOARD_THEME = {
+  darkSquareStyle: { backgroundColor: '#739552' },
+  lightSquareStyle: { backgroundColor: '#ebecd0' },
+  boardStyle: { borderRadius: '8px', overflow: 'hidden', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)' },
+  darkSquareNotationStyle: { color: '#ebecd0', fontWeight: 600 },
+  lightSquareNotationStyle: { color: '#739552', fontWeight: 600 },
+};

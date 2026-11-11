@@ -22,21 +22,35 @@ export default function App() {
     };
   }, []);
 
-  const tabs: { id: Screen; label: string }[] = [
-    { id: 'play', label: 'שחק' },
-    { id: 'review', label: 'הסקירה שלי' },
-    { id: 'drill', label: due ? `חזרה (${due})` : 'חזרה' },
+  const tabs: { id: Screen; label: string; icon: string; badge?: number }[] = [
+    { id: 'play', label: 'שחק', icon: '♟' },
+    { id: 'review', label: 'הסקירה שלי', icon: '▦' },
+    { id: 'drill', label: 'חזרה', icon: '↻', badge: due },
   ];
 
   return (
     <div className="app" dir="rtl">
-      <nav className="tabs">
-        <h1>מאמן שחמט</h1>
-        {tabs.map((t) => (
-          <button key={t.id} className={t.id === screen ? 'tab active' : 'tab'} onClick={() => setScreen(t.id)}>
-            {t.label}
-          </button>
-        ))}
+      {/* top bar on desktop, bottom tab bar on phones (see App.css) */}
+      <nav className="topbar">
+        <h1 className="brand">
+          <span className="brand-mark" aria-hidden>♞</span>
+          מאמן שחמט
+        </h1>
+        <div className="tabs" role="tablist">
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              role="tab"
+              aria-selected={t.id === screen}
+              className={t.id === screen ? 'tab active' : 'tab'}
+              onClick={() => setScreen(t.id)}
+            >
+              <span className="tab-icon" aria-hidden>{t.icon}</span>
+              <span className="tab-label">{t.label}</span>
+              {!!t.badge && <span className="badge">{t.badge}</span>}
+            </button>
+          ))}
+        </div>
       </nav>
 
       {/* Trainer and Review stay mounted so a game in progress / loaded games survive tab switches */}

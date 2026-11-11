@@ -4,7 +4,7 @@ import { Chessboard, type Arrow } from 'react-chessboard';
 import { Engine, whiteWinPercent, winPercent } from './engine';
 import { REPERTOIRES, buildBook, posKey } from './repertoire';
 import { loadMistakes, saveMistake } from './mistakes';
-import { BLUE_ARROW, GREEN_ARROW, judge, ltr, pvToSan, sanToUci, uciToArrow, uciToSan } from './chessUtils';
+import { BLUE_ARROW, BOARD_THEME, GREEN_ARROW, LAST_MOVE, WRONG_MOVE, judge, ltr, pvToSan, sanToUci, uciToArrow, uciToSan } from './chessUtils';
 import { useStored } from './storage';
 import { LEARN_UNTIL, clearLearned, learnMove, loadLearned } from './learned';
 import EvalBar from './EvalBar';
@@ -29,6 +29,7 @@ const COLOR_CHOICES: { label: string; value: ColorChoice }[] = [
 
 type Feedback = {
   kind: 'book' | 'engine';
+  tone: 'info' | 'warn' | 'error'; // card accent: book line (blue), could be better (amber), mistake (red)
   title: string;
   text: string;
   correctUci: string; // arrow
@@ -276,6 +277,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
         setMistakeCount(loadMistakes().length);
         setFeedback({
           kind: 'book',
+          tone: 'info',
           title: learnedMove ? 'שכחת את המהלך' : 'יצאת מהקו',
           text: learnedMove
             ? `במשחק קודם למדת שכאן המהלך הטוב ביותר הוא ${ltr(correct)}. שיחקת ${ltr(move.san)}.`
@@ -329,6 +331,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
         const line = pvToSan(fenBefore, pre.pv);
         setFeedback({
           kind: 'engine',
+          tone: drop >= 10 ? 'error' : 'warn',
           title: drop >= 10 ? `${judge(drop)}: ${ltr(move.san)}` : `אפשר טוב יותר: ${ltr(bestSan)}`,
           text:
             `המהלך הטוב ביותר: ${ltr(bestSan)} (המהלך שלך איבד ${ltr(Math.round(drop) + '%')}; ` +
@@ -446,8 +449,8 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
   const last = history[history.length - 1];
   const squareStyles: Record<string, React.CSSProperties> = {};
   if (last) {
-    squareStyles[last.from] = { background: 'rgba(255, 210, 0, 0.35)' };
-    squareStyles[last.to] = { background: feedback ? 'rgba(230, 60, 60, 0.45)' : 'rgba(255, 210, 0, 0.45)' };
+    squareStyles[last.from] = { background: LAST_MOVE };
+    squareStyles[last.to] = { background: feedback ? WRONG_MOVE : LAST_MOVE };
   }
   Object.assign(squareStyles, clickStyles);
 
@@ -459,18 +462,25 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
     over: 'המשחק נגמר',
   };
 
-  const movePairs: string[] = [];
-  for (let i = 0; i < history.length; i += 2) {
-    movePairs.push(`${i / 2 + 1}. ${history[i].san}${history[i + 1] ? ' ' + history[i + 1].san : ''}`);
-  }
+  const lastPly = history.length - 1;
+  const learnedCount = Object.keys(learned).length;
+  const toggle = (checked: boolean, onChange: (v: boolean) => void, label: string) => (
+    <label className="toggle">
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      <span className="toggle-track" aria-hidden />
+      {label}
+    </label>
+  );
 
   return (
-    <div>
-      <header>
-        <button className="settings-toggle" onClick={() => setSettingsOpen((o) => !o)} aria-expanded={settingsOpen}>
-          ⚙ {mode === 'play' ? 'משחק רגיל' : rep.name} · רמה {skill} {settingsOpen ? '▴' : '▾'}
+    <div className="trainer">
+      <header className="trainer-header">
+        <button className="settings-toggle" onClick={() => setSettingsOpen(true)} aria-expanded={settingsOpen}>
+          <span aria-hidden>⚙</span> {mode === 'play' ? 'משחק רגיל' : rep.name} · רמה {skill}
         </button>
+        {settingsOpen && <div className="settings-backdrop" onClick={() => setSettingsOpen(false)} />}
         <div className={settingsOpen ? 'controls open' : 'controls'}>
+          <div className="sheet-handle" aria-hidden />
           <label>
             מצב
             <select
@@ -519,21 +529,11 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
           )}
           <label>
             <span>
-              רמת המחשב ({skill})
+              רמת המחשב <b>{skill}</b>
               {mode === 'train' && <span className="muted"> · ממהלך {LEARN_UNTIL + 1}</span>}
             </span>
             <input type="range" min={0} max={20} value={skill} onChange={(e) => setSkill(Number(e.target.value))} />
           </label>
-          <label className="checkbox">
-            <input type="checkbox" checked={showEval} onChange={(e) => setShowEval(e.target.checked)} />
-            הצג מד סיכויים
-          </label>
-          {mode === 'train' && (
-            <label className="checkbox">
-              <input type="checkbox" checked={correctAll} onChange={(e) => setCorrectAll(e.target.checked)} />
-              תיקון בכל מהלך עד מהלך {LEARN_UNTIL}
-            </label>
-          )}
           {mode === 'train' && (
             <label>
               {correctAll ? `מתי לעצור (ממהלך ${LEARN_UNTIL + 1})` : 'מתי לעצור'}
@@ -544,6 +544,11 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
               </select>
             </label>
           )}
+          <div className="toggles">
+            {mode === 'train' && toggle(correctAll, setCorrectAll, `תיקון בכל מהלך עד מהלך ${LEARN_UNTIL}`)}
+            {toggle(showEval, setShowEval, 'הצג מד סיכויים')}
+          </div>
+          <button className="primary sheet-done" onClick={() => setSettingsOpen(false)}>סיום</button>
         </div>
       </header>
 
@@ -551,46 +556,48 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
         <div className="board-wrap" dir="ltr">
           {showEval && <EvalBar white={evalWhite} orientation={userColor === 'w' ? 'white' : 'black'} />}
           <div className="board">
-          <Chessboard
-            options={{
-              id: 'trainer',
-              showAnimations: active, // a hidden board has no size to animate with (react-chessboard throws)
-              position: fen,
-              boardOrientation: userColor === 'w' ? 'white' : 'black',
-              onPieceDrop,
-              onSquareClick,
-              arrows,
-              squareStyles,
-              allowDrawingArrows: false,
-              canDragPiece: ({ piece }) => status === 'user' && piece.pieceType[0] === userColor,
-            }}
-          />
+            <Chessboard
+              options={{
+                id: 'trainer',
+                showAnimations: active, // a hidden board has no size to animate with (react-chessboard throws)
+                position: fen,
+                boardOrientation: userColor === 'w' ? 'white' : 'black',
+                onPieceDrop,
+                onSquareClick,
+                arrows,
+                squareStyles,
+                ...BOARD_THEME,
+                allowDrawingArrows: false,
+                canDragPiece: ({ piece }) => status === 'user' && piece.pieceType[0] === userColor,
+              }}
+            />
           </div>
         </div>
 
         <aside>
           <div className={`status status-${status}`}>
-            {!engineReady ? 'טוען מנוע…' : statusText[status]}
-            <span className="phase">
-              {mode === 'play' ? `משחק רגיל — אתה ${userColor === 'w' ? 'לבן' : 'שחור'}` : phase === 'book' ? 'בתוך הקו' : 'משחק חופשי'}
+            <span className="status-dot" aria-hidden />
+            <span className="status-text">{!engineReady ? 'טוען מנוע…' : statusText[status]}</span>
+            <span className="pill">
+              {mode === 'play' ? `משחק רגיל · ${userColor === 'w' ? 'לבן' : 'שחור'}` : phase === 'book' ? 'בתוך הקו' : 'משחק חופשי'}
             </span>
           </div>
 
           {feedback && (
-            <div className={`feedback feedback-${feedback.kind}`}>
+            <div className={`card feedback tone-${feedback.tone}`}>
               <strong>{feedback.title}</strong>
               <p>{feedback.text}</p>
-              <p className="muted">החץ הירוק מראה את המהלך הנכון.</p>
+              <p className="muted hint-text">החץ הירוק מראה את המהלך הנכון.</p>
               <div className="buttons">
-                <button className="primary" onClick={retry}>חזור ונסה</button>
-                <button onClick={continueAnyway}>המשך בכל זאת</button>
+                <button className="primary" onClick={retry}>↩ חזור ונסה</button>
+                <button className="ghost" onClick={continueAnyway}>המשך בכל זאת</button>
               </div>
             </div>
           )}
 
           {notice && !feedback && (
-            <div className="notice">
-              {notice}
+            <div className={`card notice${undoable ? ' tone-warn' : ''}`}>
+              <p>{notice}</p>
               {undoable && (
                 <div className="buttons">
                   <button className="primary" onClick={goBack}>↩ חזור ונסה את {ltr(undoable.bestSan)}</button>
@@ -599,33 +606,52 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
             </div>
           )}
 
-          <div className="buttons">
-            <button onClick={showHint} disabled={status !== 'user'}>רמז</button>
-            <button onClick={takeBack} disabled={status !== 'user' && status !== 'over'}>החזר מהלך</button>
-            <button onClick={() => newGame()}>משחק חדש</button>
+          <div className="actions">
+            <button onClick={showHint} disabled={status !== 'user'}>
+              <span className="icon" aria-hidden>💡</span>רמז
+            </button>
+            <button onClick={takeBack} disabled={status !== 'user' && status !== 'over'}>
+              <span className="icon" aria-hidden>↶</span>החזר מהלך
+            </button>
+            <button onClick={() => newGame()}>
+              <span className="icon" aria-hidden>＋</span>משחק חדש
+            </button>
           </div>
 
-          <div className="moves" dir="ltr">
-            {movePairs.length ? movePairs.join('  ') : '—'}
-          </div>
+          <ol className="moves" dir="ltr">
+            {history.length === 0 && <li className="moves-empty">—</li>}
+            {history.map((m, i) =>
+              i % 2 === 0 ? (
+                <li key={i}>
+                  <span className="move-no">{i / 2 + 1}.</span>
+                  <span className={i === lastPly ? 'move last' : 'move'}>{m.san}</span>
+                  <span className={i + 1 === lastPly ? 'move last' : 'move'}>{history[i + 1]?.san ?? ''}</span>
+                </li>
+              ) : null,
+            )}
+          </ol>
 
           {mode === 'train' && (
-            <div className="muted learned">
-              מהלכים שלמדת בפתיחה הזו (מעבר לספר): {Object.keys(learned).length}
-              {Object.keys(learned).length > 0 && (
-                <button
-                  className="small"
-                  onClick={() => {
-                    clearLearned(repId);
-                    setLearnedVersion((v) => v + 1);
-                  }}
-                >
-                  אפס
-                </button>
-              )}
+            <div className="stats">
+              <span className="chip-stat" title="מהלכים שלמדת בפתיחה הזו, מעבר לספר">
+                נלמדו <b>{learnedCount}</b>
+                {learnedCount > 0 && (
+                  <button
+                    className="link"
+                    onClick={() => {
+                      clearLearned(repId);
+                      setLearnedVersion((v) => v + 1);
+                    }}
+                  >
+                    אפס
+                  </button>
+                )}
+              </span>
+              <span className="chip-stat" title="טעויות שנשמרו לחזרה">
+                לחזרה <b>{mistakeCount}</b>
+              </span>
             </div>
           )}
-          {mode === 'train' && <div className="muted">טעויות שנשמרו לחזרה: {mistakeCount}</div>}
         </aside>
       </main>
     </div>

@@ -4,7 +4,7 @@ import { Chessboard, type Arrow } from 'react-chessboard';
 import { Engine, winPercent } from './engine';
 import { MAX_BOX, dueMistakes, loadMistakes, recordReview, type Mistake } from './mistakes';
 import { REPERTOIRES } from './repertoire';
-import { GREEN_ARROW, ltr, sanToUci, uciToArrow } from './chessUtils';
+import { BOARD_THEME, GREEN_ARROW, ltr, sanToUci, uciToArrow } from './chessUtils';
 import { useClickToMove } from './useClickToMove';
 
 /** An alternative move that loses less than this (win%) also counts as correct for engine-found mistakes. */
@@ -89,6 +89,7 @@ export default function Drill() {
     const nextDue = all.length ? Math.min(...all.map((m) => m.due)) : null;
     return (
       <div className="card drill-empty">
+        <div className="empty-mark" aria-hidden>♞</div>
         <h2>{solved ? `כל הכבוד! פתרת ${solved} תרגילים.` : 'אין מה לחזור היום 🎉'}</h2>
         <p className="muted">
           {all.length
@@ -105,7 +106,8 @@ export default function Drill() {
 
   return (
     <main>
-      <div className="board" dir="ltr">
+      <div className="board-wrap" dir="ltr">
+        <div className="board">
         <Chessboard
           options={{
             id: 'drill',
@@ -115,18 +117,23 @@ export default function Drill() {
             onSquareClick,
             squareStyles: clickStyles,
             arrows,
+            ...BOARD_THEME,
             allowDrawingArrows: false,
             canDragPiece: ({ piece }) => !answer && !checking && piece.pieceType[0] === toMove,
           }}
         />
+        </div>
       </div>
       <aside>
-        <div className="status status-user">
-          {checking ? 'בודק…' : `מצא את המהלך הטוב ביותר ל${toMove === 'w' ? 'לבן' : 'שחור'}`}
-          <span className="phase">נשארו {queue.length - index}</span>
+        <div className={checking ? 'status status-checking' : 'status status-user'}>
+          <span className="status-dot" aria-hidden />
+          <span className="status-text">
+            {checking ? 'בודק…' : `מצא את המהלך הטוב ביותר ל${toMove === 'w' ? 'לבן' : 'שחור'}`}
+          </span>
+          <span className="pill">נשארו {queue.length - index}</span>
         </div>
 
-        <div className="muted">
+        <div className="muted drill-meta">
           {rep ? `מתוך האימון: ${rep.name}` : 'מתוך משחק שלך ב-Chess.com'}
           {current.gameUrl && (
             <>
@@ -139,7 +146,7 @@ export default function Drill() {
         <div className="muted">באותה עמדה שיחקת בעבר {ltr(current.played)}.</div>
 
         {answer && (
-          <div className={answer.ok ? 'notice notice-ok' : 'feedback'}>
+          <div className={answer.ok ? 'card notice tone-ok' : 'card feedback tone-error'}>
             <strong>{answer.text}</strong>
             {!answer.ok && <p className="muted">החץ הירוק מראה את המהלך. העמדה תחזור בסוף הסבב.</p>}
           </div>
@@ -149,7 +156,7 @@ export default function Drill() {
           {answer ? (
             <button className="primary" onClick={next}>הבא</button>
           ) : (
-            <button onClick={reveal} disabled={checking}>הראה תשובה</button>
+            <button className="ghost" onClick={reveal} disabled={checking}>הראה תשובה</button>
           )}
         </div>
       </aside>

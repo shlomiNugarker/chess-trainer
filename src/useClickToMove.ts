@@ -2,9 +2,9 @@ import { useState, type CSSProperties } from 'react';
 import { Chess, type Square } from 'chess.js';
 import type { SquareHandlerArgs } from 'react-chessboard';
 
-const SELECTED: CSSProperties = { background: 'rgba(31, 111, 235, 0.35)' };
-const TARGET: CSSProperties = { background: 'radial-gradient(circle, rgba(0, 0, 0, 0.22) 24%, transparent 26%)' };
-const CAPTURE: CSSProperties = { background: 'radial-gradient(circle, transparent 58%, rgba(0, 0, 0, 0.22) 60%)' };
+const SELECTED: CSSProperties = { background: 'rgba(95, 179, 107, 0.55)' };
+const TARGET: CSSProperties = { background: 'radial-gradient(circle, rgba(0, 0, 0, 0.18) 24%, transparent 26%)' };
+const CAPTURE: CSSProperties = { background: 'radial-gradient(circle, transparent 58%, rgba(0, 0, 0, 0.18) 60%)' };
 
 /**
  * Tap a piece, then tap where it goes — alongside drag & drop (easier on phones).

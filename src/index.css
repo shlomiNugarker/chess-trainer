@@ -1,2 +1,48 @@
+/* Design tokens — one dark theme, built around the board. */
+:root {
+  color-scheme: dark;
+
+  --bg: #16181d;
+  --surface: #1f2229;
+  --surface-2: #272b33; /* raised: tiles, inputs, hover */
+  --border: #2f343d;
+
+  --text: #e8e6e3;
+  --text-2: #a7abb3;
+  --text-3: #7d828b;
+
+  --accent: #5fb36b; /* primary action, right move */
+  --accent-hover: #6fc47b;
+  --on-accent: #0f1a11;
+
+  --warn: #e0b44c; /* could be better */
+  --error: #e06c5f; /* mistake, out of the line */
+  --info: #6aa7e8; /* book, hint */
+
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+
+  --font: 'Heebo', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  --tabbar-h: 0px; /* set on phones, where the tabs move to the bottom */
+}
+
 * { box-sizing: border-box; }
-body { margin: 0; background: #fff; }
+
+html { background: var(--bg); }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection { background: rgba(95, 179, 107, 0.35); }
