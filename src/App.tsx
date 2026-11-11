@@ -4,12 +4,13 @@ import Review from './Review';
 import Drill from './Drill';
 import Learn from './Learn';
 import { MISTAKES_CHANGED, dueMistakes } from './mistakes';
+import { useStored } from './storage';
 import './App.css';
 
 type Screen = 'play' | 'learn' | 'review' | 'drill';
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>('play');
+  const [screen, setScreen] = useStored<Screen>('screen', 'learn'); // first visit starts at Learn; then the last tab
   const [trainRequest, setTrainRequest] = useState<TrainRequest | null>(null);
   const [due, setDue] = useState(() => dueMistakes().length);
 

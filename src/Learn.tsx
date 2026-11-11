@@ -6,6 +6,7 @@ import { saveMistake } from './mistakes';
 import { BLUE_ARROW, BOARD_THEME, GREEN_ARROW, LAST_MOVE, WRONG_MOVE, ltr, uciToArrow } from './chessUtils';
 import { useClickToMove } from './useClickToMove';
 import { useStored } from './storage';
+import { hasAnyMastery, isMastered, loadMastery, recordRun } from './mastery';
 
 const START = new Chess().fen();
 
@@ -26,6 +27,15 @@ export default function Learn({ onTrain }: { onTrain: (repertoireId: string) => 
   const [ply, setPly] = useState(0); // moves played on the board
   const [quiz, setQuiz] = useState<QuizState | null>(null);
   const done = !!quiz && ply >= moves.length; // finished the line in test mode
+  const [masteryVersion, setMasteryVersion] = useState(0); // bump to re-read the store
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const mastery = useMemo(() => loadMastery(rep.id), [rep.id, masteryVersion]);
+  const masteredCount = rep.lines.filter((l) => isMastered(mastery[l.name])).length;
+  const [guideDismissed, setGuideDismissed] = useStored('guide-dismissed', false);
+  const showGuide = !guideDismissed && !hasAnyMastery();
+  const nextToLearn = [...rep.lines.keys()]
+    .map((k) => (lineIdx + 1 + k) % rep.lines.length)
+    .find((i) => i !== lineIdx && !isMastered(mastery[rep.lines[i].name]));
 
   const fen = ply === 0 ? START : moves[ply - 1].after;
   const userTurn = fen.split(' ')[1] === rep.userColor;
@@ -52,12 +62,23 @@ export default function Learn({ onTrain }: { onTrain: (repertoireId: string) => 
     return () => window.removeEventListener('keydown', onKey);
   }, [quiz, moves.length]);
 
+  /** Test mode: play the next move of the line; finishing the line records the run. */
+  const advance = (mistakes: number) => {
+    const np = ply + 1;
+    setPly(np);
+    if (np === moves.length) {
+      recordRun(rep.id, line.name, mistakes);
+      setMasteryVersion((v) => v + 1);
+    }
+  };
+
   // test mode: the app plays the other side's moves of the line
   useEffect(() => {
     if (!quiz || done || quiz.wrong || userTurn) return;
-    const t = setTimeout(() => setPly((p) => p + 1), 450);
+    const t = setTimeout(() => advance(quiz.mistakes), 450);
     return () => clearTimeout(t);
-  }, [quiz, done, userTurn]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quiz, done, userTurn, ply]);
 
   /** Other lines of this repertoire that reach this same position (also by transposition) and go on differently. */
   const branches = useMemo(() => {
@@ -84,7 +105,7 @@ export default function Learn({ onTrain }: { onTrain: (repertoireId: string) => 
       return false;
     }
     if (san === next.san) {
-      setPly(ply + 1);
+      advance(quiz.mistakes);
       return true;
     }
     saveMistake({ fen, played: san, correct: next.san, source: 'book', repertoire: rep.id });
@@ -119,6 +140,19 @@ export default function Learn({ onTrain }: { onTrain: (repertoireId: string) => 
 
   return (
     <div className="learn">
+      {showGuide && (
+        <div className="card guide">
+          <strong>איך לומדים כאן</strong>
+          <ol>
+            <li><b>למד</b> — עבור על קו מהלך אחר מהלך וקרא למה משחקים כל מהלך.</li>
+            <li><b>בחן אותי</b> — שחק את הקו בעצמך עד שאין טעויות (✓).</li>
+            <li><b>שחק</b> — באימון מול המחשב; כל סטייה מהקו נעצרת ומתוקנת.</li>
+            <li><b>חזרה</b> — כל יום כמה דקות על העמדות שטעית בהן.</li>
+          </ol>
+          <button className="ghost small" onClick={() => setGuideDismissed(true)}>הבנתי</button>
+        </div>
+      )}
+
       <header className="learn-header">
         <div className="chips" role="tablist">
           {REPERTOIRES.map((r) => (
@@ -131,10 +165,13 @@ export default function Learn({ onTrain }: { onTrain: (repertoireId: string) => 
             </button>
           ))}
         </div>
+        <span className="pill progress-pill" title="קווים שעברת בבחינה בלי טעויות">
+          שולט ב-{masteredCount} מתוך {rep.lines.length}
+        </span>
         <select value={lineIdx} onChange={(e) => pickLine(rep.id, Number(e.target.value))} aria-label="קו">
           {rep.lines.map((l, i) => (
             <option key={i} value={i}>
-              {l.name} · {Math.ceil(l.moves.split(/\s+/).length / 2)} מהלכים
+              {isMastered(mastery[l.name]) ? '✓ ' : ''}{l.name} ({Math.ceil(l.moves.split(/\s+/).length / 2)} מהלכים)
             </option>
           ))}
         </select>
@@ -198,13 +235,25 @@ export default function Learn({ onTrain }: { onTrain: (repertoireId: string) => 
             </div>
           )}
 
-          {done && (
-            <div className="card notice tone-ok">
+          {done && quiz && (
+            <div className={quiz.mistakes ? 'card notice tone-warn' : 'card notice tone-ok'}>
+              <strong>
+                {quiz.mistakes
+                  ? 'כמעט! עבור על הקו פעם נוספת בלי טעויות כדי לסמן אותו ✓'
+                  : nextToLearn === undefined
+                    ? `שולט בכל הקווים של ${rep.name} 🎉 — עכשיו תרגל אותם במשחק.`
+                    : 'שולט בקו ✓'}
+              </strong>
               <p>{line.idea}</p>
               <div className="buttons">
-                <button className="primary" onClick={startQuiz}>↻ שוב</button>
-                {lineIdx + 1 < rep.lines.length && (
-                  <button className="ghost" onClick={() => pickLine(rep.id, lineIdx + 1)}>הקו הבא</button>
+                <button className={quiz.mistakes ? 'primary' : 'ghost'} onClick={startQuiz}>↻ שוב</button>
+                {nextToLearn !== undefined && (
+                  <button className={quiz.mistakes ? 'ghost' : 'primary'} onClick={() => pickLine(rep.id, nextToLearn)}>
+                    הקו הבא ללמוד ›
+                  </button>
+                )}
+                {nextToLearn === undefined && !quiz.mistakes && (
+                  <button className="primary" onClick={() => onTrain(rep.id)}>♟ תרגל במשחק</button>
                 )}
               </div>
             </div>
