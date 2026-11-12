@@ -1,4 +1,6 @@
 import { Chess, type Move } from 'chess.js';
+import { getLang } from './i18n.ts';
+import { EN } from './repertoire.en.ts';
 
 // A repertoire is a set of lines (SAN, from the initial position).
 // Lines are merged into a position-keyed book, so transpositions just work.
@@ -309,6 +311,15 @@ export const REPERTOIRES: Repertoire[] = [
     ],
   },
 ];
+
+/** The repertoire's name in the current language. */
+export const repName = (r: Repertoire) => (getLang() === 'en' && EN[r.id]?.name) || r.name;
+
+/** A line's name, idea and notes in the current language (Hebrew when a translation is missing). */
+export function lineText(r: Repertoire, l: Line) {
+  const en = getLang() === 'en' ? EN[r.id]?.lines[l.name] : undefined;
+  return { name: en?.name ?? l.name, idea: en?.idea ?? l.idea, notes: en?.notes ?? l.notes ?? {} };
+}
 
 /** Position key: board, side, castling, en-passant (ignores move counters). */
 export const posKey = (fen: string) => fen.split(' ').slice(0, 4).join(' ');

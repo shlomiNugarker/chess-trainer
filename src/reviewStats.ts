@@ -4,6 +4,7 @@
 import { Chess } from 'chess.js';
 import type { GameSummary, TimeClass } from './chesscom.ts';
 import { type Engine, winPercent } from './engine.ts';
+import { tr } from './i18n.ts';
 
 export type Score = { games: number; wins: number; draws: number; losses: number; score: number }; // score 0..100
 
@@ -23,25 +24,28 @@ export type Overview = {
 export const SHORT_GAME = 25;
 export const MIN_OPENING_GAMES = 5;
 
-export const REASON_LABELS: Record<string, string> = {
-  checkmated: 'מט',
-  resigned: 'כניעה',
-  timeout: 'נגמר הזמן',
-  abandoned: 'נטישה',
-  agreed: 'הסכמה',
-  repetition: 'חזרה על עמדה',
-  stalemate: 'פט',
-  insufficient: 'חומר לא מספיק',
-  timevsinsufficient: 'זמן מול חומר לא מספיק',
-  '50move': 'חוק 50 המהלכים',
+// labels are functions, not constants, so they follow the current language
+const REASONS: Record<string, [string, string]> = {
+  checkmated: ['מט', 'Checkmate'],
+  resigned: ['כניעה', 'Resigned'],
+  timeout: ['נגמר הזמן', 'Out of time'],
+  abandoned: ['נטישה', 'Abandoned'],
+  agreed: ['הסכמה', 'Agreed'],
+  repetition: ['חזרה על עמדה', 'Repetition'],
+  stalemate: ['פט', 'Stalemate'],
+  insufficient: ['חומר לא מספיק', 'Insufficient material'],
+  timevsinsufficient: ['זמן מול חומר לא מספיק', 'Time vs. insufficient material'],
+  '50move': ['חוק 50 המהלכים', '50-move rule'],
 };
+export const reasonLabel = (reason: string) => (REASONS[reason] ? tr(...REASONS[reason]) : reason);
 
-export const TIME_CLASS_LABELS: Record<TimeClass, string> = {
-  bullet: 'בולט',
-  blitz: 'בליץ',
-  rapid: 'רפיד',
-  daily: 'יומי',
+const TIME_CLASSES: Record<TimeClass, [string, string]> = {
+  bullet: ['בולט', 'Bullet'],
+  blitz: ['בליץ', 'Blitz'],
+  rapid: ['רפיד', 'Rapid'],
+  daily: ['יומי', 'Daily'],
 };
+export const timeClassLabel = (tc: TimeClass) => tr(...TIME_CLASSES[tc]);
 
 export function score(games: GameSummary[]): Score {
   const wins = games.filter((g) => g.result === 'win').length;
@@ -111,7 +115,12 @@ export function buildOverview(games: GameSummary[]): Overview {
 export type GamePhase = 'opening' | 'middlegame' | 'endgame';
 export type MoveKind = 'inaccuracy' | 'mistake' | 'blunder';
 
-export const PHASE_LABELS: Record<GamePhase, string> = { opening: 'פתיחה', middlegame: 'אמצע המשחק', endgame: 'סיום' };
+const PHASES: Record<GamePhase, [string, string]> = {
+  opening: ['פתיחה', 'opening'],
+  middlegame: ['אמצע המשחק', 'middlegame'],
+  endgame: ['סיום', 'endgame'],
+};
+export const phaseLabel = (p: GamePhase) => tr(...PHASES[p]);
 
 export type GameMistake = {
   fen: string; // position before the move, user to move
@@ -220,8 +229,11 @@ export function buildTips(o: Overview, deep: DeepSummary | null): Tip[] {
   const timeouts = o.lossReasons.find((r) => r.reason === 'timeout')?.count ?? 0;
   if (losses >= 10 && timeouts / losses >= 0.2) {
     tips.push({
-      title: 'השעון מפיל אותך',
-      text: `${pct((timeouts / losses) * 100)} מההפסדים שלך הם על זמן. נסה משחקים ארוכים יותר (רפיד 10+5), ובעמדות פשוטות שחק מהר יותר.`,
+      title: tr('השעון מפיל אותך', 'The clock is beating you'),
+      text: tr(
+        `${pct((timeouts / losses) * 100)} מההפסדים שלך הם על זמן. נסה משחקים ארוכים יותר (רפיד 10+5), ובעמדות פשוטות שחק מהר יותר.`,
+        `${pct((timeouts / losses) * 100)} of your losses are on time. Try longer games (rapid 10+5), and play faster in simple positions.`,
+      ),
       weight: (timeouts / losses) * 100,
     });
   }
@@ -231,12 +243,18 @@ export function buildTips(o: Overview, deep: DeepSummary | null): Tip[] {
       .filter((r) => r.games >= MIN_OPENING_GAMES && r.score < o.byColor[color].score - 10)
       .sort((a, b) => a.score - b.score)[0];
     if (!weak) continue;
-    const side = color === 'w' ? 'בלבן' : 'בשחור';
+    const side = color === 'w' ? tr('בלבן', 'as White') : tr('בשחור', 'as Black');
     tips.push({
-      title: `הפתיחה החלשה ${side}: ${weak.name}`,
+      title: tr(`הפתיחה החלשה ${side}: ${weak.name}`, `Your weakest opening ${side}: ${weak.name}`),
       text: weak.repertoireId
-        ? `אתה משיג רק ${pct(weak.score)} ב-${weak.games} משחקים. יש לך כאן קווים מוכנים — תתאמן עליהם.`
-        : `אתה משיג רק ${pct(weak.score)} ב-${weak.games} משחקים. בחר קו אחד מוכן לפתיחה הזו ולמד אותו עד מהלך 10.`,
+        ? tr(
+            `אתה משיג רק ${pct(weak.score)} ב-${weak.games} משחקים. יש לך כאן קווים מוכנים — תתאמן עליהם.`,
+            `You score only ${pct(weak.score)} in ${weak.games} games. There are ready lines for it here — train them.`,
+          )
+        : tr(
+            `אתה משיג רק ${pct(weak.score)} ב-${weak.games} משחקים. בחר קו אחד מוכן לפתיחה הזו ולמד אותו עד מהלך 10.`,
+            `You score only ${pct(weak.score)} in ${weak.games} games. Pick one ready line for this opening and learn it to move 10.`,
+          ),
       action: weak.repertoireId ? { type: 'train', repertoireId: weak.repertoireId } : undefined,
       weight: o.byColor[color].score - weak.score + weak.games / 5,
     });
@@ -244,18 +262,24 @@ export function buildTips(o: Overview, deep: DeepSummary | null): Tip[] {
 
   const gap = o.byColor.w.score - o.byColor.b.score;
   if (Math.abs(gap) >= 10 && o.byColor.w.games >= 10 && o.byColor.b.games >= 10) {
-    const weakSide = gap > 0 ? 'שחור' : 'לבן';
+    const weakSide = gap > 0 ? tr('שחור', 'Black') : tr('לבן', 'White');
     tips.push({
-      title: `פער גדול בין הצבעים`,
-      text: `עם לבן אתה משיג ${pct(o.byColor.w.score)} ועם שחור ${pct(o.byColor.b.score)}. כדאי להשקיע בפתיחות עם ${weakSide}.`,
+      title: tr('פער גדול בין הצבעים', 'A big gap between colors'),
+      text: tr(
+        `עם לבן אתה משיג ${pct(o.byColor.w.score)} ועם שחור ${pct(o.byColor.b.score)}. כדאי להשקיע בפתיחות עם ${weakSide}.`,
+        `As White you score ${pct(o.byColor.w.score)} and as Black ${pct(o.byColor.b.score)}. Put time into your openings with ${weakSide}.`,
+      ),
       weight: Math.abs(gap),
     });
   }
 
   if (losses >= 10 && o.shortLosses / losses >= 0.3) {
     tips.push({
-      title: 'הפסדים מוקדמים',
-      text: `${pct((o.shortLosses / losses) * 100)} מההפסדים שלך נגמרים עד מהלך ${SHORT_GAME}. לפני כל מהלך שאל: מה היריב מאיים? והאם כל הכלים שלי מוגנים?`,
+      title: tr('הפסדים מוקדמים', 'Early losses'),
+      text: tr(
+        `${pct((o.shortLosses / losses) * 100)} מההפסדים שלך נגמרים עד מהלך ${SHORT_GAME}. לפני כל מהלך שאל: מה היריב מאיים? והאם כל הכלים שלי מוגנים?`,
+        `${pct((o.shortLosses / losses) * 100)} of your losses end by move ${SHORT_GAME}. Before every move ask: what is my opponent threatening, and are all my pieces protected?`,
+      ),
       weight: (o.shortLosses / losses) * 80,
     });
   }
@@ -265,16 +289,22 @@ export function buildTips(o: Overview, deep: DeepSummary | null): Tip[] {
     const [phase, n] = (Object.entries(deep.byPhase) as [GamePhase, number][]).sort((a, b) => b[1] - a[1])[0];
     if (n > 0) {
       tips.push({
-        title: `רוב הטעויות שלך: ב${PHASE_LABELS[phase]}`,
-        text: `ב-${deep.games} המשחקים שנותחו היו ${deep.counts.blunder} בלאנדרים (${perGame.toFixed(1)} למשחק). הן מחכות לך במסך החזרה.`,
+        title: tr(`רוב הטעויות שלך: ב${phaseLabel(phase)}`, `Most of your mistakes: in the ${phaseLabel(phase)}`),
+        text: tr(
+          `ב-${deep.games} המשחקים שנותחו היו ${deep.counts.blunder} בלאנדרים (${perGame.toFixed(1)} למשחק). הן מחכות לך במסך החזרה.`,
+          `The ${deep.games} analyzed games had ${deep.counts.blunder} blunders (${perGame.toFixed(1)} per game). They are waiting for you in Review.`,
+        ),
         action: { type: 'drill' },
         weight: 40 + perGame * 20,
       });
     }
   } else {
     tips.push({
-      title: 'מצא את הטעויות שלך',
-      text: 'הרץ ניתוח מנוע על המשחקים האחרונים. כל טעות שתמצא תהפוך לתרגיל במסך החזרה.',
+      title: tr('מצא את הטעויות שלך', 'Find your mistakes'),
+      text: tr(
+        'הרץ ניתוח מנוע על המשחקים האחרונים. כל טעות שתמצא תהפוך לתרגיל במסך החזרה.',
+        'Run an engine analysis of your recent games. Every mistake it finds becomes an exercise in Review.',
+      ),
       action: { type: 'deep' },
       weight: 1,
     });

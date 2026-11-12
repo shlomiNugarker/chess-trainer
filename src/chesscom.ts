@@ -1,6 +1,8 @@
 // Chess.com public API (https://www.chess.com/news/view/published-data-api). No auth, CORS-enabled.
 // We load every monthly archive and boil each game down to the few fields the review needs.
 
+import { tr } from './i18n.ts';
+
 export type Result = 'win' | 'loss' | 'draw';
 export type TimeClass = 'bullet' | 'blitz' | 'rapid' | 'daily';
 
@@ -47,14 +49,14 @@ async function getJson<T>(url: string): Promise<T> {
     try {
       res = await fetch(url);
     } catch {
-      throw new ChessComError('אין חיבור ל-Chess.com. בדוק את החיבור לאינטרנט ונסה שוב.');
+      throw new ChessComError(tr('אין חיבור ל-Chess.com. בדוק את החיבור לאינטרנט ונסה שוב.', 'Cannot reach Chess.com. Check your internet connection and try again.'));
     }
     if (res.status === 429 && attempt < 3) {
       await new Promise((r) => setTimeout(r, 1000 * (attempt + 1))); // rate limited — back off
       continue;
     }
-    if (res.status === 404) throw new ChessComError('לא נמצא משתמש בשם הזה ב-Chess.com.');
-    if (!res.ok) throw new ChessComError(`Chess.com החזיר שגיאה (${res.status}). נסה שוב בעוד רגע.`);
+    if (res.status === 404) throw new ChessComError(tr('לא נמצא משתמש בשם הזה ב-Chess.com.', 'No Chess.com user with this name.'));
+    if (!res.ok) throw new ChessComError(tr(`Chess.com החזיר שגיאה (${res.status}). נסה שוב בעוד רגע.`, `Chess.com returned an error (${res.status}). Try again in a moment.`));
     return res.json() as Promise<T>;
   }
 }
@@ -62,7 +64,7 @@ async function getJson<T>(url: string): Promise<T> {
 /** "https://www.chess.com/openings/Italian-Game-Two-Knights-Defense" -> "Italian Game Two Knights Defense" */
 export function openingFromEco(eco?: string): { full: string; family: string } {
   const slug = eco?.split('/openings/')[1];
-  if (!slug) return { full: 'לא ידוע', family: 'לא ידוע' };
+  if (!slug) return { full: tr('לא ידוע', 'Unknown'), family: tr('לא ידוע', 'Unknown') };
   const words = slug.replace(/\.{3}/g, '-').split('-'); // "Gambit...5.Bf4" -> "Gambit", "5.Bf4"
   const cut = words.findIndex((w) => /\d/.test(w)); // drop the move-list tail ("3.e5", "...Nf6")
   const full = (cut === -1 ? words : words.slice(0, Math.max(cut, 1))).join(' ');

@@ -1,5 +1,6 @@
 import { Chess } from 'chess.js';
 import { REPERTOIRES, buildBook, moveLabel } from '../src/repertoire.ts';
+import { EN } from '../src/repertoire.en.ts';
 let ok = true;
 for (const r of REPERTOIRES) {
   for (const l of r.lines) {
@@ -11,6 +12,15 @@ for (const r of REPERTOIRES) {
     // every note must point at a move that is really in the line ("2.Bf4", "4...Qb6")
     for (const key of Object.keys(l.notes ?? {})) {
       if (!labels.has(key)) { console.error(`NOTE KEY not in ${r.id}/${l.name}: ${key}`); ok = false; }
+    }
+    // the English text must exist for every line, with the same moves explained
+    const en = EN[r.id]?.lines[l.name];
+    if (!en) { console.error(`NO ENGLISH for ${r.id}/${l.name}`); ok = false; continue; }
+    for (const key of Object.keys(en.notes)) {
+      if (!labels.has(key)) { console.error(`EN NOTE KEY not in ${r.id}/${l.name}: ${key}`); ok = false; }
+    }
+    for (const key of Object.keys(l.notes ?? {})) {
+      if (!(key in en.notes)) { console.error(`EN NOTE MISSING ${r.id}/${l.name}: ${key}`); ok = false; }
     }
     console.log(r.id, l.name, '->', c.fen());
   }

@@ -1,9 +1,11 @@
+import { tr } from './i18n';
+
 /** Vertical win-chance bar for both sides; the side at the bottom of the board is at the bottom of the bar. */
 export default function EvalBar({ white, orientation }: { white: number | null; orientation: 'white' | 'black' }) {
   const w = Math.round(white ?? 50);
   const sides = [
-    { name: 'שחור', pct: 100 - w },
-    { name: 'לבן', pct: w },
+    { name: tr('שחור', 'Black'), pct: 100 - w },
+    { name: tr('לבן', 'White'), pct: w },
   ];
   const [top, bottom] = orientation === 'white' ? sides : [...sides].reverse();
   const label = (s: (typeof sides)[number]) => (
@@ -13,7 +15,7 @@ export default function EvalBar({ white, orientation }: { white: number | null; 
     </div>
   );
   return (
-    <div className="evalbar" title={`סיכויי ניצחון: לבן ${w}%, שחור ${100 - w}%`}>
+    <div className="evalbar" title={tr(`סיכויי ניצחון: לבן ${w}%, שחור ${100 - w}%`, `Win chances: White ${w}%, Black ${100 - w}%`)}>
       {label(top)}
       <div className={`evalbar-track ${orientation === 'white' ? 'white-bottom' : 'white-top'}`}>
         <div className="evalbar-white" style={{ height: `${w}%` }} />

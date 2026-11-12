@@ -2,18 +2,23 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Chess, type Move } from 'chess.js';
 import { Chessboard, type Arrow } from 'react-chessboard';
 import { Engine, whiteWinPercent, winPercent } from './engine';
-import { REPERTOIRES, buildBook, posKey } from './repertoire';
+import { REPERTOIRES, buildBook, posKey, repName } from './repertoire';
 import { loadMistakes, saveMistake } from './mistakes';
 import { BLUE_ARROW, BOARD_THEME, GREEN_ARROW, LAST_MOVE, WRONG_MOVE, judge, ltr, pvToSan, sanToUci, uciToArrow, uciToSan } from './chessUtils';
 import { useStored } from './storage';
 import { LEARN_UNTIL, clearLearned, learnMove, loadLearned } from './learned';
 import EvalBar from './EvalBar';
 import { useClickToMove } from './useClickToMove';
+import { tr } from './i18n';
 
 /** Below this win% loss a non-best move is not worth a remark. */
 const MIN_REMARK_DROP = 2;
 
-const BOOK_END_NOTICE = `סוף הקו בספר. עד מהלך ${LEARN_UNTIL} המחשב משחק את המהלכים הכי טובים, וכל מהלך שלך נבדק — אם יש טוב יותר, תקבל תיקון ותוכל לנסות שוב. המהלכים נשמרים לפעם הבאה.`;
+const bookEndNotice = () =>
+  tr(
+    `סוף הקו בספר. עד מהלך ${LEARN_UNTIL} המחשב משחק את המהלכים הכי טובים, וכל מהלך שלך נבדק — אם יש טוב יותר, תקבל תיקון ותוכל לנסות שוב. המהלכים נשמרים לפעם הבאה.`,
+    `End of the book line. Up to move ${LEARN_UNTIL} the computer plays the best moves and each of your moves is checked — if there is a better one, you get a correction and can try again. The moves are saved for next time.`,
+  );
 
 type Mode = 'train' | 'play'; // opening training, or a regular game against the engine
 type Phase = 'book' | 'free';
@@ -21,10 +26,10 @@ type Status = 'user' | 'opponent' | 'checking' | 'paused' | 'over';
 type Color = 'w' | 'b';
 type ColorChoice = Color | 'random';
 
-const COLOR_CHOICES: { label: string; value: ColorChoice }[] = [
-  { label: 'לבן', value: 'w' },
-  { label: 'שחור', value: 'b' },
-  { label: 'אקראי', value: 'random' },
+const colorChoices = (): { label: string; value: ColorChoice }[] => [
+  { label: tr('לבן', 'White'), value: 'w' },
+  { label: tr('שחור', 'Black'), value: 'b' },
+  { label: tr('אקראי', 'Random'), value: 'random' },
 ];
 
 type Feedback = {
@@ -36,10 +41,10 @@ type Feedback = {
   playedSan: string;
 };
 
-const THRESHOLDS = [
-  { label: 'רגיש (אי-דיוק ומעלה)', value: 10 },
-  { label: 'רגיל (טעות ומעלה)', value: 20 },
-  { label: 'רק בלאנדרים', value: 30 },
+const thresholds = () => [
+  { label: tr('רגיש (אי-דיוק ומעלה)', 'Sensitive (inaccuracies and up)'), value: 10 },
+  { label: tr('רגיל (טעות ומעלה)', 'Normal (mistakes and up)'), value: 20 },
+  { label: tr('רק בלאנדרים', 'Blunders only'), value: 30 },
 ];
 
 /** A request from another screen to start training a repertoire (nonce makes repeats count). */
@@ -129,8 +134,8 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
     setStatus('over');
     setNotice(
       g.isCheckmate()
-        ? g.turn() === userColor ? 'מט. הפסדת — נסה שוב.' : 'מט! ניצחת.'
-        : 'תיקו.',
+        ? g.turn() === userColor ? tr('מט. הפסדת — נסה שוב.', 'Checkmate. You lost — try again.') : tr('מט! ניצחת.', 'Checkmate! You won.')
+        : tr('תיקו.', 'Draw.'),
     );
     return true;
   }, [userColor]);
@@ -150,7 +155,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
         if (replies?.length) san = replies[Math.floor(Math.random() * replies.length)];
         else {
           nextPhase = 'free';
-          setNotice(BOOK_END_NOTICE);
+          setNotice(bookEndNotice());
         }
       }
 
@@ -172,7 +177,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
       // Still in book but the line ends on our move? Then free play starts now.
       if (nextPhase === 'book' && !book.get(posKey(g.fen()))?.length) {
         setPhase('free');
-        setNotice(BOOK_END_NOTICE);
+        setNotice(bookEndNotice());
       }
       setStatus('user');
       startPreAnalysis();
@@ -266,8 +271,12 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
           const seen = Object.keys(tally).length;
           setNotice(
             !learnedMove ? ''
-              : fresh ? `✓ ${ltr(move.san)} — נכון. בפעם הבאה שתגיע לכאן תצטרך לזכור אותו.`
-              : `זכרת! ✓ ${ltr(move.san)} הוא המהלך שלמדת כאן. (זכרת ${hits} מתוך ${seen} עמדות שלמדת, במשחק הזה)`,
+              : fresh
+                ? tr(`✓ ${ltr(move.san)} — נכון. בפעם הבאה שתגיע לכאן תצטרך לזכור אותו.`, `✓ ${move.san} — correct. Next time you get here you will need to remember it.`)
+                : tr(
+                    `זכרת! ✓ ${ltr(move.san)} הוא המהלך שלמדת כאן. (זכרת ${hits} מתוך ${seen} עמדות שלמדת, במשחק הזה)`,
+                    `You remembered! ✓ ${move.san} is the move you learned here. (${hits} of ${seen} learned positions remembered this game)`,
+                  ),
           );
           opponentMove(learnedMove ? 'free' : 'book');
           return;
@@ -278,10 +287,16 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
         setFeedback({
           kind: 'book',
           tone: 'info',
-          title: learnedMove ? 'שכחת את המהלך' : 'יצאת מהקו',
+          title: learnedMove ? tr('שכחת את המהלך', 'You forgot the move') : tr('יצאת מהקו', 'You left the line'),
           text: learnedMove
-            ? `במשחק קודם למדת שכאן המהלך הטוב ביותר הוא ${ltr(correct)}. שיחקת ${ltr(move.san)}.`
-            : `בקו שלך משחקים כאן ${expected.map(ltr).join(' או ')}. שיחקת ${ltr(move.san)}.`,
+            ? tr(
+                `במשחק קודם למדת שכאן המהלך הטוב ביותר הוא ${ltr(correct)}. שיחקת ${ltr(move.san)}.`,
+                `In an earlier game you learned that the best move here is ${correct}. You played ${move.san}.`,
+              )
+            : tr(
+                `בקו שלך משחקים כאן ${expected.map(ltr).join(' או ')}. שיחקת ${ltr(move.san)}.`,
+                `Your line plays ${expected.join(' or ')} here. You played ${move.san}.`,
+              ),
           correctUci: sanToUci(fenBefore, correct),
           playedSan: move.san,
         });
@@ -309,7 +324,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
 
       if (pre.bestMove === move.from + move.to + (move.promotion ?? '')) {
         learn(bestSan);
-        setNotice(`✓ ${ltr(move.san)} — המהלך הטוב ביותר.`);
+        setNotice(tr(`✓ ${ltr(move.san)} — המהלך הטוב ביותר.`, `✓ ${move.san} — the best move.`));
         opponentMove('free');
         return;
       }
@@ -332,11 +347,14 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
         setFeedback({
           kind: 'engine',
           tone: drop >= 10 ? 'error' : 'warn',
-          title: drop >= 10 ? `${judge(drop)}: ${ltr(move.san)}` : `אפשר טוב יותר: ${ltr(bestSan)}`,
-          text:
+          title: drop >= 10 ? `${judge(drop)}: ${ltr(move.san)}` : tr(`אפשר טוב יותר: ${ltr(bestSan)}`, `There is better: ${bestSan}`),
+          text: tr(
             `המהלך הטוב ביותר: ${ltr(bestSan)} (המהלך שלך איבד ${ltr(Math.round(drop) + '%')}; ` +
-            `סיכויי הניצחון שלך: ${ltr(Math.round(before) + '%')} ← ${ltr(Math.round(after) + '%')}).` +
-            (line.includes(' ') ? ` ההמשך: ${ltr(line)}` : ''),
+              `סיכויי הניצחון שלך: ${ltr(Math.round(before) + '%')} ← ${ltr(Math.round(after) + '%')}).` +
+              (line.includes(' ') ? ` ההמשך: ${ltr(line)}` : ''),
+            `Best move: ${bestSan} (yours lost ${Math.round(drop)}%; your win chance: ${Math.round(before)}% → ${Math.round(after)}%).` +
+              (line.includes(' ') ? ` Continuation: ${line}` : ''),
+          ),
           correctUci: pre.bestMove,
           playedSan: move.san,
         });
@@ -345,8 +363,11 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
         // not a mistake — still show the best move without stopping, and offer to go back and play it
         setNotice(
           drop >= MIN_REMARK_DROP
-            ? `המהלך הטוב ביותר היה ${ltr(bestSan)} (המהלך שלך איבד ${ltr(Math.round(drop) + '%')}).`
-            : `✓ ${ltr(move.san)} — מהלך טוב (הטוב ביותר: ${ltr(bestSan)}).`,
+            ? tr(
+                `המהלך הטוב ביותר היה ${ltr(bestSan)} (המהלך שלך איבד ${ltr(Math.round(drop) + '%')}).`,
+                `The best move was ${bestSan} (yours lost ${Math.round(drop)}%).`,
+              )
+            : tr(`✓ ${ltr(move.san)} — מהלך טוב (הטוב ביותר: ${ltr(bestSan)}).`, `✓ ${move.san} — a good move (best: ${bestSan}).`),
         );
         if (drop >= MIN_REMARK_DROP) {
           setUndoable({ ply: gameRef.current.history().length - 1, bestUci: pre.bestMove, bestSan });
@@ -397,7 +418,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
     while (g.history().length > undoable.ply) g.undo();
     sync();
     setHint(uciToArrow(undoable.bestUci, GREEN_ARROW));
-    setNotice(`חזרת אחורה. שחק את ${ltr(undoable.bestSan)} — החץ הירוק מראה אותו.`);
+    setNotice(tr(`חזרת אחורה. שחק את ${ltr(undoable.bestSan)} — החץ הירוק מראה אותו.`, `You went back. Play ${undoable.bestSan} — the green arrow shows it.`));
     setUndoable(null);
     setStatus('user');
     startPreAnalysis();
@@ -406,7 +427,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
   const continueAnyway = () => {
     const wasBook = feedback?.kind === 'book';
     setFeedback(null);
-    if (wasBook) setNotice('המשכת מחוץ לקו — מכאן המאמן בודק אותך עם המנוע.');
+    if (wasBook) setNotice(tr('המשכת מחוץ לקו — מכאן המאמן בודק אותך עם המנוע.', 'You continued off the line — from here the coach checks you with the engine.'));
     const p: Phase = wasBook ? 'free' : phase;
     setPhase(p);
     opponentMove(p);
@@ -455,11 +476,11 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
   Object.assign(squareStyles, clickStyles);
 
   const statusText: Record<Status, string> = {
-    user: 'התור שלך',
-    opponent: 'המחשב חושב…',
-    checking: 'המאמן בודק את המהלך…',
-    paused: 'עצירה לתיקון',
-    over: 'המשחק נגמר',
+    user: tr('התור שלך', 'Your move'),
+    opponent: tr('המחשב חושב…', 'Computer is thinking…'),
+    checking: tr('המאמן בודק את המהלך…', 'Coach is checking your move…'),
+    paused: tr('עצירה לתיקון', 'Stopped to correct'),
+    over: tr('המשחק נגמר', 'Game over'),
   };
 
   const lastPly = history.length - 1;
@@ -476,13 +497,13 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
     <div className="trainer">
       <header className="trainer-header">
         <button className="settings-toggle" onClick={() => setSettingsOpen(true)} aria-expanded={settingsOpen}>
-          <span aria-hidden>⚙</span> {mode === 'play' ? 'משחק רגיל' : rep.name} · רמה {skill}
+          <span aria-hidden>⚙</span> {mode === 'play' ? tr('משחק רגיל', 'Regular game') : repName(rep)} · {tr('רמה', 'Level')} {skill}
         </button>
         {settingsOpen && <div className="settings-backdrop" onClick={() => setSettingsOpen(false)} />}
         <div className={settingsOpen ? 'controls open' : 'controls'}>
           <div className="sheet-handle" aria-hidden />
           <label>
-            מצב
+            {tr('מצב', 'Mode')}
             <select
               value={mode}
               onChange={(e) => {
@@ -491,13 +512,13 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
                 newGame({ mode: m });
               }}
             >
-              <option value="train">אימון פתיחות</option>
-              <option value="play">משחק רגיל</option>
+              <option value="train">{tr('אימון פתיחות', 'Opening training')}</option>
+              <option value="play">{tr('משחק רגיל', 'Regular game')}</option>
             </select>
           </label>
           {mode === 'train' ? (
             <label>
-              פתיחה
+              {tr('פתיחה', 'Opening')}
               <select
                 value={repId}
                 onChange={(e) => {
@@ -506,13 +527,13 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
                 }}
               >
                 {REPERTOIRES.map((r) => (
-                  <option key={r.id} value={r.id}>{r.name}</option>
+                  <option key={r.id} value={r.id}>{repName(r)}</option>
                 ))}
               </select>
             </label>
           ) : (
             <label>
-              צבע
+              {tr('צבע', 'Color')}
               <select
                 value={colorChoice}
                 onChange={(e) => {
@@ -521,7 +542,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
                   newGame({ color: c });
                 }}
               >
-                {COLOR_CHOICES.map((c) => (
+                {colorChoices().map((c) => (
                   <option key={c.value} value={c.value}>{c.label}</option>
                 ))}
               </select>
@@ -529,24 +550,24 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
           )}
           <label>
             <span>
-              רמת המחשב <b>{skill}</b>
-              {mode === 'train' && <span className="muted"> · ממהלך {LEARN_UNTIL + 1}</span>}
+              {tr('רמת המחשב', 'Computer level')} <b>{skill}</b>
+              {mode === 'train' && <span className="muted"> · {tr(`ממהלך ${LEARN_UNTIL + 1}`, `from move ${LEARN_UNTIL + 1}`)}</span>}
             </span>
             <input type="range" min={0} max={20} value={skill} onChange={(e) => setSkill(Number(e.target.value))} />
           </label>
           {/* the basics stay in view; finer control folds away so the screen stays simple */}
           <details className="more-settings">
-            <summary>עוד אפשרויות</summary>
+            <summary>{tr('עוד אפשרויות', 'More options')}</summary>
             <div className="more-settings-body">
               <div className="toggles">
-                {mode === 'train' && toggle(correctAll, setCorrectAll, `תיקון בכל מהלך עד מהלך ${LEARN_UNTIL}`)}
-                {toggle(showEval, setShowEval, 'הצג מד סיכויים')}
+                {mode === 'train' && toggle(correctAll, setCorrectAll, tr(`תיקון בכל מהלך עד מהלך ${LEARN_UNTIL}`, `Correct every move up to move ${LEARN_UNTIL}`))}
+                {toggle(showEval, setShowEval, tr('הצג מד סיכויים', 'Show win-chance bar'))}
               </div>
               {mode === 'train' && (
                 <label>
-                  {correctAll ? `מתי לעצור (ממהלך ${LEARN_UNTIL + 1})` : 'מתי לעצור'}
+                  {correctAll ? tr(`מתי לעצור (ממהלך ${LEARN_UNTIL + 1})`, `When to stop (from move ${LEARN_UNTIL + 1})`) : tr('מתי לעצור', 'When to stop')}
                   <select value={threshold} onChange={(e) => setThreshold(Number(e.target.value))}>
-                    {THRESHOLDS.map((t) => (
+                    {thresholds().map((t) => (
                       <option key={t.value} value={t.value}>{t.label}</option>
                     ))}
                   </select>
@@ -554,7 +575,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
               )}
             </div>
           </details>
-          <button className="primary sheet-done" onClick={() => setSettingsOpen(false)}>סיום</button>
+          <button className="primary sheet-done" onClick={() => setSettingsOpen(false)}>{tr('סיום', 'Done')}</button>
         </div>
       </header>
 
@@ -583,9 +604,13 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
         <aside>
           <div className={`status status-${status}`}>
             <span className="status-dot" aria-hidden />
-            <span className="status-text">{!engineReady ? 'טוען מנוע…' : statusText[status]}</span>
+            <span className="status-text">{!engineReady ? tr('טוען מנוע…', 'Loading engine…') : statusText[status]}</span>
             <span className="pill">
-              {mode === 'play' ? `משחק רגיל · ${userColor === 'w' ? 'לבן' : 'שחור'}` : phase === 'book' ? 'בתוך הקו' : 'משחק חופשי'}
+              {mode === 'play'
+                ? `${tr('משחק רגיל', 'Regular game')} · ${userColor === 'w' ? tr('לבן', 'White') : tr('שחור', 'Black')}`
+                : phase === 'book'
+                  ? tr('בתוך הקו', 'In the line')
+                  : tr('משחק חופשי', 'Free play')}
             </span>
           </div>
 
@@ -593,10 +618,10 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
             <div className={`card feedback tone-${feedback.tone}`}>
               <strong>{feedback.title}</strong>
               <p>{feedback.text}</p>
-              <p className="muted hint-text">החץ הירוק מראה את המהלך הנכון.</p>
+              <p className="muted hint-text">{tr('החץ הירוק מראה את המהלך הנכון.', 'The green arrow shows the right move.')}</p>
               <div className="buttons">
-                <button className="primary" onClick={retry}>↩ חזור ונסה</button>
-                <button className="ghost" onClick={continueAnyway}>המשך בכל זאת</button>
+                <button className="primary" onClick={retry}>↩ {tr('חזור ונסה', 'Try again')}</button>
+                <button className="ghost" onClick={continueAnyway}>{tr('המשך בכל זאת', 'Continue anyway')}</button>
               </div>
             </div>
           )}
@@ -606,7 +631,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
               <p>{notice}</p>
               {undoable && (
                 <div className="buttons">
-                  <button className="primary" onClick={goBack}>↩ חזור ונסה את {ltr(undoable.bestSan)}</button>
+                  <button className="primary" onClick={goBack}>↩ {tr('חזור ונסה את', 'Go back and play')} {ltr(undoable.bestSan)}</button>
                 </div>
               )}
             </div>
@@ -614,13 +639,13 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
 
           <div className="actions">
             <button onClick={showHint} disabled={status !== 'user'}>
-              <span className="icon" aria-hidden>💡</span>רמז
+              <span className="icon" aria-hidden>💡</span>{tr('רמז', 'Hint')}
             </button>
             <button onClick={takeBack} disabled={status !== 'user' && status !== 'over'}>
-              <span className="icon" aria-hidden>↶</span>החזר מהלך
+              <span className="icon" aria-hidden>↶</span>{tr('החזר מהלך', 'Take back')}
             </button>
             <button onClick={() => newGame()}>
-              <span className="icon" aria-hidden>＋</span>משחק חדש
+              <span className="icon" aria-hidden>＋</span>{tr('משחק חדש', 'New game')}
             </button>
           </div>
 
@@ -639,8 +664,8 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
 
           {mode === 'train' && (
             <div className="stats">
-              <span className="chip-stat" title="מהלכים שלמדת בפתיחה הזו, מעבר לספר">
-                נלמדו <b>{learnedCount}</b>
+              <span className="chip-stat" title={tr('מהלכים שלמדת בפתיחה הזו, מעבר לספר', 'Moves you learned in this opening, beyond the book')}>
+                {tr('נלמדו', 'Learned')} <b>{learnedCount}</b>
                 {learnedCount > 0 && (
                   <button
                     className="link"
@@ -649,12 +674,12 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
                       setLearnedVersion((v) => v + 1);
                     }}
                   >
-                    אפס
+                    {tr('אפס', 'Reset')}
                   </button>
                 )}
               </span>
-              <span className="chip-stat" title="טעויות שנשמרו לחזרה">
-                לחזרה <b>{mistakeCount}</b>
+              <span className="chip-stat" title={tr('טעויות שנשמרו לחזרה', 'Mistakes saved for review')}>
+                {tr('לחזרה', 'To review')} <b>{mistakeCount}</b>
               </span>
             </div>
           )}

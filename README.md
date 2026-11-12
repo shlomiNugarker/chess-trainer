@@ -24,6 +24,9 @@ Open http://localhost:5173
 - `src/Drill.tsx` — spaced-repetition drill
 - `src/engine.ts` — Stockfish Web Worker wrapper + Lichess win% formula
 - `src/repertoire.ts` — the opening lines (edit here to change your repertoire)
+- `src/Learn.tsx` — study each repertoire line step by step, "test me", progress per line
+- `src/i18n.ts` — Hebrew / English: every string is written in place as `tr('עברית', 'English')`
+- `src/repertoire.en.ts` — English names, ideas and move notes for the lines in `repertoire.ts`
 - `src/mistakes.ts` — localStorage store of your mistakes + Leitner scheduling
 - `public/engine/` — Stockfish 19 lite (WASM)
 - `scripts/check-lines.ts` — verifies every repertoire line is legal:

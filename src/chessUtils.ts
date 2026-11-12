@@ -1,11 +1,13 @@
 import { Chess } from 'chess.js';
 import type { Arrow } from 'react-chessboard';
+import { tr } from './i18n.ts';
 
 // keep SAN / percentages left-to-right inside Hebrew text
 export const ltr = (t: string | number) => `⁦${t}⁩`;
 
 /** Win% drop thresholds: 10 inaccuracy, 20 mistake, 30 blunder. */
-export const judge = (drop: number) => (drop >= 30 ? 'בלאנדר' : drop >= 20 ? 'טעות' : 'אי-דיוק');
+export const judge = (drop: number) =>
+  drop >= 30 ? tr('בלאנדר', 'Blunder') : drop >= 20 ? tr('טעות', 'Mistake') : tr('אי-דיוק', 'Inaccuracy');
 
 export const uciToArrow = (uci: string, color: string): Arrow => ({
   startSquare: uci.slice(0, 2),

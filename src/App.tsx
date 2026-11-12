@@ -5,6 +5,7 @@ import Drill from './Drill';
 import Learn from './Learn';
 import { MISTAKES_CHANGED, dueMistakes } from './mistakes';
 import { useStored } from './storage';
+import { dir, setLang, tr, useLang } from './i18n';
 import './App.css';
 
 type Screen = 'play' | 'learn' | 'review' | 'drill';
@@ -13,6 +14,7 @@ export default function App() {
   const [screen, setScreen] = useStored<Screen>('screen', 'learn'); // first visit starts at Learn; then the last tab
   const [trainRequest, setTrainRequest] = useState<TrainRequest | null>(null);
   const [due, setDue] = useState(() => dueMistakes().length);
+  const lang = useLang(); // re-renders the whole app when the language changes
 
   useEffect(() => {
     const refresh = () => setDue(dueMistakes().length);
@@ -25,19 +27,19 @@ export default function App() {
   }, []);
 
   const tabs: { id: Screen; label: string; icon: string; badge?: number }[] = [
-    { id: 'play', label: 'שחק', icon: '♟' },
-    { id: 'learn', label: 'למד', icon: '📖' },
-    { id: 'review', label: 'הסקירה שלי', icon: '▦' },
-    { id: 'drill', label: 'חזרה', icon: '↻', badge: due },
+    { id: 'play', label: tr('שחק', 'Play'), icon: '♟' },
+    { id: 'learn', label: tr('למד', 'Learn'), icon: '📖' },
+    { id: 'review', label: tr('הסקירה שלי', 'My review'), icon: '▦' },
+    { id: 'drill', label: tr('חזרה', 'Review'), icon: '↻', badge: due },
   ];
 
   return (
-    <div className="app" dir="rtl">
+    <div className="app" dir={dir()}>
       {/* top bar on desktop, bottom tab bar on phones (see App.css) */}
       <nav className="topbar">
         <h1 className="brand">
           <span className="brand-mark" aria-hidden>♞</span>
-          מאמן שחמט
+          {tr('מאמן שחמט', 'Chess Trainer')}
         </h1>
         <div className="tabs" role="tablist">
           {tabs.map((t) => (
@@ -53,6 +55,11 @@ export default function App() {
               {!!t.badge && <span className="badge">{t.badge}</span>}
             </button>
           ))}
+          {/* the other language, always one tap away (a fifth item in the phone tab bar) */}
+          <button className="tab lang-switch" onClick={() => setLang(lang === 'he' ? 'en' : 'he')} lang={lang === 'he' ? 'en' : 'he'}>
+            <span className="tab-icon" aria-hidden>🌐</span>
+            <span className="tab-label">{lang === 'he' ? 'English' : 'עברית'}</span>
+          </button>
         </div>
       </nav>
 
