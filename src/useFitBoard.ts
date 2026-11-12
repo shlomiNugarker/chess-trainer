@@ -13,8 +13,17 @@ export function useFitBoard<T extends HTMLElement>() {
     if (!el) return;
     const update = () => {
       const top = el.getBoundingClientRect().top + window.scrollY;
-      const bottomGap = 24; // breathing room under the board
-      el.style.setProperty('--fit-h', `${Math.round(window.innerHeight - top - bottomGap)}px`);
+      const bottomGap = 24; // breathing room under the board (matches the page's bottom padding)
+      // positions are fractional with display scaling (125%, 150%): round toward "smaller", or a
+      // half pixel too much is enough for the browser to show a scrollbar
+      let fit = Math.floor(window.innerHeight - Math.ceil(top) - bottomGap);
+      el.style.setProperty('--fit-h', `${fit}px`);
+      // whatever sub-pixel overflow is still left (borders, rounding) comes off the board too
+      const over = document.documentElement.scrollHeight - window.innerHeight;
+      if (over > 0 && over <= 4) {
+        fit -= over;
+        el.style.setProperty('--fit-h', `${fit}px`);
+      }
     };
     update();
     window.addEventListener('resize', update);
