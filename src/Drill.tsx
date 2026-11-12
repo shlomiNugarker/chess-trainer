@@ -7,6 +7,7 @@ import { REPERTOIRES, repName } from './repertoire';
 import { formatDate, tr } from './i18n';
 import { BOARD_THEME, GREEN_ARROW, ltr, sanToUci, uciToArrow } from './chessUtils';
 import { useClickToMove } from './useClickToMove';
+import { useFitBoard } from './useFitBoard';
 
 /** An alternative move that loses less than this (win%) also counts as correct for engine-found mistakes. */
 const ALT_TOLERANCE = 10;
@@ -73,6 +74,7 @@ export default function Drill() {
     (color) => !!current && !answer && !checking && color === current.fen.split(' ')[1],
     (from, to) => onPieceDrop({ sourceSquare: from, targetSquare: to }),
   );
+  const boardRef = useFitBoard<HTMLDivElement>();
 
   const reveal = () => {
     if (!current || answer) return;
@@ -120,7 +122,7 @@ export default function Drill() {
 
   return (
     <main>
-      <div className="board-wrap" dir="ltr">
+      <div className="board-wrap" dir="ltr" ref={boardRef}>
         <div className="board">
         <Chessboard
           options={{

@@ -9,6 +9,7 @@ import { useStored } from './storage';
 import { LEARN_UNTIL, clearLearned, learnMove, loadLearned } from './learned';
 import EvalBar from './EvalBar';
 import { useClickToMove } from './useClickToMove';
+import { useFitBoard } from './useFitBoard';
 import { tr } from './i18n';
 
 /** Below this win% loss a non-best move is not worth a remark. */
@@ -401,6 +402,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
     (color) => status === 'user' && color === userColor,
     (from, to) => onPieceDrop({ sourceSquare: from, targetSquare: to }),
   );
+  const boardRef = useFitBoard<HTMLDivElement>();
 
   const retry = () => {
     gameRef.current.undo();
@@ -580,7 +582,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
       </header>
 
       <main>
-        <div className="board-wrap" dir="ltr">
+        <div className="board-wrap" dir="ltr" ref={boardRef}>
           {showEval && <EvalBar white={evalWhite} orientation={userColor === 'w' ? 'white' : 'black'} />}
           <div className="board">
             <Chessboard

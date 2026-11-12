@@ -6,6 +6,7 @@ import { tr, useLang } from './i18n';
 import { dueMistakes, saveMistake } from './mistakes';
 import { BLUE_ARROW, BOARD_THEME, GREEN_ARROW, LAST_MOVE, WRONG_MOVE, ltr, uciToArrow } from './chessUtils';
 import { useClickToMove } from './useClickToMove';
+import { useFitBoard } from './useFitBoard';
 import { useStored } from './storage';
 import { hasAnyMastery, isMastered, loadMastery, recordRun } from './mastery';
 
@@ -127,6 +128,7 @@ export default function Learn({ onTrain, onDrill }: Props) {
     (color) => !!quiz && !done && !quiz.wrong && color === rep.userColor,
     onMove,
   );
+  const boardRef = useFitBoard<HTMLDivElement>();
 
   const startQuiz = () => {
     setPly(0);
@@ -206,7 +208,7 @@ export default function Learn({ onTrain, onDrill }: Props) {
       </header>
 
       <main>
-        <div className="board-wrap" dir="ltr">
+        <div className="board-wrap" dir="ltr" ref={boardRef}>
           <div className="board">
             <Chessboard
               options={{

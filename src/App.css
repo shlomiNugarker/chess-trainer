@@ -318,11 +318,16 @@ main {
 }
 
 .board-wrap {
+  /* side by side: the board is as tall as the room left below its top edge (--fit-h, measured by
+     useFitBoard), never smaller than 320px; --bar-w adds the win-chance bar beside it */
+  --bar-w: 0px;
   display: flex;
   gap: 10px;
-  width: min(640px, 100%, calc(100dvh - 190px));
+  width: min(820px, 100%, calc(max(var(--fit-h, 100dvh), 320px) + var(--bar-w)));
   flex-shrink: 0;
 }
+
+.board-wrap:has(.evalbar) { --bar-w: 44px; }
 
 .board { flex: 1; min-width: 0; }
 
