@@ -534,20 +534,26 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
             </span>
             <input type="range" min={0} max={20} value={skill} onChange={(e) => setSkill(Number(e.target.value))} />
           </label>
-          {mode === 'train' && (
-            <label>
-              {correctAll ? `מתי לעצור (ממהלך ${LEARN_UNTIL + 1})` : 'מתי לעצור'}
-              <select value={threshold} onChange={(e) => setThreshold(Number(e.target.value))}>
-                {THRESHOLDS.map((t) => (
-                  <option key={t.value} value={t.value}>{t.label}</option>
-                ))}
-              </select>
-            </label>
-          )}
-          <div className="toggles">
-            {mode === 'train' && toggle(correctAll, setCorrectAll, `תיקון בכל מהלך עד מהלך ${LEARN_UNTIL}`)}
-            {toggle(showEval, setShowEval, 'הצג מד סיכויים')}
-          </div>
+          {/* the basics stay in view; finer control folds away so the screen stays simple */}
+          <details className="more-settings">
+            <summary>עוד אפשרויות</summary>
+            <div className="more-settings-body">
+              <div className="toggles">
+                {mode === 'train' && toggle(correctAll, setCorrectAll, `תיקון בכל מהלך עד מהלך ${LEARN_UNTIL}`)}
+                {toggle(showEval, setShowEval, 'הצג מד סיכויים')}
+              </div>
+              {mode === 'train' && (
+                <label>
+                  {correctAll ? `מתי לעצור (ממהלך ${LEARN_UNTIL + 1})` : 'מתי לעצור'}
+                  <select value={threshold} onChange={(e) => setThreshold(Number(e.target.value))}>
+                    {THRESHOLDS.map((t) => (
+                      <option key={t.value} value={t.value}>{t.label}</option>
+                    ))}
+                  </select>
+                </label>
+              )}
+            </div>
+          </details>
           <button className="primary sheet-done" onClick={() => setSettingsOpen(false)}>סיום</button>
         </div>
       </header>

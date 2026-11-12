@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard, type Arrow } from 'react-chessboard';
 import { REPERTOIRES, lineMoves, moveLabel, posKey } from './repertoire';
-import { saveMistake } from './mistakes';
+import { dueMistakes, saveMistake } from './mistakes';
 import { BLUE_ARROW, BOARD_THEME, GREEN_ARROW, LAST_MOVE, WRONG_MOVE, ltr, uciToArrow } from './chessUtils';
 import { useClickToMove } from './useClickToMove';
 import { useStored } from './storage';
@@ -17,7 +17,9 @@ type QuizState = { wrong?: { san: string; correctUci: string }; mistakes: number
  * Study a repertoire line move by move on a board, with the idea of the line and a note on key moves.
  * "Test me" replays the line: the user plays their side, the app plays the other.
  */
-export default function Learn({ onTrain }: { onTrain: (repertoireId: string) => void }) {
+type Props = { onTrain: (repertoireId: string) => void; onDrill: () => void };
+
+export default function Learn({ onTrain, onDrill }: Props) {
   const [repId, setRepId] = useStored('learn-repertoire', REPERTOIRES[0].id);
   const rep = REPERTOIRES.find((r) => r.id === repId) ?? REPERTOIRES[0];
   const [storedLine, setLineIdx] = useStored('learn-line', 0);
@@ -33,6 +35,9 @@ export default function Learn({ onTrain }: { onTrain: (repertoireId: string) => 
   const masteredCount = rep.lines.filter((l) => isMastered(mastery[l.name])).length;
   const [guideDismissed, setGuideDismissed] = useStored('guide-dismissed', false);
   const showGuide = !guideDismissed && !hasAnyMastery();
+  // "today": the one or two things worth doing now, one tap each
+  const due = dueMistakes().length;
+  const firstToLearn = rep.lines.findIndex((l) => !isMastered(mastery[l.name]));
   const nextToLearn = [...rep.lines.keys()]
     .map((k) => (lineIdx + 1 + k) % rep.lines.length)
     .find((i) => i !== lineIdx && !isMastered(mastery[rep.lines[i].name]));
@@ -150,6 +155,24 @@ export default function Learn({ onTrain }: { onTrain: (repertoireId: string) => 
             <li><b>חזרה</b> — כל יום כמה דקות על העמדות שטעית בהן.</li>
           </ol>
           <button className="ghost small" onClick={() => setGuideDismissed(true)}>הבנתי</button>
+        </div>
+      )}
+
+      {!showGuide && !quiz && (
+        <div className="today">
+          <span className="today-title">היום</span>
+          {due > 0 && (
+            <button onClick={onDrill}>↻ חזרה על {due} עמדות</button>
+          )}
+          {firstToLearn === lineIdx ? (
+            <button className="primary" onClick={startQuiz}>🎯 בחן אותי על הקו הזה</button>
+          ) : firstToLearn >= 0 ? (
+            <button className="primary" onClick={() => pickLine(rep.id, firstToLearn)}>
+              📖 ללמוד: {rep.lines[firstToLearn].name}
+            </button>
+          ) : (
+            <button className="primary" onClick={() => onTrain(rep.id)}>♟ שולט בכל הקווים — משחק אימון</button>
+          )}
         </div>
       )}
 

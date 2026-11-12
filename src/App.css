@@ -268,6 +268,43 @@ input[type='range'] { accent-color: var(--accent); width: 100%; direction: ltr; 
   padding-bottom: 6px;
 }
 
+/* folded settings: a quiet "more options" link that opens in place */
+.more-settings { align-self: center; }
+
+.more-settings[open] { flex-basis: 100%; } /* opened: its options get their own row under the basics */
+
+.more-settings summary {
+  display: inline-block;
+  list-style: none;
+  cursor: pointer;
+  padding: 7px 12px;
+  border-radius: 999px;
+  color: var(--text-2);
+  font-size: 13px;
+  user-select: none;
+}
+.more-settings summary::-webkit-details-marker { display: none; }
+.more-settings summary::after { content: ' ▾'; }
+.more-settings[open] summary::after { content: ' ▴'; }
+.more-settings summary:hover { background: var(--surface-2); color: var(--text); }
+
+.more-settings-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 20px;
+  padding: 10px 4px 2px;
+}
+
+.more-settings-body > label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-2);
+  min-width: 170px;
+}
+
 /* ---------- trainer: board + side panel ---------- */
 
 main {
@@ -452,6 +489,17 @@ aside {
 }
 
 /* ---------- learn ---------- */
+
+.today {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.today-title { color: var(--text-3); font-size: 13px; font-weight: 700; margin-inline-end: 4px; }
+.today button { border-radius: 999px; padding: 7px 14px; font-size: 13px; }
 
 .guide { margin-bottom: 14px; border-color: rgba(95, 179, 107, 0.4); }
 .guide ol { margin: 8px 0 10px; padding-inline-start: 22px; color: var(--text-2); font-size: 14px; line-height: 1.8; }
@@ -785,6 +833,13 @@ aside {
   .controls.open > label { min-width: 0; font-size: 13px; }
   .controls.open select { padding: 10px 12px; font-size: 15px; }
   .toggles { flex-direction: column; gap: 14px; padding: 4px 0; }
+  .more-settings { align-self: stretch; }
+  .more-settings summary { padding: 8px 0; font-size: 14px; }
+  .more-settings-body { flex-direction: column; align-items: stretch; gap: 14px; padding: 6px 0 0; }
+  .more-settings-body > label { min-width: 0; font-size: 13px; }
+  .today { flex-wrap: nowrap; overflow-x: auto; margin-bottom: 8px; scrollbar-width: none; }
+  .today::-webkit-scrollbar { display: none; }
+  .today button { flex: none; }
 
   .sheet-handle {
     display: block;

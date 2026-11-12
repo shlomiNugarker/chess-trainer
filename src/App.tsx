@@ -75,6 +75,7 @@ export default function App() {
             setTrainRequest({ repertoireId, nonce: Date.now() });
             setScreen('play');
           }}
+          onDrill={() => setScreen('drill')}
         />
       )}
       {screen === 'drill' && <Drill />}
