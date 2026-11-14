@@ -5,6 +5,7 @@ Three tabs:
 - **Play** — train your repertoire (London / Italian as White, Caro-Kann as Black): every time you leave the line or make a mistake, the game stops, shows the right move, and lets you **retry** or **continue**. Or play a regular game at any level and color.
 - **My review** — enter a Chess.com username; get the 3 most important things to improve, results by color / time control / opening, how you lose, a rating chart, and an optional Stockfish pass over your recent games.
 - **Drill** — spaced repetition (Leitner) over every mistake found in training or in your games.
+- **Installable & offline** — add it to your phone's home screen; learning, training and drill (with the engine) work without internet.
 
 ## Run
 
@@ -29,6 +30,7 @@ Open http://localhost:5173
 - `src/repertoire.en.ts` — English names, ideas and move notes for the lines in `repertoire.ts`
 - `src/mistakes.ts` — localStorage store of your mistakes + Leitner scheduling
 - `public/engine/` — Stockfish 19 lite (WASM)
+- `public/sw.js` + `public/manifest.webmanifest` — offline cache (pages network-first, files cache-first) and install info
 - `scripts/check-lines.ts` — verifies every repertoire line is legal:
   `node --experimental-strip-types scripts/check-lines.ts`
 - `scripts/check-review.ts` — checks for the review logic:
