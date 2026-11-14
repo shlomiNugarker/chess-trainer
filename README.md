@@ -5,6 +5,7 @@ Three tabs:
 - **Play** — train your repertoire (London / Italian as White, Caro-Kann as Black): every time you leave the line or make a mistake, the game stops, shows the right move, and lets you **retry** or **continue**. Or play a regular game at any level and color.
 - **My review** — enter a Chess.com username; get the 3 most important things to improve, results by color / time control / opening, how you lose, a rating chart, and an optional Stockfish pass over your recent games.
 - **Drill** — spaced repetition (Leitner) over every mistake found in training or in your games.
+- **Sounds** — move, capture, check, "wrong move" and "well done" sounds (Web Audio, no files); mute in Play → More options.
 - **Installable & offline** — add it to your phone's home screen; learning, training and drill (with the engine) work without internet.
 
 ## Run

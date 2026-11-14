@@ -6,6 +6,7 @@ import { tr, useLang } from './i18n';
 import { dueMistakes, saveMistake } from './mistakes';
 import { BLUE_ARROW, BOARD_THEME, GREEN_ARROW, LAST_MOVE, WRONG_MOVE, ltr, uciToArrow } from './chessUtils';
 import { useClickToMove } from './useClickToMove';
+import { playSound, useMoveSound } from './sound';
 import { useFitBoard } from './useFitBoard';
 import { useStored } from './storage';
 import { hasAnyMastery, isMastered, loadMastery, recordRun } from './mastery';
@@ -77,6 +78,7 @@ export default function Learn({ onTrain, onDrill }: Props) {
     setPly(np);
     if (np === moves.length) {
       recordRun(rep.id, line.name, mistakes);
+      if (!mistakes) playSound('success', 0.15);
       setMasteryVersion((v) => v + 1);
     }
   };
@@ -119,6 +121,7 @@ export default function Learn({ onTrain, onDrill }: Props) {
       return true;
     }
     saveMistake({ fen, played: san, correct: next.san, source: 'book', repertoire: rep.id });
+    playSound('error');
     setQuiz({ ...quiz, mistakes: quiz.mistakes + 1, wrong: { san, correctUci: next.from + next.to + (next.promotion ?? '') } });
     return false; // the piece goes back; the right move is shown
   };
@@ -129,6 +132,7 @@ export default function Learn({ onTrain, onDrill }: Props) {
     onMove,
   );
   const boardRef = useFitBoard<HTMLDivElement>();
+  useMoveSound(fen);
 
   const startQuiz = () => {
     setPly(0);

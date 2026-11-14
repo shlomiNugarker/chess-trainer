@@ -9,6 +9,7 @@ import { useStored } from './storage';
 import { LEARN_UNTIL, clearLearned, learnMove, loadLearned } from './learned';
 import EvalBar from './EvalBar';
 import { useClickToMove } from './useClickToMove';
+import { playSound, setSoundOn, useMoveSound, useSoundOn } from './sound';
 import { useFitBoard } from './useFitBoard';
 import { tr } from './i18n';
 
@@ -80,6 +81,8 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
 
   const gameRef = useRef(new Chess());
   const [fen, setFen] = useState(gameRef.current.fen());
+  useMoveSound(fen, active);
+  const soundOn = useSoundOn();
   const [history, setHistory] = useState<Move[]>([]);
   const [phase, setPhase] = useState<Phase>('book');
   const [status, setStatus] = useState<Status>('user');
@@ -285,6 +288,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
         const correct = expected[0];
         saveMistake({ fen: fenBefore, played: move.san, correct, source: 'book', repertoire: rep.id });
         setMistakeCount(loadMistakes().length);
+        playSound('error', 0.12);
         setFeedback({
           kind: 'book',
           tone: 'info',
@@ -345,6 +349,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
         saveMistake({ fen: fenBefore, played: move.san, correct: bestSan, source: 'engine', repertoire: rep.id, drop });
         setMistakeCount(loadMistakes().length);
         const line = pvToSan(fenBefore, pre.pv);
+        playSound('error', 0.12);
         setFeedback({
           kind: 'engine',
           tone: drop >= 10 ? 'error' : 'warn',
@@ -564,6 +569,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
               <div className="toggles">
                 {mode === 'train' && toggle(correctAll, setCorrectAll, tr(`תיקון בכל מהלך עד מהלך ${LEARN_UNTIL}`, `Correct every move up to move ${LEARN_UNTIL}`))}
                 {toggle(showEval, setShowEval, tr('הצג מד סיכויים', 'Show win-chance bar'))}
+                {toggle(soundOn, setSoundOn, tr('צלילים', 'Sounds'))}
               </div>
               {mode === 'train' && (
                 <label>

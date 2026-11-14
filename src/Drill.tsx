@@ -7,6 +7,7 @@ import { REPERTOIRES, repName } from './repertoire';
 import { formatDate, tr } from './i18n';
 import { BOARD_THEME, GREEN_ARROW, ltr, sanToUci, uciToArrow } from './chessUtils';
 import { useClickToMove } from './useClickToMove';
+import { playSound, useMoveSound } from './sound';
 import { useFitBoard } from './useFitBoard';
 
 /** An alternative move that loses less than this (win%) also counts as correct for engine-found mistakes. */
@@ -56,8 +57,10 @@ export default function Drill() {
       recordReview(current, res.ok);
       if (res.ok) {
         setSolved((n) => n + 1);
+        playSound('success', 0.1);
         setAnswer(res);
       } else {
+        playSound('error');
         setFen(current.fen); // back to the puzzle, with the right move drawn
         setQueue((q) => [...q, current]); // failed cards come back later in this session
         setAnswer({
@@ -75,6 +78,7 @@ export default function Drill() {
     (from, to) => onPieceDrop({ sourceSquare: from, targetSquare: to }),
   );
   const boardRef = useFitBoard<HTMLDivElement>();
+  useMoveSound(fen);
 
   const reveal = () => {
     if (!current || answer) return;
