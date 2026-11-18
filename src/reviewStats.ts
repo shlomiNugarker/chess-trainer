@@ -61,6 +61,8 @@ export function matchRepertoire(openingFull: string, color: 'w' | 'b'): string |
   if (color === 'w' && /London System/.test(openingFull)) return 'london';
   if (color === 'w' && /^(Italian Game|Giuoco|Two Knights Defense)/.test(openingFull)) return 'italian';
   if (color === 'b' && /^Caro Kann Defense/.test(openingFull)) return 'caro';
+  // the Slav repertoire also has lines against the London and the Colle
+  if (color === 'b' && /^(Slav Defense|Queens Gambit Declined Slav)|London System|Colle System/.test(openingFull)) return 'slav';
   return undefined;
 }
 
