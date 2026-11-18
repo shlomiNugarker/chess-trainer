@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChessComError, fetchGames, type GameSummary, type TimeClass } from './chesscom';
 import { Engine } from './engine';
+import { getAnalysis, saveAnalysis } from './analysisCache';
 import { saveMistake } from './mistakes';
 import {
   phaseLabel, reasonLabel, timeClassLabel, MIN_OPENING_GAMES, SHORT_GAME,
@@ -51,6 +52,9 @@ export default function Review({ onTrain, onDrill }: Props) {
       setUsername(user);
       setGames(all);
       setTimeClass('all');
+      // results of an earlier engine pass show at once
+      const known = all.slice(-deepCount).reverse().map((g) => getAnalysis(g.url)).filter((a): a is GameAnalysis => !!a);
+      if (known.length) setDeep(known);
     } catch (e) {
       if (!token.cancelled) setError(e instanceof ChessComError ? e.message : tr('משהו השתבש בטעינת המשחקים.', 'Something went wrong while loading the games.'));
     } finally {
@@ -64,6 +68,12 @@ export default function Review({ onTrain, onDrill }: Props) {
   );
   const overview = useMemo(() => (filtered.length ? buildOverview(filtered) : null), [filtered]);
   const deepSummary = useMemo(() => (deep?.length ? summarizeDeep(deep) : null), [deep]);
+  // recent games without a stored analysis (deep changes whenever one is added)
+  const pending = useMemo(
+    () => filtered.slice(-deepCount).filter((g) => !getAnalysis(g.url)).length,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [filtered, deepCount, deep],
+  );
   const lang = useLang();
   const tips = useMemo(() => (overview ? buildTips(overview, deepSummary) : []), [overview, deepSummary, lang]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -83,6 +93,13 @@ export default function Review({ onTrain, onDrill }: Props) {
     const results: GameAnalysis[] = [];
     setDeep([]);
     for (let i = 0; i < recent.length; i++) {
+      // analyzed before: reuse it (its mistakes are already in the drill)
+      const known = getAnalysis(recent[i].url);
+      if (known) {
+        results.push(known);
+        setDeep([...results]);
+        continue;
+      }
       setDeepProgress({ game: i + 1, total: recent.length, pos: 0, posTotal: 0 });
       const a = await analyzeGame(run.engine, recent[i], {
         cancelled: () => run.cancelled,
@@ -94,6 +111,7 @@ export default function Review({ onTrain, onDrill }: Props) {
         if (m.kind === 'inaccuracy') continue; // only real mistakes become drills
         saveMistake({ fen: m.fen, played: m.played, correct: m.best, source: 'engine', repertoire: 'chesscom', drop: m.drop, gameUrl: m.gameUrl });
       }
+      saveAnalysis(a);
       results.push(a);
       setDeep([...results]);
     }
@@ -231,8 +249,8 @@ export default function Review({ onTrain, onDrill }: Props) {
             <h2>{tr('ניתוח מנוע של המשחקים האחרונים', 'Engine analysis of your recent games')}</h2>
             <p className="muted">
               {tr(
-                'Stockfish עובר על כל מהלך שלך ומוצא טעויות. כל טעות ובלאנדר נכנסים למסך "חזרה" כתרגיל. לוקח כ-10 שניות למשחק.',
-                'Stockfish goes over each of your moves and finds mistakes. Every mistake and blunder becomes an exercise in Review. About 10 seconds per game.',
+                'Stockfish עובר על כל מהלך שלך ומוצא טעויות. כל טעות ובלאנדר נכנסים ל"תרגול ← הטעויות שלי". לוקח כ-10 שניות למשחק; משחק שכבר נותח לא מנותח שוב.',
+                'Stockfish goes over each of your moves and finds mistakes. Every mistake and blunder goes to "Practice → My mistakes". About 10 seconds per game; a game already analyzed is not analyzed again.',
               )}
             </p>
             <div className="buttons">
@@ -244,7 +262,13 @@ export default function Review({ onTrain, onDrill }: Props) {
               {deepProgress ? (
                 <button onClick={stopDeep}>{tr('עצור', 'Stop')}</button>
               ) : (
-                <button className="primary" onClick={runDeep}>{deep ? tr('נתח שוב', 'Analyze again') : tr('נתח', 'Analyze')}</button>
+                <button className="primary" onClick={runDeep} disabled={pending === 0 && !!deep?.length}>
+                  {pending === 0
+                    ? tr('הכל כבר נותח ✓', 'All analyzed ✓')
+                    : pending === Math.min(deepCount, filtered.length)
+                      ? tr('נתח', 'Analyze')
+                      : tr(`נתח ${pending} משחקים חדשים`, `Analyze ${pending} new games`)}
+                </button>
               )}
             </div>
             {deepProgress && (

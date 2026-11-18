@@ -107,6 +107,25 @@ export function summarize(g: ApiGame, username: string): GameSummary | null {
   };
 }
 
+// Past months never change, so their archives are kept in the browser's Cache Storage (not localStorage:
+// they can be megabytes, and localStorage is synced to the cloud). Only the current month is fetched again.
+const ARCHIVE_CACHE = 'chesscom-archives-v1';
+
+async function getMonth(url: string, past: boolean): Promise<{ games: ApiGame[] }> {
+  const cache = past && typeof caches !== 'undefined' ? await caches.open(ARCHIVE_CACHE).catch(() => null) : null;
+  const hit = await cache?.match(url).catch(() => undefined);
+  if (hit) {
+    try {
+      return (await hit.json()) as { games: ApiGame[] };
+    } catch {
+      /* broken entry — fetch it again */
+    }
+  }
+  const data = await getJson<{ games: ApiGame[] }>(url);
+  if (cache) void cache.put(url, new Response(JSON.stringify(data), { headers: { 'Content-Type': 'application/json' } })).catch(() => {});
+  return data;
+}
+
 /** Load all of a player's standard-chess games, oldest first. */
 export async function fetchGames(
   username: string,
@@ -123,7 +142,7 @@ export async function fetchGames(
   const worker = async () => {
     while (next < archives.length && !signal?.cancelled) {
       const i = next++;
-      const { games } = await getJson<{ games: ApiGame[] }>(archives[i]);
+      const { games } = await getMonth(archives[i], i < archives.length - 1); // the last archive is this month
       perMonth[i] = games.map((g) => summarize(g, username)).filter((g): g is GameSummary => g !== null);
       onProgress(++done, archives.length);
     }
