@@ -4,7 +4,7 @@ Three tabs:
 
 - **Play** — train your repertoire (London / Italian as White; Caro-Kann vs 1.e4 and the Slav vs 1.d4 as Black): every time you leave the line or make a mistake, the game stops, shows the right move, and lets you **retry** or **continue**. Or play a regular game at any level and color.
 - **My review** — enter a Chess.com username; get the 3 most important things to improve, results by color / time control / opening, how you lose, a rating chart, and an optional Stockfish pass over your recent games.
-- **Practice → Puzzles** — 3,600 tactics puzzles from the Lichess database (CC0) that adapt to your rating (Elo), with modes *for my level*, *from my openings* and *mates*; a missed puzzle goes to your mistakes.
+- **Practice → Puzzles** — 3,600 tactics puzzles from the Lichess database (CC0) that adapt to your rating (Elo), with modes *for my level*, *from my openings* and *mates*; a missed puzzle goes to your mistakes. A daily goal of 5 puzzles with a streak of days (🔥).
 - **Practice → My mistakes** — spaced repetition (Leitner) over every mistake found in training, in your games or in puzzles.
 - **Sounds** — move, capture, check, "wrong move" and "well done" sounds (Web Audio, no files); mute in Play → More options.
 - **Installable & offline** — add it to your phone's home screen; learning, training and drill (with the engine) work without internet.

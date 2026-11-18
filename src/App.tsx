@@ -89,6 +89,7 @@ export default function App() {
             setScreen('play');
           }}
           onDrill={() => openPractice('mistakes')}
+          onPuzzles={() => openPractice('puzzles')}
         />
       )}
       {screen === 'drill' && <Practice view={practiceView} onView={setPracticeView} due={due} />}

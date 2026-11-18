@@ -14,6 +14,7 @@ import {
   type PuzzleMode,
 } from './puzzleData';
 import { saveMistake } from './mistakes';
+import { DAILY_GOAL, dayStreak, recordPuzzleDay, todayCount, daysLabel } from './daily';
 import { useStored } from './storage';
 import { tr } from './i18n';
 import { BOARD_THEME, GREEN_ARROW, LAST_MOVE, ltr, uciToArrow } from './chessUtils';
@@ -42,6 +43,8 @@ export default function Puzzles() {
   const [wrong, setWrong] = useState<string | null>(null); // the right move's UCI after a wrong try
   const [hint, setHint] = useState(false);
   const [delta, setDelta] = useState<number | null>(null);
+  const [today, setToday] = useState(() => todayCount());
+  const [goalJustMet, setGoalJustMet] = useState(false);
   const [lastMove, setLastMove] = useState<string | null>(null);
   const timers = useRef<number[]>([]);
 
@@ -61,6 +64,7 @@ export default function Puzzles() {
     setHint(false);
     setFailed(false);
     setDelta(null);
+    setGoalJustMet(false);
     setLastMove(null);
     if (!p) return;
     setFen(p.fen);
@@ -95,6 +99,9 @@ export default function Puzzles() {
     const r = recordResult(p, solved);
     setStats(r.stats);
     setDelta(r.delta);
+    const n = recordPuzzleDay();
+    setToday(n);
+    setGoalJustMet(n === DAILY_GOAL);
   };
 
   /** Fails the puzzle once: the rating goes down, and later tries no longer count. */
@@ -207,6 +214,7 @@ export default function Puzzles() {
     { id: 'mates', label: tr('מטים', 'Mates') },
   ];
 
+  const streakDays = dayStreak();
   const header = (
     <header className="learn-header puzzle-header">
       <div className="chips" role="tablist">
@@ -219,7 +227,10 @@ export default function Puzzles() {
       <span className="pill puzzle-rating" title={tr('הדירוג שלך בפאזלים', 'Your puzzle rating')}>
         {tr('דירוג', 'Rating')} <b>{stats.rating}</b>
       </span>
-      {stats.streak > 1 && <span className="pill">🔥 {stats.streak}</span>}
+      <span className={today >= DAILY_GOAL ? 'pill daily-pill done' : 'pill daily-pill'} title={tr(`המטרה היומית: ${DAILY_GOAL} פאזלים`, `Daily goal: ${DAILY_GOAL} puzzles`)}>
+        🎯 {tr('היום', 'Today')} {Math.min(today, DAILY_GOAL)}/{DAILY_GOAL}
+      </span>
+      {streakDays > 0 && <span className="pill">🔥 {daysLabel(streakDays)}</span>}
     </header>
   );
 
@@ -315,6 +326,14 @@ export default function Puzzles() {
                     : tr(`הדירוג שלך: ${stats.rating} (${ltr(String(delta))})`, `Your rating: ${stats.rating} (${delta})`))}
               </strong>
               {themes.length > 0 && <p>{tr(`הנושא: ${themes.join(' · ')}`, `Theme: ${themes.join(' · ')}`)}</p>}
+              {goalJustMet && (
+                <p className="daily-done">
+                  {tr(
+                    `🎯 המטרה היומית הושגה! 🔥 ${daysLabel(streakDays)} ברצף. אפשר להמשיך או לחזור מחר.`,
+                    `🎯 Daily goal reached! 🔥 ${daysLabel(streakDays)} in a row. Keep going, or come back tomorrow.`,
+                  )}
+                </p>
+              )}
             </div>
           )}
 

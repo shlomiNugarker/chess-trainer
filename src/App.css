@@ -973,3 +973,7 @@ aside {
   .segmented button { flex: 1; justify-content: center; padding: 8px 10px; }
   .puzzle-header .chips { width: auto; flex: 1; }
 }
+
+/* daily goal */
+.daily-pill.done, .today .daily-btn.done { color: var(--accent); background: rgba(95, 179, 107, 0.12); }
+.daily-done { color: var(--accent); font-weight: 600; }

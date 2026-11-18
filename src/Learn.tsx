@@ -7,6 +7,7 @@ import { dueMistakes, saveMistake } from './mistakes';
 import { BLUE_ARROW, BOARD_THEME, GREEN_ARROW, LAST_MOVE, WRONG_MOVE, ltr, uciToArrow } from './chessUtils';
 import { useClickToMove } from './useClickToMove';
 import { playSound, useMoveSound } from './sound';
+import { DAILY_GOAL, dayStreak, todayCount, daysLabel } from './daily';
 import { useFitBoard } from './useFitBoard';
 import { useStored } from './storage';
 import { hasAnyMastery, isMastered, loadMastery, recordRun } from './mastery';
@@ -20,9 +21,9 @@ type QuizState = { wrong?: { san: string; correctUci: string }; mistakes: number
  * Study a repertoire line move by move on a board, with the idea of the line and a note on key moves.
  * "Test me" replays the line: the user plays their side, the app plays the other.
  */
-type Props = { onTrain: (repertoireId: string) => void; onDrill: () => void };
+type Props = { onTrain: (repertoireId: string) => void; onDrill: () => void; onPuzzles: () => void };
 
-export default function Learn({ onTrain, onDrill }: Props) {
+export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
   const [repId, setRepId] = useStored('learn-repertoire', REPERTOIRES[0].id);
   const rep = REPERTOIRES.find((r) => r.id === repId) ?? REPERTOIRES[0];
   const [storedLine, setLineIdx] = useStored('learn-line', 0);
@@ -40,6 +41,8 @@ export default function Learn({ onTrain, onDrill }: Props) {
   const showGuide = !guideDismissed && !hasAnyMastery();
   // "today": the one or two things worth doing now, one tap each
   const due = dueMistakes().length;
+  const puzzlesToday = todayCount();
+  const streakDays = dayStreak();
   const firstToLearn = rep.lines.findIndex((l) => !isMastered(mastery[l.name]));
   const nextToLearn = [...rep.lines.keys()]
     .map((k) => (lineIdx + 1 + k) % rep.lines.length)
@@ -171,9 +174,15 @@ export default function Learn({ onTrain, onDrill }: Props) {
       {!showGuide && !quiz && (
         <div className="today">
           <span className="today-title">{tr('היום', 'Today')}</span>
+          {streakDays > 0 && <span className="pill">🔥 {daysLabel(streakDays)}</span>}
           {due > 0 && (
             <button onClick={onDrill}>↻ {tr(`חזרה על ${due} עמדות`, `Review ${due} positions`)}</button>
           )}
+          <button onClick={onPuzzles} className={puzzlesToday >= DAILY_GOAL ? 'daily-btn done' : 'daily-btn'}>
+            🧩 {puzzlesToday >= DAILY_GOAL
+              ? tr(`${DAILY_GOAL} פאזלים ✓`, `${DAILY_GOAL} puzzles ✓`)
+              : tr(`פאזלים ${puzzlesToday}/${DAILY_GOAL}`, `Puzzles ${puzzlesToday}/${DAILY_GOAL}`)}
+          </button>
           {firstToLearn === lineIdx ? (
             <button className="primary" onClick={startQuiz}>🎯 {tr('בחן אותי על הקו הזה', 'Test me on this line')}</button>
           ) : firstToLearn >= 0 ? (
