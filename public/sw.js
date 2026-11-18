@@ -2,8 +2,8 @@
 // - pages: network first, so a new version arrives as soon as you are online; the cached copy offline
 // - /assets (hashed names), /engine, icons: cache first — their content never changes under the same name
 // - Google Fonts: cached after the first load
-// - everything else (the Chess.com API) is left alone
-const CACHE = 'chess-trainer-v1';
+// - everything else (the Chess.com API, Google sign-in, Firestore) is left alone
+const CACHE = 'chess-trainer-v2';
 const CORE = ['/', '/manifest.webmanifest', '/icon-192.png', '/engine/stockfish-19-lite-single.js', '/engine/stockfish-19-lite-single.wasm'];
 
 // the hashed js/css that a given index.html points at
@@ -45,6 +45,8 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
+  // Google sign-in pages (proxied to Firebase by vercel.json) must always come from the network
+  if (url.origin === location.origin && url.pathname.startsWith('/__/')) return;
 
   if (req.mode === 'navigate' && url.origin === location.origin) {
     event.respondWith(

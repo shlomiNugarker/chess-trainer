@@ -24,3 +24,8 @@ dist-ssr
 *.sw?
 
 .vercel
+
+# Firebase emulator logs
+firebase-debug.log
+firestore-debug.log
+dist-emu

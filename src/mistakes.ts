@@ -12,6 +12,7 @@ export type Mistake = {
   at: number; // timestamp
   box: number; // Leitner box, 0 = new / failed
   due: number; // next review time
+  reviewed?: number; // last review time (lets sync between devices keep the newest state)
 };
 
 const KEY = 'chess-trainer:mistakes';
@@ -68,5 +69,6 @@ export function recordReview(m: Pick<Mistake, 'fen' | 'repertoire'>, correct: bo
     x.box = 0;
     x.due = now;
   }
+  x.reviewed = now;
   store(all);
 }

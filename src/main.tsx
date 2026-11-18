@@ -2,6 +2,9 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { startCloud } from './cloud'
+
+startCloud() // Google sign-in + sync (only when configured, see docs/google-login-setup.md)
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

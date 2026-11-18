@@ -8,6 +8,7 @@ Three tabs:
 - **Practice → My mistakes** — spaced repetition (Leitner) over every mistake found in training, in your games or in puzzles.
 - **Sounds** — move, capture, check, "wrong move" and "well done" sounds (Web Audio, no files); mute in Play → More options.
 - **Installable & offline** — add it to your phone's home screen; learning, training and drill (with the engine) work without internet.
+- **Google sign-in (optional)** — syncs all progress between devices through Firebase (Auth + Firestore). Hidden until the `VITE_FIREBASE_*` env vars are set; setup steps in `docs/google-login-setup.md`.
 
 ## Run
 
@@ -32,6 +33,7 @@ Open http://localhost:5173
 - `src/repertoire.en.ts` — English names, ideas and move notes for the lines in `repertoire.ts`
 - `src/Practice.tsx`, `src/Puzzles.tsx`, `src/puzzleData.ts` — the Practice tab, the puzzle screen, puzzle rating/selection
 - `public/puzzles-v1.json` — the puzzle set, built by `scripts/build-puzzles.py` from the [Lichess puzzle database](https://database.lichess.org/#puzzles) (CC0); checked by `scripts/check-puzzles.ts`
+- `src/cloud.ts`, `src/firebase.ts`, `src/syncMerge.ts`, `src/Account.tsx` — sign-in, sync (merge rules checked by `scripts/check-sync.ts`), account panel; `firestore.rules` — database security
 - `src/mistakes.ts` — localStorage store of your mistakes + Leitner scheduling
 - `public/engine/` — Stockfish 19 lite (WASM)
 - `public/sw.js` + `public/manifest.webmanifest` — offline cache (pages network-first, files cache-first) and install info

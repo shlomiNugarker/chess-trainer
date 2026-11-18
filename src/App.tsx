@@ -6,6 +6,8 @@ import Learn from './Learn';
 import { MISTAKES_CHANGED, dueMistakes } from './mistakes';
 import { useStored } from './storage';
 import { dir, setLang, tr, useLang } from './i18n';
+import Account from './Account';
+import { useCloud } from './cloud';
 import './App.css';
 
 type Screen = 'play' | 'learn' | 'review' | 'drill';
@@ -21,6 +23,8 @@ export default function App() {
   };
   const [due, setDue] = useState(() => dueMistakes().length);
   const lang = useLang(); // re-renders the whole app when the language changes
+  const cloud = useCloud();
+  const [accountOpen, setAccountOpen] = useState(false);
 
   useEffect(() => {
     const refresh = () => setDue(dueMistakes().length);
@@ -61,11 +65,21 @@ export default function App() {
               {!!t.badge && <span className="badge">{t.badge}</span>}
             </button>
           ))}
-          {/* the other language, always one tap away (a fifth item in the phone tab bar) */}
-          <button className="tab lang-switch" onClick={() => setLang(lang === 'he' ? 'en' : 'he')} lang={lang === 'he' ? 'en' : 'he'}>
-            <span className="tab-icon" aria-hidden>🌐</span>
-            <span className="tab-label">{lang === 'he' ? 'English' : 'עברית'}</span>
-          </button>
+          {cloud.enabled ? (
+            // account (Google sign-in, sync) and language, in one panel (a fifth item in the phone tab bar)
+            <button className="tab lang-switch account-tab" onClick={() => setAccountOpen(true)} aria-haspopup="dialog">
+              <span className="tab-icon" aria-hidden>
+                {cloud.user?.photo ? <img className="avatar avatar-sm" src={cloud.user.photo} alt="" referrerPolicy="no-referrer" /> : '👤'}
+              </span>
+              <span className="tab-label">{tr('חשבון', 'Account')}</span>
+            </button>
+          ) : (
+            // no cloud configured: the other language, always one tap away
+            <button className="tab lang-switch" onClick={() => setLang(lang === 'he' ? 'en' : 'he')} lang={lang === 'he' ? 'en' : 'he'}>
+              <span className="tab-icon" aria-hidden>🌐</span>
+              <span className="tab-label">{lang === 'he' ? 'English' : 'עברית'}</span>
+            </button>
+          )}
         </div>
       </nav>
 
@@ -93,6 +107,7 @@ export default function App() {
         />
       )}
       {screen === 'drill' && <Practice view={practiceView} onView={setPracticeView} due={due} />}
+      {accountOpen && <Account onClose={() => setAccountOpen(false)} />}
     </div>
   );
 }
