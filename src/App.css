@@ -1039,3 +1039,18 @@ aside {
     animation: sheet-up 0.2s ease-out;
   }
 }
+
+/* training: which line you are in, and why */
+.line-info { display: flex; flex-direction: column; gap: 6px; border-inline-start: 3px solid var(--info); }
+.line-info-head { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.line-info-head .muted { font-size: 12px; }
+.line-info p { font-size: 14px; line-height: 1.5; }
+.note-label { font-family: var(--mono); font-weight: 700; color: var(--text); margin-inline-end: 4px; unicode-bidi: isolate; }
+.feedback .why { font-size: 14px; }
+
+@media (max-width: 600px) {
+  /* phones: keep the move buttons on screen — name + the latest move's note only */
+  .line-info { gap: 2px; padding: 8px 12px; }
+  .line-info p { font-size: 13px; line-height: 1.4; }
+  .line-info p:not(:last-child) { display: none; }
+}

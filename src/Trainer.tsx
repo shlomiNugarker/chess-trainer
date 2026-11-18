@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Chess, type Move } from 'chess.js';
 import { Chessboard, type Arrow } from 'react-chessboard';
 import { Engine, whiteWinPercent, winPercent } from './engine';
-import { REPERTOIRES, buildBook, posKey, repName } from './repertoire';
+import { REPERTOIRES, buildBook, lineInfo, noteForNext, posKey, repName } from './repertoire';
 import { loadMistakes, saveMistake } from './mistakes';
 import { BLUE_ARROW, BOARD_THEME, GREEN_ARROW, LAST_MOVE, WRONG_MOVE, judge, ltr, pvToSan, sanToUci, uciToArrow, uciToSan } from './chessUtils';
 import { useStored } from './storage';
@@ -11,7 +11,7 @@ import EvalBar from './EvalBar';
 import { useClickToMove } from './useClickToMove';
 import { playSound, setSoundOn, useMoveSound, useSoundOn } from './sound';
 import { useFitBoard } from './useFitBoard';
-import { tr } from './i18n';
+import { tr, useLang } from './i18n';
 
 /** Below this win% loss a non-best move is not worth a remark. */
 const MIN_REMARK_DROP = 2;
@@ -41,6 +41,7 @@ type Feedback = {
   text: string;
   correctUci: string; // arrow
   playedSan: string;
+  why?: string; // the line's note on the right move
 };
 
 const thresholds = () => [
@@ -68,6 +69,8 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
   const [skill, setSkill] = useStored('skill', 3);
   const [threshold, setThreshold] = useStored('threshold', 20);
   const [showEval, setShowEval] = useStored('show-eval', true);
+  const [showNotes, setShowNotes] = useStored('show-notes', true); // line name + why each move is played
+  const lang = useLang(); // notes and line names follow the language
   const [correctAll, setCorrectAll] = useStored('correct-all', true); // learning zone: correct every worse move
   // learned positions met in this game: posKey -> remembered on the first try?
   const [remembered, setRemembered] = useState<Record<string, boolean>>({});
@@ -304,6 +307,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
               ),
           correctUci: sanToUci(fenBefore, correct),
           playedSan: move.san,
+          why: learnedMove ? undefined : noteForNext(rep, gameRef.current.history().slice(0, -1), correct),
         });
         setStatus('paused');
         return;
@@ -381,7 +385,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
         opponentMove('free');
       }
     },
-    [book, correctAll, learned, mode, opponentMove, phase, remembered, rep.id, threshold],
+    [book, correctAll, learned, mode, opponentMove, phase, remembered, rep, threshold],
   );
 
   const onPieceDrop = ({ sourceSquare, targetSquare }: { sourceSquare: string; targetSquare: string | null }) => {
@@ -475,6 +479,12 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
   if (hint) arrows.push(hint);
 
   const last = history[history.length - 1];
+  // which line you are in, and why the last moves are played (training, inside the book)
+  const info = useMemo(
+    () => (mode === 'train' && phase === 'book' && showNotes ? lineInfo(rep, history.map((m) => m.san)) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [history, mode, phase, rep, showNotes, lang],
+  );
   const squareStyles: Record<string, React.CSSProperties> = {};
   if (last) {
     squareStyles[last.from] = { background: LAST_MOVE };
@@ -568,6 +578,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
             <div className="more-settings-body">
               <div className="toggles">
                 {mode === 'train' && toggle(correctAll, setCorrectAll, tr(`תיקון בכל מהלך עד מהלך ${LEARN_UNTIL}`, `Correct every move up to move ${LEARN_UNTIL}`))}
+                {mode === 'train' && toggle(showNotes, setShowNotes, tr('הצג את שם הקו והסברים', 'Show the line name and explanations'))}
                 {toggle(showEval, setShowEval, tr('הצג מד סיכויים', 'Show win-chance bar'))}
                 {toggle(soundOn, setSoundOn, tr('צלילים', 'Sounds'))}
               </div>
@@ -626,11 +637,27 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
             <div className={`card feedback tone-${feedback.tone}`}>
               <strong>{feedback.title}</strong>
               <p>{feedback.text}</p>
+              {feedback.why && showNotes && <p className="why"><b>{tr('למה:', 'Why:')}</b> {feedback.why}</p>}
               <p className="muted hint-text">{tr('החץ הירוק מראה את המהלך הנכון.', 'The green arrow shows the right move.')}</p>
               <div className="buttons">
                 <button className="primary" onClick={retry}>↩ {tr('חזור ונסה', 'Try again')}</button>
                 <button className="ghost" onClick={continueAnyway}>{tr('המשך בכל זאת', 'Continue anyway')}</button>
               </div>
+            </div>
+          )}
+
+          {info && !feedback && (
+            <div className="card line-info">
+              <div className="line-info-head">
+                <span aria-hidden>📖</span>
+                <strong>{info.name}</strong>
+                {info.others > 0 && <span className="muted">{tr(info.others === 1 ? '(ועוד קו אחד מכאן)' : `(ועוד ${info.others} קווים מכאן)`, info.others === 1 ? '(+1 more line from here)' : `(+${info.others} more lines from here)`)}</span>}
+              </div>
+              {info.notes.map((n) => (
+                <p key={n.label}>
+                  <span className="note-label" dir="ltr">{n.label}</span> {n.text}
+                </p>
+              ))}
             </div>
           )}
 

@@ -432,6 +432,73 @@ export function lineMoves(moves: string): Move[] {
   return moves.split(/\s+/).map((san) => c.move(san));
 }
 
+const movesCache = new WeakMap<Line, Move[]>();
+const movesOf = (l: Line) => {
+  let m = movesCache.get(l);
+  if (!m) movesCache.set(l, (m = lineMoves(l.moves)));
+  return m;
+};
+
+/**
+ * Where a game stands in the repertoire: the lines it is in, and for each, the index in that line of the game's
+ * last move. Found by the exact move order first, else by the position (a transposition).
+ */
+function placeInLines(rep: Repertoire, sans: string[]): { line: Line; at: number }[] {
+  if (!sans.length) return [];
+  const exact = rep.lines
+    .filter((l) => {
+      const ms = movesOf(l);
+      return sans.length <= ms.length && sans.every((s, i) => ms[i].san === s);
+    })
+    .map((line) => ({ line, at: sans.length - 1 }));
+  if (exact.length) return exact;
+  const c = new Chess();
+  for (const s of sans) c.move(s);
+  const here = posKey(c.fen());
+  const last = sans[sans.length - 1];
+  return rep.lines.flatMap((line) => {
+    const at = movesOf(line).findIndex((m) => m.san === last && posKey(m.after) === here);
+    return at >= 0 ? [{ line, at }] : [];
+  });
+}
+
+/**
+ * For the training screen: the name of the line the game is in (and how many other lines share this position),
+ * and the notes on the last two moves (the user's and the reply), in the current language.
+ */
+export function lineInfo(rep: Repertoire, sans: string[]) {
+  const places = placeInLines(rep, sans);
+  if (!places.length) return null;
+  const notes: { label: string; text: string }[] = [];
+  for (const back of [1, 0]) {
+    if (sans.length - 1 - back < 0) continue;
+    for (const { line, at } of places) {
+      const i = at - back;
+      if (i < 0) continue;
+      const label = moveLabel(i, movesOf(line)[i].san);
+      const text = lineText(rep, line).notes[label];
+      if (text) {
+        notes.push({ label, text });
+        break;
+      }
+    }
+  }
+  return { name: lineText(rep, places[0].line).name, others: places.length - 1, notes };
+}
+
+/** The note explaining `nextSan` as the move to play after `sans` (for the "you left the line" card). */
+export function noteForNext(rep: Repertoire, sans: string[], nextSan: string): string | undefined {
+  const places = sans.length ? placeInLines(rep, sans) : rep.lines.map((line) => ({ line, at: -1 }));
+  for (const { line, at } of places) {
+    const m = movesOf(line)[at + 1];
+    if (m?.san === nextSan) {
+      const text = lineText(rep, line).notes[moveLabel(at + 1, m.san)];
+      if (text) return text;
+    }
+  }
+  return undefined;
+}
+
 export type Book = Map<string, string[]>; // posKey -> SAN moves seen in repertoire
 
 export function buildBook(rep: Repertoire): Book {
