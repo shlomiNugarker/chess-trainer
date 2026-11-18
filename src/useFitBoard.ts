@@ -1,15 +1,15 @@
-import { useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useState } from 'react';
 
 /**
  * Measures the room left on screen below the board's top edge and publishes it as `--fit-h` on the element,
  * so CSS can make the board exactly as tall as the remaining viewport (no needless page scrolling).
  * The CSS decides when to use it (side-by-side layouts) and keeps a minimum size.
+ * Returns a callback ref, so a board that appears later (e.g. after data loads) is measured too.
  */
 export function useFitBoard<T extends HTMLElement>() {
-  const ref = useRef<T>(null);
+  const [el, setEl] = useState<T | null>(null);
 
   useLayoutEffect(() => {
-    const el = ref.current;
     if (!el) return;
     const update = () => {
       const top = el.getBoundingClientRect().top + window.scrollY;
@@ -35,7 +35,7 @@ export function useFitBoard<T extends HTMLElement>() {
       window.removeEventListener('resize', update);
       ro.disconnect();
     };
-  }, []);
+  }, [el]);
 
-  return ref;
+  return setEl;
 }

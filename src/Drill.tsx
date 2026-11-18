@@ -156,7 +156,17 @@ export default function Drill() {
         </div>
 
         <div className="muted drill-meta">
-          {rep ? tr(`מתוך האימון: ${repName(rep)}`, `From training: ${repName(rep)}`) : tr('מתוך משחק שלך ב-Chess.com', 'From one of your Chess.com games')}
+          {current.source === 'puzzle'
+            ? tr('מתוך פאזל', 'From a puzzle')
+            : rep
+              ? tr(`מתוך האימון: ${repName(rep)}`, `From training: ${repName(rep)}`)
+              : tr('מתוך משחק שלך ב-Chess.com', 'From one of your Chess.com games')}
+          {current.puzzleId && (
+            <>
+              {' · '}
+              <a href={`https://lichess.org/training/${current.puzzleId}`} target="_blank" rel="noreferrer">Lichess</a>
+            </>
+          )}
           {current.gameUrl && (
             <>
               {' · '}
@@ -165,7 +175,11 @@ export default function Drill() {
           )}
           {' · '}{tr(`שלב ${current.box} מתוך ${MAX_BOX}`, `Step ${current.box} of ${MAX_BOX}`)}
         </div>
-        <div className="muted">{tr(`באותה עמדה שיחקת בעבר ${ltr(current.played)}.`, `Last time here you played ${current.played}.`)}</div>
+        <div className="muted">
+          {current.source === 'puzzle'
+            ? tr(`בפאזל ניסית ${ltr(current.played)}.`, `In the puzzle you tried ${current.played}.`)
+            : tr(`באותה עמדה שיחקת בעבר ${ltr(current.played)}.`, `Last time here you played ${current.played}.`)}
+        </div>
 
         {answer && (
           <div className={answer.ok ? 'card notice tone-ok' : 'card feedback tone-error'}>

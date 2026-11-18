@@ -935,3 +935,41 @@ aside {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ---- Practice tab: puzzles | my mistakes ---- */
+.segmented {
+  display: flex;
+  gap: 4px;
+  width: fit-content;
+  max-width: 100%;
+  margin-bottom: 14px;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.segmented button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border: none;
+  border-radius: 9px;
+  background: none;
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+.segmented button.active,
+.segmented button.active:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
+.segmented .badge { position: static; }
+
+.puzzle-header .puzzle-rating b { color: var(--text); font-variant-numeric: tabular-nums; }
+.puzzle-stats { font-size: 13px; }
+
+@media (max-width: 600px) {
+  .segmented { width: 100%; margin-bottom: 8px; }
+  .segmented button { flex: 1; justify-content: center; padding: 8px 10px; }
+  .puzzle-header .chips { width: auto; flex: 1; }
+}

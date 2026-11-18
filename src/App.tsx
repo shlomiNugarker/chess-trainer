@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import Trainer, { type TrainRequest } from './Trainer';
 import Review from './Review';
-import Drill from './Drill';
+import Practice, { type PracticeView } from './Practice';
 import Learn from './Learn';
 import { MISTAKES_CHANGED, dueMistakes } from './mistakes';
 import { useStored } from './storage';
@@ -13,6 +13,12 @@ type Screen = 'play' | 'learn' | 'review' | 'drill';
 export default function App() {
   const [screen, setScreen] = useStored<Screen>('screen', 'learn'); // first visit starts at Learn; then the last tab
   const [trainRequest, setTrainRequest] = useState<TrainRequest | null>(null);
+  const [practiceView, setPracticeView] = useStored<PracticeView>('practice-view', 'puzzles');
+  /** Opens the Practice tab on puzzles or on the review of your mistakes. */
+  const openPractice = (v: PracticeView) => {
+    setPracticeView(v);
+    setScreen('drill');
+  };
   const [due, setDue] = useState(() => dueMistakes().length);
   const lang = useLang(); // re-renders the whole app when the language changes
 
@@ -30,7 +36,7 @@ export default function App() {
     { id: 'play', label: tr('שחק', 'Play'), icon: '♟' },
     { id: 'learn', label: tr('למד', 'Learn'), icon: '📖' },
     { id: 'review', label: tr('הסקירה שלי', 'My review'), icon: '▦' },
-    { id: 'drill', label: tr('חזרה', 'Review'), icon: '↻', badge: due },
+    { id: 'drill', label: tr('תרגול', 'Practice'), icon: '🧩', badge: due },
   ];
 
   return (
@@ -73,7 +79,7 @@ export default function App() {
             setTrainRequest({ repertoireId, nonce: Date.now() });
             setScreen('play');
           }}
-          onDrill={() => setScreen('drill')}
+          onDrill={() => openPractice('mistakes')}
         />
       </div>
       {screen === 'learn' && (
@@ -82,10 +88,10 @@ export default function App() {
             setTrainRequest({ repertoireId, nonce: Date.now() });
             setScreen('play');
           }}
-          onDrill={() => setScreen('drill')}
+          onDrill={() => openPractice('mistakes')}
         />
       )}
-      {screen === 'drill' && <Drill />}
+      {screen === 'drill' && <Practice view={practiceView} onView={setPracticeView} due={due} />}
     </div>
   );
 }

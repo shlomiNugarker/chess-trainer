@@ -4,8 +4,9 @@ export type Mistake = {
   fen: string; // position before the mistake (user to move)
   played: string; // SAN
   correct: string; // SAN
-  source: 'book' | 'engine';
-  repertoire: string; // repertoire id, or 'chesscom' for mistakes found in the user's own games
+  source: 'book' | 'engine' | 'puzzle';
+  repertoire: string; // repertoire id, 'chesscom' for mistakes found in the user's own games, 'puzzle' for puzzles
+  puzzleId?: string; // Lichess puzzle id (source 'puzzle')
   drop?: number; // win% lost (engine mistakes)
   gameUrl?: string; // chess.com game the mistake came from
   at: number; // timestamp
