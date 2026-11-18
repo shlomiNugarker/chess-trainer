@@ -35,7 +35,8 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
-      for (const k of await caches.keys()) if (k !== CACHE) await caches.delete(k);
+      // only this app's old versions; other caches (e.g. Chess.com archives) belong to the page
+      for (const k of await caches.keys()) if (k.startsWith('chess-trainer-') && k !== CACHE) await caches.delete(k);
       await self.clients.claim();
     })(),
   );
