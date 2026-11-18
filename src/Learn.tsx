@@ -3,7 +3,8 @@ import { Chess } from 'chess.js';
 import { Chessboard, type Arrow } from 'react-chessboard';
 import { REPERTOIRES, lineMoves, lineText, moveLabel, posKey, repName } from './repertoire';
 import { tr, useLang } from './i18n';
-import { dueMistakes, saveMistake } from './mistakes';
+import { dueMistakes, loadMistakes, saveMistake } from './mistakes';
+import { lineStats } from './lineStats';
 import { BLUE_ARROW, BOARD_THEME, GREEN_ARROW, LAST_MOVE, WRONG_MOVE, ltr, uciToArrow } from './chessUtils';
 import { useClickToMove } from './useClickToMove';
 import { playSound, useMoveSound } from './sound';
@@ -37,6 +38,9 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const mastery = useMemo(() => loadMastery(rep.id), [rep.id, masteryVersion]);
   const masteredCount = rep.lines.filter((l) => isMastered(mastery[l.name])).length;
+  const [statsOpen, setStatsOpen] = useState(false);
+  // re-read after every test try too (each wrong move is saved as a mistake)
+  const stats = useMemo(() => (statsOpen ? lineStats(rep, mastery, loadMistakes()) : []), [statsOpen, rep, mastery, quiz]); // eslint-disable-line react-hooks/exhaustive-deps
   const [guideDismissed, setGuideDismissed] = useStored('guide-dismissed', false);
   const showGuide = !guideDismissed && !hasAnyMastery();
   // "today": the one or two things worth doing now, one tap each
@@ -207,9 +211,14 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
             </button>
           ))}
         </div>
-        <span className="pill progress-pill" title={tr('קווים שעברת בבחינה בלי טעויות', 'Lines you passed in a test with no mistakes')}>
-          {tr(`שולט ב-${masteredCount} מתוך ${rep.lines.length}`, `Mastered ${masteredCount} of ${rep.lines.length}`)}
-        </span>
+        <button
+          className="pill progress-pill"
+          aria-expanded={statsOpen}
+          onClick={() => setStatsOpen((o) => !o)}
+          title={tr('קווים שעברת בבחינה בלי טעויות — לחץ לפירוט לפי קו', 'Lines you passed in a test with no mistakes — tap for each line')}
+        >
+          {tr(`שולט ב-${masteredCount} מתוך ${rep.lines.length}`, `Mastered ${masteredCount} of ${rep.lines.length}`)} {statsOpen ? '▴' : '▾'}
+        </button>
         <select value={lineIdx} onChange={(e) => pickLine(rep.id, Number(e.target.value))} aria-label={tr('קו', 'Line')}>
           {rep.lines.map((l, i) => (
             <option key={i} value={i}>
@@ -219,6 +228,43 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
           ))}
         </select>
       </header>
+
+      {statsOpen && (
+        <section className="card line-stats">
+          <h3>{tr('איך הולך לך בכל קו', 'How each line is going')}</h3>
+          <ul>
+            {rep.lines.map((l, i) => {
+              const st = stats[i];
+              if (!st) return null;
+              return (
+                <li key={l.name}>
+                  <button className="line-stats-name" onClick={() => pickLine(rep.id, i)}>
+                    {isMastered(mastery[l.name]) ? '✓ ' : ''}
+                    {lineText(rep, l).name}
+                  </button>
+                  <span className={st.rate === null ? 'muted' : st.rate >= 70 ? 'rate good' : st.rate >= 40 ? 'rate mid' : 'rate low'}>
+                    {st.rate === null
+                      ? tr('עוד לא נבחנת', 'Not tested yet')
+                      : tr(`${st.rate}% · ${st.clean} מתוך ${st.tries} בלי טעויות`, `${st.rate}% · ${st.clean} of ${st.tries} clean`)}
+                  </span>
+                  {st.hardest && (
+                    <button className="link hardest" onClick={() => pickLine(rep.id, i, st.hardest!.ply)}>
+                      {tr('הכי קשה:', 'Hardest:')} <span dir="ltr">{st.hardest.label}</span>{' '}
+                      {tr(`(טעית ${st.hardest.misses === 1 ? 'פעם אחת' : `${st.hardest.misses} פעמים`})`, `(missed ${st.hardest.misses}×)`)}
+                    </button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+          <p className="muted">
+            {tr(
+              'האחוז הוא מתוך הבחינות ("בחן אותי"). "הכי קשה" הוא המהלך שטעית בו הכי הרבה — באימון או בבחינה; לחיצה עליו פותחת את הקו בדיוק שם.',
+              'The rate is from your tests ("Test me"). "Hardest" is the move you missed most — in training or in tests; tap it to open the line right there.',
+            )}
+          </p>
+        </section>
+      )}
 
       <main>
         <div className="board-wrap" dir="ltr" ref={boardRef}>

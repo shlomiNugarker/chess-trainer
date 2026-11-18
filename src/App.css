@@ -1054,3 +1054,19 @@ aside {
   .line-info p { font-size: 13px; line-height: 1.4; }
   .line-info p:not(:last-child) { display: none; }
 }
+
+/* Learn: success per line */
+button.progress-pill { border: none; cursor: pointer; font: inherit; }
+.line-stats { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.line-stats h3 { font-size: 15px; }
+.line-stats ul { list-style: none; display: flex; flex-direction: column; gap: 8px; padding: 0; margin: 0; }
+.line-stats li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.line-stats li:last-child { border-bottom: none; padding-bottom: 0; }
+.line-stats-name { background: none; border: none; padding: 0; color: var(--text); font: inherit; font-weight: 600; text-align: start; cursor: pointer; }
+.line-stats-name:hover { text-decoration: underline; }
+.line-stats .rate { font-size: 13px; font-variant-numeric: tabular-nums; }
+.line-stats .rate.good { color: var(--accent); }
+.line-stats .rate.mid { color: #e0a85f; }
+.line-stats .rate.low { color: #e06c5f; }
+.line-stats .hardest { font-size: 13px; }
+.line-stats > p { font-size: 12px; }

@@ -13,6 +13,7 @@ export type Mistake = {
   box: number; // Leitner box, 0 = new / failed
   due: number; // next review time
   reviewed?: number; // last review time (lets sync between devices keep the newest state)
+  misses?: number; // how many times this position was played wrong (training, tests, games)
 };
 
 const KEY = 'chess-trainer:mistakes';
@@ -45,8 +46,8 @@ export function saveMistake(m: Omit<Mistake, 'at' | 'box' | 'due'>) {
   const all = loadMistakes();
   const now = Date.now();
   const existing = all.find((x) => x.fen === m.fen && x.repertoire === m.repertoire);
-  if (existing) Object.assign(existing, m, { at: now, box: 0, due: now });
-  else all.push({ ...m, at: now, box: 0, due: now });
+  if (existing) Object.assign(existing, m, { at: now, box: 0, due: now, misses: (existing.misses ?? 1) + 1 });
+  else all.push({ ...m, at: now, box: 0, due: now, misses: 1 });
   store(all);
 }
 
