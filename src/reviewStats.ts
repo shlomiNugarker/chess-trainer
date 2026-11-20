@@ -60,6 +60,8 @@ export function matchRepertoire(openingFull: string, color: 'w' | 'b'): string |
   // Italian, "English Opening Caro Kann Defensive System" is not the Caro-Kann
   if (color === 'w' && /London System/.test(openingFull)) return 'london';
   if (color === 'w' && /^(Italian Game|Giuoco|Two Knights Defense)/.test(openingFull)) return 'italian';
+  // the 1.e4 repertoire also answers the Scandinavian, the Sicilian (Alapin), the French and Caro-Kann (Advance), the Modern
+  if (color === 'w' && /^(Scandinavian Defense|Sicilian Defense Alapin|French Defense Advance|Caro Kann Defense Advance|Modern Defense)/.test(openingFull)) return 'italian';
   if (color === 'b' && /^Caro Kann Defense/.test(openingFull)) return 'caro';
   // the Slav repertoire also has lines against the London and the Colle
   if (color === 'b' && /^(Slav Defense|Queens Gambit Declined Slav)|London System|Colle System/.test(openingFull)) return 'slav';
