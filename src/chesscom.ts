@@ -1,5 +1,5 @@
 // Chess.com public API (https://www.chess.com/news/view/published-data-api). No auth, CORS-enabled.
-// We load every monthly archive and boil each game down to the few fields the review needs.
+// We load the monthly archives (newest first, up to MAX_GAMES games) and boil each game down to the few fields the review needs.
 
 import { tr } from './i18n.ts';
 
@@ -126,27 +126,37 @@ async function getMonth(url: string, past: boolean): Promise<{ games: ApiGame[] 
   return data;
 }
 
-/** Load all of a player's standard-chess games, oldest first. */
+/** Enough for every statistic; players with years of bullet would otherwise download hundreds of megabytes. */
+export const MAX_GAMES = 5000;
+
+/**
+ * Load a player's standard-chess games, oldest first: every game, or the most recent MAX_GAMES (`partial`).
+ * Months are fetched newest first, so a long history stops early.
+ */
 export async function fetchGames(
   username: string,
-  onProgress: (done: number, total: number) => void,
+  onProgress: (fraction: number, games: number) => void,
   signal?: { cancelled: boolean },
-): Promise<GameSummary[]> {
+): Promise<{ games: GameSummary[]; partial: boolean }> {
   const user = encodeURIComponent(username.trim().toLowerCase());
   const { archives } = await getJson<{ archives: string[] }>(`${API}/${user}/games/archives`);
   const perMonth: GameSummary[][] = new Array(archives.length);
-  let next = 0;
+  let next = archives.length - 1; // newest first
   let done = 0;
-  onProgress(0, archives.length);
+  let count = 0;
+  onProgress(0, 0);
   // a few requests in parallel: fast, but polite enough to avoid 429s
   const worker = async () => {
-    while (next < archives.length && !signal?.cancelled) {
-      const i = next++;
+    while (next >= 0 && count < MAX_GAMES && !signal?.cancelled) {
+      const i = next--;
       const { games } = await getMonth(archives[i], i < archives.length - 1); // the last archive is this month
       perMonth[i] = games.map((g) => summarize(g, username)).filter((g): g is GameSummary => g !== null);
-      onProgress(++done, archives.length);
+      count += perMonth[i].length;
+      onProgress(Math.min(1, Math.max(++done / archives.length, count / MAX_GAMES)), count);
     }
   };
   await Promise.all([worker(), worker(), worker()]);
-  return perMonth.flat().sort((a, b) => a.endTime - b.endTime);
+  const all = perMonth.flat().sort((a, b) => a.endTime - b.endTime);
+  const partial = next >= 0 || all.length > MAX_GAMES;
+  return { games: all.slice(-MAX_GAMES), partial };
 }

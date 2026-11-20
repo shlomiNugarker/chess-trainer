@@ -24,7 +24,8 @@ export default function Review({ onTrain, onDrill, onLearn }: Props) {
   const [username, setUsername] = useStored('chesscom-user', '');
   const [input, setInput] = useState(username);
   const [games, setGames] = useState<GameSummary[] | null>(null);
-  const [loading, setLoading] = useState<{ done: number; total: number } | null>(null);
+  const [loading, setLoading] = useState<{ fraction: number; count: number } | null>(null);
+  const [partial, setPartial] = useState(false);
   const [error, setError] = useState('');
   const [timeClass, setTimeClass] = useState<TimeClass | 'all'>('all');
   const loadToken = useRef({ cancelled: false });
@@ -46,12 +47,13 @@ export default function Review({ onTrain, onDrill, onLearn }: Props) {
     setError('');
     setGames(null);
     setDeep(null);
-    setLoading({ done: 0, total: 0 });
+    setLoading({ fraction: 0, count: 0 });
     try {
-      const all = await fetchGames(user, (done, total) => !token.cancelled && setLoading({ done, total }), token);
+      const { games: all, partial } = await fetchGames(user, (fraction, count) => !token.cancelled && setLoading({ fraction, count }), token);
       if (token.cancelled) return;
       setUsername(user);
       setGames(all);
+      setPartial(partial);
       setTimeClass('all');
       // results of an earlier engine pass show at once
       const known = all.slice(-deepCount).reverse().map((g) => getAnalysis(g.url)).filter((a): a is GameAnalysis => !!a);
@@ -147,11 +149,19 @@ export default function Review({ onTrain, onDrill, onLearn }: Props) {
 
       {loading && (
         <div className="card">
-          {loading.total
-            ? tr(`טוען חודש ${loading.done} מתוך ${loading.total}…`, `Loading month ${loading.done} of ${loading.total}…`)
+          {loading.count
+            ? tr(`טוען משחקים… ${loading.count.toLocaleString()}`, `Loading games… ${loading.count.toLocaleString()}`)
             : tr('מתחבר ל-Chess.com…', 'Connecting to Chess.com…')}
-          <Progress value={loading.total ? loading.done / loading.total : 0} />
+          <Progress value={loading.fraction} />
         </div>
+      )}
+      {games && partial && games.length > 0 && (
+        <p className="muted small-print">
+          {tr(
+            `הסקירה מבוססת על ${games.length.toLocaleString()} המשחקים האחרונים (מאז ${date(games[0].endTime)}).`,
+            `Based on your last ${games.length.toLocaleString()} games (since ${date(games[0].endTime)}).`,
+          )}
+        </p>
       )}
       {error && <div className="notice">{error}</div>}
       {games && !games.length && <div className="notice">{tr('לא נמצאו משחקי שחמט רגיל למשתמש הזה.', 'No standard chess games found for this user.')}</div>}

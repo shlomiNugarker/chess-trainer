@@ -91,6 +91,8 @@ const dv = findDeviations(
     game('1. e4 c6 2. Bc4 d5 0-1', 'b', 4), // Caro-Kann: 2.Bc4 is not answered
     game('1. c4 e5 1-0', 'b', 5), // another first move: not a branch
     game('1. d4 d5 2. c4 c6 3. Nf3 Nf6 1-0', 'b', 6), // follows the Slav: nothing to report
+    game('1. e4 e5 2. Nf3 Nc6 1-0', 'b', 7), // Black's own first move is another opening (1...e5), not leaving the Caro-Kann
+    game('1. d4 Nf6 2. c4 e6 1-0', 'b', 8), // same against 1.d4
   ],
   REPERTOIRES,
 );

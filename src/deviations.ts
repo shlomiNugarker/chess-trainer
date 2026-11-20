@@ -65,8 +65,9 @@ export function findDeviations(games: GameSummary[], reps: Repertoire[]) {
       if (!best || res.depth > best.res.depth) best = { rep, res };
     }
     const dev = best?.res.dev;
-    // a different first move (1.c4 against a 1.d4 repertoire) is another opening, not a branch
-    if (!best || !dev || dev.ply === 0) continue;
+    // a different first move (1.c4 against a 1.d4 repertoire, or the user's own 1...e5 instead of the
+    // Caro-Kann's 1...c6) is another opening, not a branch
+    if (!best || !dev || dev.ply === 0 || (dev.mine && dev.ply === 1)) continue;
     const { rep } = best;
     const prefix = sans.slice(0, dev.ply);
     const played = sans[dev.ply];
