@@ -39,9 +39,10 @@ export default function Puzzles() {
   const [fen, setFen] = useState(new Chess().fen());
   const [ply, setPly] = useState(0); // index of the next move in puzzle.moves
   const [status, setStatus] = useState<Status>('intro');
-  const [failed, setFailed] = useState(false); // a mistake, hint or "show solution" — rated as not solved
+  const [failed, setFailed] = useState(false); // a mistake or "show solution" — rated as not solved
   const [wrong, setWrong] = useState<string | null>(null); // the right move's UCI after a wrong try
   const [hint, setHint] = useState(false);
+  const [usedHint, setUsedHint] = useState(false); // solved after a hint: rated half, like a draw
   const [delta, setDelta] = useState<number | null>(null);
   const [today, setToday] = useState(() => todayCount());
   const [goalJustMet, setGoalJustMet] = useState(false);
@@ -62,6 +63,7 @@ export default function Puzzles() {
     setPuzzle(p ?? null);
     setWrong(null);
     setHint(false);
+    setUsedHint(false);
     setFailed(false);
     setDelta(null);
     setGoalJustMet(false);
@@ -95,8 +97,8 @@ export default function Puzzles() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const rate = (p: Puzzle, solved: boolean) => {
-    const r = recordResult(p, solved);
+  const rate = (p: Puzzle, score: number) => {
+    const r = recordResult(p, score);
     setStats(r.stats);
     setDelta(r.delta);
     const n = recordPuzzleDay();
@@ -108,14 +110,14 @@ export default function Puzzles() {
   const fail = (p: Puzzle) => {
     if (failed) return;
     setFailed(true);
-    rate(p, false);
+    rate(p, 0);
   };
 
   const finish = (p: Puzzle) => {
     setStatus('solved');
     setWrong(null);
     playSound('success', 0.15);
-    if (!failed) rate(p, true);
+    if (!failed) rate(p, usedHint ? 0.5 : 1);
   };
 
   const onMove = (from: string, to: string) => {
@@ -172,7 +174,7 @@ export default function Puzzles() {
   const showHint = () => {
     if (!puzzle || status !== 'solving') return;
     setHint(true);
-    fail(puzzle);
+    setUsedHint(true); // solving it now counts half
   };
 
   /** Plays the rest of the solution move by move. */
@@ -295,7 +297,9 @@ export default function Puzzles() {
               {status === 'solved'
                 ? failed
                   ? tr('פתרת — אחרי עזרה', 'Solved — with help')
-                  : tr('נפתר ✓', 'Solved ✓')
+                  : usedHint
+                    ? tr('נפתר עם רמז — חצי נקודה', 'Solved with a hint — half credit')
+                    : tr('נפתר ✓', 'Solved ✓')
                 : status === 'shown'
                   ? tr('זה הפתרון', 'That is the solution')
                   : status === 'solving'

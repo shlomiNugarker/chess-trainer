@@ -17,6 +17,7 @@ import { tr, useLang } from './i18n';
 
 /** Below this win% loss a non-best move is not worth a remark. */
 const MIN_REMARK_DROP = 2;
+const LEARN_STOP_DROP = 5; // in the learning zone, below this the correction does not stop the game
 
 const bookEndNotice = () =>
   tr(
@@ -349,8 +350,9 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
       // an equally good move of your own is easier to remember than the engine's
       learn(drop < MIN_REMARK_DROP ? move.san : bestSan);
 
-      // in the learning zone every clearly worse move gets corrected, not just mistakes above the threshold
-      const stopAt = inLearningZone && correctAll ? MIN_REMARK_DROP : threshold;
+      // in the learning zone every clearly worse move gets corrected, not just mistakes above the threshold:
+      // a small loss shows the better move (with "go back") without stopping, a real one stops the game
+      const stopAt = inLearningZone && correctAll ? LEARN_STOP_DROP : threshold;
       if (drop >= stopAt) {
         saveMistake({ fen: fenBefore, played: move.san, correct: bestSan, source: 'engine', repertoire: rep.id, drop });
         setMistakeCount(loadMistakes().length);

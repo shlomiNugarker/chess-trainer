@@ -57,11 +57,13 @@ function saveStats(s: PuzzleStats) {
 }
 
 /** Elo update against the puzzle's rating. Returns the new stats and the rating change. */
-export function recordResult(p: Puzzle, solved: boolean): { stats: PuzzleStats; delta: number } {
+/** score: 1 solved, 0.5 solved with a hint (like a draw), 0 failed. */
+export function recordResult(p: Puzzle, score: number): { stats: PuzzleStats; delta: number } {
   const s = loadStats();
+  const solved = score === 1;
   const k = s.played < 30 ? 32 : 16; // move fast while the level is still unknown
   const expected = 1 / (1 + 10 ** ((p.rating - s.rating) / 400));
-  const delta = Math.round(k * ((solved ? 1 : 0) - expected));
+  const delta = Math.round(k * (score - expected));
   const streak = solved ? s.streak + 1 : 0;
   const stats: PuzzleStats = {
     rating: Math.max(400, s.rating + delta),
