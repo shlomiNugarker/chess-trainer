@@ -1,45 +1,87 @@
-# Chess Opening Trainer
+# Chess Trainer
 
-Three tabs:
+Learn a chess opening repertoire step by step, train it against Stockfish until you know it by heart, solve puzzles at your level, and review your own Chess.com games — in the browser, on your phone, even offline. Hebrew and English.
 
-- **Play** — train your repertoire (London / Italian as White; Caro-Kann vs 1.e4 and the Slav vs 1.d4 as Black): every time you leave the line or make a mistake, the game stops, shows the right move, and lets you **retry** or **continue**. Or play a regular game at any level and color.
-- **My review** — enter a Chess.com username; get the 3 most important things to improve, results by color / time control / opening, how you lose, a rating chart, and an optional Stockfish pass over your recent games.
-- **Practice → Puzzles** — 3,600 tactics puzzles from the Lichess database (CC0) that adapt to your rating (Elo), with modes *for my level*, *from my openings* and *mates*; a missed puzzle goes to your mistakes. A daily goal of 5 puzzles with a streak of days (🔥).
-- **Practice → My mistakes** — spaced repetition (Leitner) over every mistake found in training, in your games or in puzzles.
-- **Sounds** — move, capture, check, "wrong move" and "well done" sounds (Web Audio, no files); mute in Play → More options.
-- **Installable & offline** — add it to your phone's home screen; learning, training and drill (with the engine) work without internet.
-- **Google sign-in (optional)** — syncs all progress between devices through Firebase (Auth + Firestore). Hidden until the `VITE_FIREBASE_*` env vars are set; setup steps in `docs/google-login-setup.md`.
+**Live:** https://chess-trainer-seven-pink.vercel.app
 
-## Run
+<p>
+  <img src="docs/screenshots/learn.png" alt="Learn page: a London System line step by step, with the idea of every move" width="62%">
+  <img src="docs/screenshots/train-phone.png" alt="Training on a phone: the line you are in and why the move is played" width="18%">
+  <img src="docs/screenshots/puzzle-phone.png" alt="A puzzle on a phone" width="18%">
+</p>
+
+## Features
+
+- **Learn** — every line of the repertoire on a board, move by move, with the idea of the line and a one-sentence reason for each of your moves. "Test me" quizzes you on the line; per-line success rate and the move you miss most.
+- **Play** — train the repertoire against the computer. Leave the line and the game stops, shows the right move and why, and lets you **try again** or **continue**. After the book, a full-strength coach keeps correcting you up to move 15 and remembers the best moves, so the line grows from your own games. Or play a regular game at any level.
+- **Repertoire** — London System and Italian Game as White, Caro-Kann (vs 1.e4) and Slav (vs 1.d4) as Black: 26 lines, every user move checked with Stockfish.
+- **Practice** — 3,600 puzzles from the Lichess puzzle database with a personal rating, modes *for my level* / *from my openings* / *mates*, and a daily goal with a streak. **My mistakes** brings back every position you got wrong with spaced repetition (Leitner).
+- **My review** — enter a Chess.com username: the three most useful things to improve, results by color / time control / opening, how you lose, a rating chart, and an optional Stockfish pass over recent games (its mistakes become drills).
+- **Installable, offline** — a PWA; learning, training, puzzles and the engine work without internet.
+- **Optional Google sign-in** — syncs all progress between devices (Firebase Auth + Firestore).
+
+## Run it
+
+Requires Node.js 22+.
 
 ```bash
 npm install
-npm run dev
+npm run dev        # http://localhost:5173
 ```
 
-Open http://localhost:5173
+Production build: `npm run build`, then `npm run preview`.
 
-## Structure
+### Checks
 
-- `src/App.tsx` — tab shell
-- `src/Trainer.tsx` — game flow (book phase → free play, mistake detection, retry/continue; regular game mode)
-- `src/Review.tsx` + `src/reviewStats.ts` — Chess.com review (UI / pure stats, tips, engine pass)
-- `src/chesscom.ts` — Chess.com public API client
-- `src/Drill.tsx` — spaced-repetition drill
-- `src/engine.ts` — Stockfish Web Worker wrapper + Lichess win% formula
-- `src/repertoire.ts` — the opening lines (edit here to change your repertoire)
-- `src/Learn.tsx` — study each repertoire line step by step, "test me", progress per line
-- `src/i18n.ts` — Hebrew / English: every string is written in place as `tr('עברית', 'English')`
-- `src/repertoire.en.ts` — English names, ideas and move notes for the lines in `repertoire.ts`
-- `src/Practice.tsx`, `src/Puzzles.tsx`, `src/puzzleData.ts` — the Practice tab, the puzzle screen, puzzle rating/selection
-- `public/puzzles-v1.json` — the puzzle set, built by `scripts/build-puzzles.py` from the [Lichess puzzle database](https://database.lichess.org/#puzzles) (CC0); checked by `scripts/check-puzzles.ts`
-- `src/cloud.ts`, `src/firebase.ts`, `src/syncMerge.ts`, `src/Account.tsx` — sign-in, sync (merge rules checked by `scripts/check-sync.ts`), account panel; `firestore.rules` — database security
-- `src/mistakes.ts` — localStorage store of your mistakes + Leitner scheduling
-- `public/engine/` — Stockfish 19 lite (WASM)
-- `public/sw.js` + `public/manifest.webmanifest` — offline cache (pages network-first, files cache-first) and install info
-- `scripts/check-lines.ts` — verifies every repertoire line is legal:
-  `node --experimental-strip-types scripts/check-lines.ts`
-- `scripts/check-review.ts` — checks for the review logic:
-  `node --experimental-strip-types scripts/check-review.ts`
+```bash
+npm run lint
+npm run build
+node --experimental-strip-types scripts/check-lines.ts    # every repertoire line is legal, notes exist in both languages
+node --experimental-strip-types scripts/check-review.ts   # Chess.com review logic
+node --experimental-strip-types scripts/check-puzzles.ts  # every puzzle in public/puzzles-v1.json is legal
+node --experimental-strip-types scripts/check-sync.ts     # merge rules for syncing between devices
+```
 
-See `PLAN.md` for the roadmap.
+The same checks run on every push and pull request (GitHub Actions).
+
+### Google sign-in on your own deployment (optional)
+
+Without configuration the app works fully, with progress kept in the browser. To enable sign-in and sync:
+
+1. Create a Firebase project with Google sign-in and Firestore, and publish [`firestore.rules`](firestore.rules) — step by step in [`docs/google-login-setup.md`](docs/google-login-setup.md).
+2. Copy [`.env.example`](.env.example) to `.env.local` (and set the same variables in your host).
+3. In [`vercel.json`](vercel.json), point the `/__/auth` rewrite at **your** project (`<project-id>.firebaseapp.com`).
+
+## Project structure
+
+| Path | What it is |
+|---|---|
+| `src/App.tsx` | Tab shell |
+| `src/Trainer.tsx` | Training / regular game: book phase, coach, corrections |
+| `src/Learn.tsx`, `src/lineStats.ts` | Learn page, "test me", per-line stats |
+| `src/repertoire.ts`, `src/repertoire.en.ts` | The opening lines (SAN), ideas and notes — Hebrew and English |
+| `src/Practice.tsx`, `src/Puzzles.tsx`, `src/puzzleData.ts`, `src/daily.ts` | Puzzles, rating, daily goal |
+| `src/Drill.tsx`, `src/mistakes.ts` | "My mistakes" spaced repetition |
+| `src/Review.tsx`, `src/reviewStats.ts`, `src/chesscom.ts`, `src/analysisCache.ts` | Chess.com review |
+| `src/engine.ts` | Stockfish Web Worker wrapper and the Lichess win% formula |
+| `src/cloud.ts`, `src/firebase.ts`, `src/syncMerge.ts`, `src/Account.tsx` | Optional sign-in and sync |
+| `src/i18n.ts` | Two languages without a library: `tr('עברית', 'English')` |
+| `public/engine/` | Stockfish 19 lite (WASM) |
+| `public/puzzles-v1.json` | Puzzle set, built by `scripts/build-puzzles.py` |
+| `public/sw.js` | Offline cache |
+
+The roadmap is in [`PLAN.md`](PLAN.md) (Hebrew).
+
+## Contributing
+
+Issues and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Security reports: [SECURITY.md](SECURITY.md). Please follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+## License
+
+Copyright © 2026 Shlomi Nugarker.
+
+Chess Trainer is free software: you can redistribute it and/or modify it under the terms of the **GNU General Public License v3.0 or later** — see [LICENSE](LICENSE). It bundles the Stockfish engine (GPL-3.0) and uses other open-source software and data listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+## Credits
+
+[Stockfish](https://stockfishchess.org) and [Stockfish.js](https://github.com/nmrugg/stockfish.js) · [chess.js](https://github.com/jhlywa/chess.js) · [react-chessboard](https://github.com/Clariity/react-chessboard) · puzzles from the [Lichess puzzle database](https://database.lichess.org/#puzzles) (CC0) · game data from the [Chess.com published-data API](https://www.chess.com/news/view/published-data-api).

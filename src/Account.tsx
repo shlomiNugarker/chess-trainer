@@ -73,6 +73,15 @@ export default function Account({ onClose }: { onClose: () => void }) {
             <button className={lang === 'en' ? 'chip active' : 'chip'} onClick={() => setLang('en')} lang="en">English</button>
           </div>
         </div>
+
+        {/* GPL: whoever gets the app (and the Stockfish engine in it) can get the source */}
+        <p className="muted account-foot">
+          {tr('קוד פתוח (GPL-3.0)', 'Open source (GPL-3.0)')} ·{' '}
+          <a href="https://github.com/shlomiNugarker/chess-trainer" target="_blank" rel="noreferrer">GitHub</a> ·{' '}
+          <a href="https://github.com/shlomiNugarker/chess-trainer/blob/main/THIRD_PARTY_NOTICES.md" target="_blank" rel="noreferrer">
+            {tr('רישיונות', 'Licenses')}
+          </a>
+        </p>
       </div>
     </>
   );

@@ -1070,3 +1070,5 @@ button.progress-pill { border: none; cursor: pointer; font: inherit; }
 .line-stats .rate.low { color: #e06c5f; }
 .line-stats .hardest { font-size: 13px; }
 .line-stats > p { font-size: 12px; }
+
+.account-foot { font-size: 12px; margin-top: -4px; }

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Chess Trainer — Copyright (C) 2026 Shlomi Nugarker. See LICENSE and THIRD_PARTY_NOTICES.md.
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
