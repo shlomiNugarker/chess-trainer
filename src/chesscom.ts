@@ -112,16 +112,27 @@ export function summarize(g: ApiGame, username: string): GameSummary | null {
 const ARCHIVE_CACHE = 'chesscom-archives-v1';
 
 async function getMonth(url: string, past: boolean): Promise<{ games: ApiGame[] }> {
-  const cache = past && typeof caches !== 'undefined' ? await caches.open(ARCHIVE_CACHE).catch(() => null) : null;
-  const hit = await cache?.match(url).catch(() => undefined);
-  if (hit) {
+  const cache = typeof caches !== 'undefined' ? await caches.open(ARCHIVE_CACHE).catch(() => null) : null;
+  const cached = async () => {
     try {
-      return (await hit.json()) as { games: ApiGame[] };
+      return ((await (await cache?.match(url))?.json()) as { games: ApiGame[] } | undefined) ?? null;
     } catch {
-      /* broken entry — fetch it again */
+      return null; // broken entry — fetch it again
     }
+  };
+  if (past) {
+    const hit = await cached();
+    if (hit) return hit;
   }
-  const data = await getJson<{ games: ApiGame[] }>(url);
+  let data: { games: ApiGame[] };
+  try {
+    data = await getJson<{ games: ApiGame[] }>(url);
+  } catch (e) {
+    // this month changes, so it is fetched every time — but offline, the last copy is better than nothing
+    const hit = await cached();
+    if (hit) return hit;
+    throw e;
+  }
   if (cache) void cache.put(url, new Response(JSON.stringify(data), { headers: { 'Content-Type': 'application/json' } })).catch(() => {});
   return data;
 }

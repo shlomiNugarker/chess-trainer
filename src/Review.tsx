@@ -18,9 +18,14 @@ const date = formatDate;
 const kindLabel = (k: 'blunder' | 'mistake' | 'inaccuracy') =>
   ({ blunder: tr('בלאנדרים', 'Blunders'), mistake: tr('טעויות', 'Mistakes'), inaccuracy: tr('אי-דיוקים', 'Inaccuracies') })[k];
 
-type Props = { onTrain: (repertoireId: string) => void; onDrill: () => void; onLearn: (repertoireId: string, moves: string) => void };
+type Props = {
+  active: boolean; // the tab is showing
+  onTrain: (repertoireId: string) => void;
+  onDrill: () => void;
+  onLearn: (repertoireId: string, moves: string) => void;
+};
 
-export default function Review({ onTrain, onDrill, onLearn }: Props) {
+export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
   const [username, setUsername] = useStored('chesscom-user', '');
   const [input, setInput] = useState(username);
   const [games, setGames] = useState<GameSummary[] | null>(null);
@@ -64,6 +69,16 @@ export default function Review({ onTrain, onDrill, onLearn }: Props) {
       if (!token.cancelled) setLoading(null);
     }
   };
+
+  // the games live only in memory: the first time the tab is opened, load the saved username's games again
+  // (past months come from the browser cache, so this is quick)
+  const autoLoaded = useRef(false);
+  useEffect(() => {
+    if (!active || autoLoaded.current || !username) return;
+    autoLoaded.current = true;
+    void load(username);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, username]);
 
   const filtered = useMemo(
     () => (games ?? []).filter((g) => timeClass === 'all' || g.timeClass === timeClass),

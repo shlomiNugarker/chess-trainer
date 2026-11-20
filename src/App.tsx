@@ -91,6 +91,7 @@ export default function App() {
       </div>
       <div hidden={screen !== 'review'}>
         <Review
+          active={screen === 'review'}
           onTrain={(repertoireId) => {
             setTrainRequest({ repertoireId, nonce: Date.now() });
             setScreen('play');
