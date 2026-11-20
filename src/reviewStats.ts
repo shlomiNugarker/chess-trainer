@@ -59,7 +59,7 @@ export function matchRepertoire(openingFull: string, color: 'w' | 'b'): string |
   // match the opening's own name (its start), not a sub-variation: "Caro Kann Defense Two Knights Attack" is not the
   // Italian, "English Opening Caro Kann Defensive System" is not the Caro-Kann
   if (color === 'w' && /London System/.test(openingFull)) return 'london';
-  if (color === 'w' && /^(Italian Game|Giuoco|Two Knights Defense)/.test(openingFull)) return 'italian';
+  if (color === 'w' && /^(Italian Game|Giuoco|Two Knights Defense|Bishops Opening)/.test(openingFull)) return 'italian';
   // the 1.e4 repertoire also answers the Scandinavian, the Sicilian (Alapin), the French and Caro-Kann (Advance), the Modern
   if (color === 'w' && /^(Scandinavian Defense|Sicilian Defense Alapin|French Defense Advance|Caro Kann Defense Advance|Modern Defense)/.test(openingFull)) return 'italian';
   if (color === 'b' && /^Caro Kann Defense/.test(openingFull)) return 'caro';
