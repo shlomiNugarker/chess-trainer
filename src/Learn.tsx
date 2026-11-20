@@ -10,6 +10,7 @@ import { BLUE_ARROW, BOARD_THEME, GREEN_ARROW, LAST_MOVE, WRONG_MOVE, ltr, uciTo
 import { useClickToMove } from './useClickToMove';
 import { playSound, useMoveSound } from './sound';
 import { DAILY_GOAL, dayStreak, todayCount, daysLabel } from './daily';
+import { useScrollToMove } from './useScrollToMove';
 import { useFitBoard } from './useFitBoard';
 import { useStored } from './storage';
 import { hasAnyMastery, isMastered, loadMastery, recordRun } from './mastery';
@@ -143,6 +144,7 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
     onMove,
   );
   const boardRef = useFitBoard<HTMLDivElement>();
+  const movesRef = useScrollToMove<HTMLOListElement>(`${lineIdx}:${ply}`);
   useMoveSound(fen);
 
   const startQuiz = () => {
@@ -184,7 +186,7 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
           <span className="today-title">{tr('היום', 'Today')}</span>
           {streakDays > 0 && <span className="pill">🔥 {daysLabel(streakDays)}</span>}
           {due > 0 && (
-            <button onClick={onDrill}>↻ {tr(`חזרה על ${due} עמדות`, `Review ${due} positions`)}</button>
+            <button onClick={onDrill}>↻ {due === 1 ? tr('חזרה על עמדה אחת', 'Review 1 position') : tr(`חזרה על ${due} עמדות`, `Review ${due} positions`)}</button>
           )}
           <button onClick={onPuzzles} className={puzzlesToday >= DAILY_GOAL ? 'daily-btn done' : 'daily-btn'}>
             🧩 {puzzlesToday >= DAILY_GOAL
@@ -442,7 +444,7 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
             </>
           )}
 
-          <ol className="moves" dir="ltr">
+          <ol className="moves" dir="ltr" ref={movesRef}>
             {moves.map((_, i) =>
               i % 2 === 0 ? (
                 <li key={i}>

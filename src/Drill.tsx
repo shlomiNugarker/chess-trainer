@@ -173,7 +173,7 @@ export default function Drill() {
               <a href={current.gameUrl} target="_blank" rel="noreferrer">{tr('למשחק', 'Game')}</a>
             </>
           )}
-          {' · '}{tr(`שלב ${current.box} מתוך ${MAX_BOX}`, `Step ${current.box} of ${MAX_BOX}`)}
+          {' · '}{current.box === 0 ? tr('עמדה חדשה', 'New position') : tr(`שלב ${current.box} מתוך ${MAX_BOX}`, `Step ${current.box} of ${MAX_BOX}`)}
         </div>
         <div className="muted">
           {current.source === 'puzzle'

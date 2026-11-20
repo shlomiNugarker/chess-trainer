@@ -11,6 +11,7 @@ import { LEARN_UNTIL, clearLearned, learnMove, loadLearned } from './learned';
 import EvalBar from './EvalBar';
 import { useClickToMove } from './useClickToMove';
 import { playSound, setSoundOn, useMoveSound, useSoundOn } from './sound';
+import { useScrollToMove } from './useScrollToMove';
 import { useFitBoard } from './useFitBoard';
 import { tr, useLang } from './i18n';
 
@@ -413,6 +414,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
     (from, to) => onPieceDrop({ sourceSquare: from, targetSquare: to }),
   );
   const boardRef = useFitBoard<HTMLDivElement>();
+  const movesRef = useScrollToMove<HTMLOListElement>(history.length);
 
   const retry = () => {
     gameRef.current.undo();
@@ -685,7 +687,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
             </button>
           </div>
 
-          <ol className="moves" dir="ltr">
+          <ol className="moves" dir="ltr" ref={movesRef}>
             {history.length === 0 && <li className="moves-empty">—</li>}
             {history.map((m, i) =>
               i % 2 === 0 ? (

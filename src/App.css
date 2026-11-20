@@ -971,7 +971,7 @@ aside {
 @media (max-width: 600px) {
   .segmented { width: 100%; margin-bottom: 8px; }
   .segmented button { flex: 1; justify-content: center; padding: 8px 10px; }
-  .puzzle-header .chips { width: auto; flex: 1; }
+  .puzzle-header .chips { width: 100%; flex: none; } /* the modes get their own row; rating and goal below */
 }
 
 /* daily goal */
