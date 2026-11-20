@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard, type Arrow } from 'react-chessboard';
 import { REPERTOIRES, lineMoves, lineText, moveLabel, posKey, repName } from './repertoire';
+import { removeCustomLine, useRepertoire } from './customLines';
 import { tr, useLang } from './i18n';
 import { dueMistakes, loadMistakes, saveMistake } from './mistakes';
 import { lineStats } from './lineStats';
@@ -26,7 +27,7 @@ type Props = { onTrain: (repertoireId: string) => void; onDrill: () => void; onP
 
 export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
   const [repId, setRepId] = useStored('learn-repertoire', REPERTOIRES[0].id);
-  const rep = REPERTOIRES.find((r) => r.id === repId) ?? REPERTOIRES[0];
+  const rep = useRepertoire(repId); // includes the branches added from your games
   const [storedLine, setLineIdx] = useStored('learn-line', 0);
   const lineIdx = storedLine < rep.lines.length ? storedLine : 0;
   const line = rep.lines[lineIdx];
@@ -227,6 +228,17 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
             </option>
           ))}
         </select>
+        {line.custom && (
+          <button
+            className="link remove-branch"
+            onClick={() => {
+              removeCustomLine(rep.id, line.moves);
+              pickLine(rep.id, 0);
+            }}
+          >
+            {tr('הסר את הענף', 'Remove this branch')}
+          </button>
+        )}
       </header>
 
       {statsOpen && (

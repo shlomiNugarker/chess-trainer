@@ -7,7 +7,13 @@ import { EN } from './repertoire.en.ts';
 // `idea` is the plan of the line in one or two sentences; `notes` explain single moves,
 // keyed by move label: "2.Bf4" for White, "4...Qb6" for Black (checked by scripts/check-lines.ts).
 
-export type Line = { name: string; moves: string; idea?: string; notes?: Record<string, string> };
+export type Line = {
+  name: string;
+  moves: string;
+  idea?: string;
+  notes?: Record<string, string>;
+  custom?: string; // a branch the user added from their games: the opponent's deviating move ("2.Bc4")
+};
 
 export type Repertoire = {
   id: string;
@@ -575,6 +581,16 @@ export const repName = (r: Repertoire) => (getLang() === 'en' && EN[r.id]?.name)
 
 /** A line's name, idea and notes in the current language (Hebrew when a translation is missing). */
 export function lineText(r: Repertoire, l: Line) {
+  if (l.custom) {
+    const he = getLang() === 'he';
+    return {
+      name: he ? `★ מול ${l.custom}` : `★ Vs ${l.custom}`,
+      idea: he
+        ? `ענף שהוספת מהמשחקים שלך: יריבים שיחקו נגדך ${l.custom}, וזו התשובה של Stockfish.`
+        : `A branch you added from your games: opponents played ${l.custom} against you, and this is Stockfish's answer.`,
+      notes: {} as Record<string, string>,
+    };
+  }
   const en = getLang() === 'en' ? EN[r.id]?.lines[l.name] : undefined;
   return { name: en?.name ?? l.name, idea: en?.idea ?? l.idea, notes: en?.notes ?? l.notes ?? {} };
 }

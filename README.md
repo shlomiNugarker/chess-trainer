@@ -16,7 +16,7 @@ Learn a chess opening repertoire step by step, train it against Stockfish until 
 - **Play** — train the repertoire against the computer. Leave the line and the game stops, shows the right move and why, and lets you **try again** or **continue**. After the book, a full-strength coach keeps correcting you up to move 15 and remembers the best moves, so the line grows from your own games. Or play a regular game at any level.
 - **Repertoire** — London System and Italian Game as White, Caro-Kann (vs 1.e4) and Slav (vs 1.d4) as Black: 26 lines, every user move checked with Stockfish.
 - **Practice** — 3,600 puzzles from the Lichess puzzle database with a personal rating, modes *for my level* / *from my openings* / *mates*, and a daily goal with a streak. **My mistakes** brings back every position you got wrong with spaced repetition (Leitner).
-- **My review** — enter a Chess.com username: the three most useful things to improve, results by color / time control / opening, how you lose, a rating chart, and an optional Stockfish pass over recent games (its mistakes become drills).
+- **My review** — enter a Chess.com username: the three most useful things to improve, results by color / time control / opening, how you lose, a rating chart, and an optional Stockfish pass over recent games (its mistakes become drills). It also shows **where your games leave your lines**: add Stockfish's answer to an opponent's unexpected move as a new branch of your repertoire, or practice the spots where you left the line yourself.
 - **Installable, offline** — a PWA; learning, training, puzzles and the engine work without internet.
 - **Optional Google sign-in** — syncs all progress between devices (Firebase Auth + Firestore).
 
@@ -63,6 +63,7 @@ Without configuration the app works fully, with progress kept in the browser. To
 | `src/Practice.tsx`, `src/Puzzles.tsx`, `src/puzzleData.ts`, `src/daily.ts` | Puzzles, rating, daily goal |
 | `src/Drill.tsx`, `src/mistakes.ts` | "My mistakes" spaced repetition |
 | `src/Review.tsx`, `src/reviewStats.ts`, `src/chesscom.ts`, `src/analysisCache.ts` | Chess.com review |
+| `src/Branches.tsx`, `src/deviations.ts`, `src/customLines.ts` | Where games leave the repertoire; branches added from your games |
 | `src/engine.ts` | Stockfish Web Worker wrapper and the Lichess win% formula |
 | `src/cloud.ts`, `src/firebase.ts`, `src/syncMerge.ts`, `src/Account.tsx` | Optional sign-in and sync |
 | `src/i18n.ts` | Two languages without a library: `tr('עברית', 'English')` |

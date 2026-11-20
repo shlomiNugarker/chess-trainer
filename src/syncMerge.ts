@@ -67,6 +67,16 @@ const MERGERS: Record<string, (a: string, b: string) => string> = {
   },
 };
 
+MERGERS['custom-lines'] = (a, b) => {
+  // repertoire -> branches: every branch from both devices (by move list)
+  const x = parse<Record<string, { moves: string }[]>>(a, {});
+  for (const [rep, list] of Object.entries(parse<Record<string, { moves: string }[]>>(b, {}))) {
+    const have = new Set((x[rep] ??= []).map((c) => c.moves));
+    for (const c of list) if (!have.has(c.moves)) x[rep].push(c);
+  }
+  return JSON.stringify(x);
+};
+
 export type Side = { data: Record<string, string>; stamps: Record<string, number> };
 
 /** The merged state of both sides. Keys are full localStorage keys (with the prefix). */

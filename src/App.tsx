@@ -8,6 +8,8 @@ import { useStored } from './storage';
 import { dir, setLang, tr, useLang } from './i18n';
 import Account from './Account';
 import { useCloud } from './cloud';
+import { REPERTOIRES } from './repertoire';
+import { withCustom } from './customLines';
 import './App.css';
 
 type Screen = 'play' | 'learn' | 'review' | 'drill';
@@ -94,6 +96,13 @@ export default function App() {
             setScreen('play');
           }}
           onDrill={() => openPractice('mistakes')}
+          onLearn={(repertoireId, moves) => {
+            // open Learn on that repertoire and line (Learn reads both when it mounts)
+            const rep = withCustom(REPERTOIRES.find((r) => r.id === repertoireId)!);
+            localStorage.setItem('chess-trainer:learn-repertoire', JSON.stringify(repertoireId));
+            localStorage.setItem('chess-trainer:learn-line', JSON.stringify(Math.max(0, rep.lines.findIndex((l) => l.moves === moves))));
+            setScreen('learn');
+          }}
         />
       </div>
       {screen === 'learn' && (

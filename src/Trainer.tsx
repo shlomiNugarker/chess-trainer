@@ -3,6 +3,7 @@ import { Chess, type Move } from 'chess.js';
 import { Chessboard, type Arrow } from 'react-chessboard';
 import { Engine, whiteWinPercent, winPercent } from './engine';
 import { REPERTOIRES, buildBook, lineInfo, noteForNext, posKey, repName } from './repertoire';
+import { useRepertoire, withCustom } from './customLines';
 import { loadMistakes, saveMistake } from './mistakes';
 import { BLUE_ARROW, BOARD_THEME, GREEN_ARROW, LAST_MOVE, WRONG_MOVE, judge, ltr, pvToSan, sanToUci, uciToArrow, uciToSan } from './chessUtils';
 import { useStored } from './storage';
@@ -59,7 +60,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
   const [colorChoice, setColorChoice] = useStored<ColorChoice>('color', 'w');
   const [playColor, setPlayColor] = useState<Color>('w'); // resolved color in play mode
   const [storedRepId, setRepId] = useStored('repertoire', REPERTOIRES[0].id);
-  const rep = REPERTOIRES.find((r) => r.id === storedRepId) ?? REPERTOIRES[0];
+  const rep = useRepertoire(storedRepId); // includes the branches added from your games
   const repId = rep.id;
   const book = useMemo(() => buildBook(rep), [rep]);
   const [learnedVersion, setLearnedVersion] = useState(0); // bump to re-read the learned store
@@ -217,7 +218,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
         }
         return;
       }
-      const r = REPERTOIRES.find((x) => x.id === repertoireId)!;
+      const r = withCustom(REPERTOIRES.find((x) => x.id === repertoireId)!);
       if (r.userColor === 'b') {
         setStatus('opponent');
         // opponentMove closes over the current book; for a repertoire switch we play the first move directly

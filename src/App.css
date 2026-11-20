@@ -1072,3 +1072,14 @@ button.progress-pill { border: none; cursor: pointer; font: inherit; }
 .line-stats > p { font-size: 12px; }
 
 .account-foot { font-size: 12px; margin-top: -4px; }
+
+/* review: where games leave the lines */
+.branches-card { display: flex; flex-direction: column; gap: 10px; }
+.branches-card h3 { font-size: 14px; margin-top: 4px; }
+.branch-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.branch-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+.branch-list li:last-child { border-bottom: none; }
+.branch-list li button { flex: none; }
+.branch-added { color: var(--accent); }
+.small-print { font-size: 12px; }
+.remove-branch { font-size: 12px; }

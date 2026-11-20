@@ -57,4 +57,13 @@ m = mergeSides(
 );
 assert.deepEqual(JSON.parse(m.data[P + 'learned']), { london: { p1: 'Nf3', p2: 'c3' } });
 
+// custom-lines: every branch from both devices, once
+m = mergeSides(
+  { data: { [P + 'custom-lines']: j({ london: [{ moves: 'a', dev: 'x', at: 1 }] }) }, stamps: {} },
+  { data: { [P + 'custom-lines']: j({ london: [{ moves: 'a', dev: 'x', at: 2 }, { moves: 'b', dev: 'y', at: 3 }], caro: [{ moves: 'c', dev: 'z', at: 4 }] }) }, stamps: {} },
+);
+const cl = JSON.parse(m.data[P + 'custom-lines']);
+assert.deepEqual(cl.london.map((c: { moves: string }) => c.moves), ['a', 'b']);
+assert.equal(cl.caro.length, 1);
+
 console.log('check-sync: all good');

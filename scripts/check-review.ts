@@ -2,6 +2,8 @@
 import assert from 'node:assert/strict';
 import { Chess } from 'chess.js';
 import { countMoves, openingFromEco, summarize, type GameSummary } from '../src/chesscom.ts';
+import { findDeviations, movesText } from '../src/deviations.ts';
+import { REPERTOIRES } from '../src/repertoire.ts';
 import { buildOverview, buildTips, matchRepertoire, phaseOf, summarizeDeep, type GameAnalysis } from '../src/reviewStats.ts';
 
 const O = 'https://www.chess.com/openings/';
@@ -76,5 +78,27 @@ assert.deepEqual(d.counts, { inaccuracy: 1, mistake: 0, blunder: 1 });
 assert.equal(d.byPhase.middlegame, 1);
 assert.equal(d.worst.length, 1);
 assert.ok(buildTips(o, d).some((t) => t.action?.type === 'drill'));
+
+// ---- where games leave the repertoire ----
+const game = (pgn: string, color: 'w' | 'b', n: number) => ({ pgn: `[Event "x"]
+
+${pgn}`, color, url: `g${n}` }) as GameSummary;
+const dv = findDeviations(
+  [
+    game('1. d4 d5 2. Bf4 Nf6 3. e3 g6 1-0', 'w', 1), // opponent leaves the London at 3...g6
+    game('1. d4 d5 2. Bf4 Nf6 3. e3 g6 0-1', 'w', 2), // same again
+    game('1. d4 d5 2. Bf4 Nf6 3. Nf3 e6 1-0', 'w', 3), // the user leaves the line: 3.Nf3 instead of 3.e3
+    game('1. e4 c6 2. Bc4 d5 0-1', 'b', 4), // Caro-Kann: 2.Bc4 is not answered
+    game('1. c4 e5 1-0', 'b', 5), // another first move: not a branch
+    game('1. d4 d5 2. c4 c6 3. Nf3 Nf6 1-0', 'b', 6), // follows the Slav: nothing to report
+  ],
+  REPERTOIRES,
+);
+assert.equal(dv.opp.length, 2);
+assert.deepEqual([dv.opp[0].repId, dv.opp[0].label, dv.opp[0].count], ['london', '3...g6', 2]);
+assert.equal(movesText(dv.opp[0].prefix), '1.d4 d5 2.Bf4 Nf6 3.e3 g6');
+assert.deepEqual([dv.opp[1].repId, dv.opp[1].label], ['caro', '2.Bc4']);
+assert.equal(dv.mine.length, 1);
+assert.deepEqual([dv.mine[0].repId, dv.mine[0].played, dv.mine[0].expected, dv.mine[0].label], ['london', 'Nf3', ['e3'], '3.e3']);
 
 console.log('check-review: all good');

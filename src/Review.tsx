@@ -3,6 +3,7 @@ import { ChessComError, fetchGames, type GameSummary, type TimeClass } from './c
 import { Engine } from './engine';
 import { getAnalysis, saveAnalysis } from './analysisCache';
 import { saveMistake } from './mistakes';
+import Branches from './Branches';
 import {
   phaseLabel, reasonLabel, timeClassLabel, MIN_OPENING_GAMES, SHORT_GAME,
   analyzeGame, buildOverview, buildTips, summarizeDeep,
@@ -17,9 +18,9 @@ const date = formatDate;
 const kindLabel = (k: 'blunder' | 'mistake' | 'inaccuracy') =>
   ({ blunder: tr('בלאנדרים', 'Blunders'), mistake: tr('טעויות', 'Mistakes'), inaccuracy: tr('אי-דיוקים', 'Inaccuracies') })[k];
 
-type Props = { onTrain: (repertoireId: string) => void; onDrill: () => void };
+type Props = { onTrain: (repertoireId: string) => void; onDrill: () => void; onLearn: (repertoireId: string, moves: string) => void };
 
-export default function Review({ onTrain, onDrill }: Props) {
+export default function Review({ onTrain, onDrill, onLearn }: Props) {
   const [username, setUsername] = useStored('chesscom-user', '');
   const [input, setInput] = useState(username);
   const [games, setGames] = useState<GameSummary[] | null>(null);
@@ -244,6 +245,8 @@ export default function Review({ onTrain, onDrill }: Props) {
               </p>
             </section>
           )}
+
+          <Branches games={filtered} onLearn={onLearn} onDrill={onDrill} />
 
           <section className="card" id="deep">
             <h2>{tr('ניתוח מנוע של המשחקים האחרונים', 'Engine analysis of your recent games')}</h2>
