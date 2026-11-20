@@ -1083,3 +1083,12 @@ button.progress-pill { border: none; cursor: pointer; font: inherit; }
 .branch-added { color: var(--accent); }
 .small-print { font-size: 12px; }
 .remove-branch { font-size: 12px; }
+
+/* Learn: import a line from PGN */
+.import-link { font-size: 13px; }
+.import-card { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.import-card h3 { font-size: 15px; }
+.import-card textarea { width: 100%; padding: 10px 12px; border-radius: var(--r-md, 10px); border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: 14px/1.5 var(--mono); resize: vertical; }
+.import-results { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.import-results .ok { color: var(--accent); }
+.import-results .warn { color: #e0a85f; }

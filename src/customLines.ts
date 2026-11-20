@@ -4,7 +4,9 @@
 // stats) through withCustom / useRepertoire, and synced between devices like any other saved key.
 
 import { useEffect, useMemo, useState } from 'react';
-import { REPERTOIRES, type Repertoire } from './repertoire';
+import { Chess } from 'chess.js';
+import { REPERTOIRES, buildBook, moveLabel, posKey, type Repertoire } from './repertoire';
+import { tr } from './i18n';
 
 const KEY = 'chess-trainer:custom-lines';
 export const CUSTOM_CHANGED = 'chess-trainer:custom-lines-changed';
@@ -70,4 +72,71 @@ export function useRepertoire(id: string): Repertoire {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [id, version],
   );
+}
+
+const START = new Chess().fen();
+const MAX_PLIES = 40;
+
+export type ImportResult = { ok: boolean; text: string };
+
+/**
+ * Imports lines from PGN text (one or more games, or just moves like "1.e4 c6 2.d4"). Only the main line is used
+ * (variations and comments are ignored). A line is added as a branch unless it contradicts the repertoire (a
+ * different move of yours in a position the repertoire already answers) or adds nothing new.
+ */
+export function importPgn(repId: string, text: string): ImportResult[] {
+  const games = text
+    .split(/\n\s*\n(?=\s*\[)/) // games start with their tag section
+    .map((g) => g.trim())
+    .filter(Boolean);
+  const results: ImportResult[] = [];
+  for (const [n, pgn] of games.entries()) {
+    const which = games.length > 1 ? tr(`משחק ${n + 1}: `, `Game ${n + 1}: `) : '';
+    const c = new Chess();
+    try {
+      c.loadPgn(pgn);
+    } catch {
+      results.push({ ok: false, text: which + tr('לא הצלחתי לקרוא את המהלכים.', 'Could not read the moves.') });
+      continue;
+    }
+    const moves = c.history({ verbose: true });
+    if (!moves.length) {
+      results.push({ ok: false, text: which + tr('אין מהלכים.', 'No moves.') });
+      continue;
+    }
+    if (moves[0].before !== START) {
+      results.push({ ok: false, text: which + tr('רק קווים מעמדת הפתיחה הרגילה.', 'Only lines from the normal starting position.') });
+      continue;
+    }
+    const rep = withCustom(REPERTOIRES.find((r) => r.id === repId)!);
+    const book = buildBook(rep);
+    const sans = moves.slice(0, MAX_PLIES).map((m) => m.san);
+    let firstNew = -1;
+    let conflict = '';
+    for (const [i, m] of moves.slice(0, MAX_PLIES).entries()) {
+      const known = book.get(posKey(m.before));
+      if (known?.includes(m.san)) continue;
+      if (known?.length && m.color === rep.userColor) {
+        conflict = tr(
+          `הקו משחק ${moveLabel(i, m.san)}, אבל ברפרטואר שלך משחקים כאן ${moveLabel(i, known[0])}. אפשר רק מהלך אחד שלך בכל עמדה.`,
+          `The line plays ${moveLabel(i, m.san)}, but your repertoire plays ${moveLabel(i, known[0])} here. Only one move of yours per position.`,
+        );
+        break;
+      }
+      if (firstNew < 0) firstNew = i;
+    }
+    if (conflict) {
+      results.push({ ok: false, text: which + conflict });
+      continue;
+    }
+    if (firstNew < 0) {
+      results.push({ ok: false, text: which + tr('הקו כבר נמצא ברפרטואר.', 'This line is already in the repertoire.') });
+      continue;
+    }
+    const dev = moveLabel(firstNew, sans[firstNew]);
+    addCustomLine(repId, sans, dev);
+    results.push({ ok: true, text: which + tr(`נוסף: ★ מול ${dev} (${Math.ceil(sans.length / 2)} מהלכים)`, `Added: ★ Vs ${dev} (${Math.ceil(sans.length / 2)} moves)`) });
+  }
+  if (!games.length) results.push({ ok: false, text: tr('הדבק PGN או מהלכים.', 'Paste a PGN or moves.') });
+  return results;
 }

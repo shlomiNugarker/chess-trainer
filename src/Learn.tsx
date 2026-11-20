@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard, type Arrow } from 'react-chessboard';
 import { REPERTOIRES, lineMoves, lineText, moveLabel, posKey, repName } from './repertoire';
-import { removeCustomLine, useRepertoire } from './customLines';
+import { importPgn, removeCustomLine, useRepertoire, type ImportResult } from './customLines';
 import { tr, useLang } from './i18n';
 import { dueMistakes, loadMistakes, saveMistake } from './mistakes';
 import { lineStats } from './lineStats';
@@ -40,6 +40,9 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
   const mastery = useMemo(() => loadMastery(rep.id), [rep.id, masteryVersion]);
   const masteredCount = rep.lines.filter((l) => isMastered(mastery[l.name])).length;
   const [statsOpen, setStatsOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [pgnText, setPgnText] = useState('');
+  const [imported, setImported] = useState<ImportResult[]>([]);
   // re-read after every test try too (each wrong move is saved as a mistake)
   const stats = useMemo(() => (statsOpen ? lineStats(rep, mastery, loadMistakes()) : []), [statsOpen, rep, mastery, quiz]); // eslint-disable-line react-hooks/exhaustive-deps
   const [guideDismissed, setGuideDismissed] = useStored('guide-dismissed', false);
@@ -239,7 +242,43 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
             {tr('הסר את הענף', 'Remove this branch')}
           </button>
         )}
+        <button className="link import-link" aria-expanded={importOpen} onClick={() => setImportOpen((o) => !o)}>
+          ＋ {tr('ייבא קו (PGN)', 'Import a line (PGN)')}
+        </button>
       </header>
+
+      {importOpen && (
+        <section className="card import-card">
+          <h3>{tr(`ייבוא קו ל${repName(rep)}`, `Import a line into ${repName(rep)}`)}</h3>
+          <p className="muted">
+            {tr(
+              'הדבק PGN (אפשר כמה משחקים) או מהלכים כמו 1.e4 c6 2.d4 d5. נכנס רק הקו הראשי; כל קו נבדק שהוא לא סותר את הרפרטואר, ונוסף כענף ★.',
+              'Paste a PGN (several games are fine) or moves like 1.e4 c6 2.d4 d5. Only the main line is used; each line is checked against your repertoire and added as a ★ branch.',
+            )}
+          </p>
+          <textarea dir="ltr" rows={4} value={pgnText} onChange={(e) => setPgnText(e.target.value)} placeholder="1.e4 c6 2.d4 d5 3.Nc3 dxe4 ..." />
+          <div className="buttons">
+            <button
+              className="primary"
+              disabled={!pgnText.trim()}
+              onClick={() => {
+                const r = importPgn(rep.id, pgnText);
+                setImported(r);
+                if (r.some((x) => x.ok)) setPgnText('');
+              }}
+            >
+              {tr('ייבא', 'Import')}
+            </button>
+          </div>
+          {imported.length > 0 && (
+            <ul className="import-results">
+              {imported.map((r, i) => (
+                <li key={i} className={r.ok ? 'ok' : 'warn'}>{r.ok ? '✓' : '✕'} {r.text}</li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
 
       {statsOpen && (
         <section className="card line-stats">

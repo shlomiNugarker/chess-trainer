@@ -12,7 +12,7 @@ Learn a chess opening repertoire step by step, train it against Stockfish until 
 
 ## Features
 
-- **Learn** — every line of the repertoire on a board, move by move, with the idea of the line and a one-sentence reason for each of your moves. "Test me" quizzes you on the line; per-line success rate and the move you miss most.
+- **Learn** — every line of the repertoire on a board, move by move, with the idea of the line and a one-sentence reason for each of your moves. "Test me" quizzes you on the line; per-line success rate and the move you miss most. Import your own lines from PGN — each is checked against the repertoire and added as a branch.
 - **Play** — train the repertoire against the computer. Leave the line and the game stops, shows the right move and why, and lets you **try again** or **continue**. After the book, a full-strength coach keeps correcting you up to move 15 and remembers the best moves, so the line grows from your own games. Or play a regular game at any level.
 - **Repertoire** — London System and Italian Game as White, Caro-Kann (vs 1.e4) and Slav (vs 1.d4) as Black: 26 lines, every user move checked with Stockfish.
 - **Practice** — 3,600 puzzles from the Lichess puzzle database with a personal rating, modes *for my level* / *from my openings* / *mates*, and a daily goal with a streak. **My mistakes** brings back every position you got wrong with spaced repetition (Leitner).
