@@ -228,6 +228,10 @@ def review(pg):
     txt = pg.locator('.review').inner_text()
     for h in ['Your openings as White', 'Your openings as Black', 'How you lose', 'By time control', 'Where your games leave your lines']:
         r.check(h in txt, f'review section "{h}"')
+    strengths = text(pg, '.strengths')
+    r.check('Your strengths' in strengths and 'As White' in strengths and 'As Black' in strengths, 'the strengths card', strengths[:160])
+    r.check(pg.locator('.opening.strong').count() > 0 or 'No opening stands out' in strengths, 'strongest openings marked in the tables',
+            f'{pg.locator(".opening.strong").count()} marked')
     r.shot(pg, 'review')
     chips = pg.locator('.review .chips button')
     if chips.count() > 1:

@@ -4,7 +4,7 @@ import { Chess } from 'chess.js';
 import { countMoves, openingFromEco, summarize, type GameSummary } from '../src/chesscom.ts';
 import { findDeviations, movesText } from '../src/deviations.ts';
 import { REPERTOIRES } from '../src/repertoire.ts';
-import { buildOverview, buildTips, matchRepertoire, phaseOf, summarizeDeep, type GameAnalysis } from '../src/reviewStats.ts';
+import { buildOverview, buildTips, matchRepertoire, phaseOf, strongestOpenings, summarizeDeep, weakestOpenings, type GameAnalysis, type OpeningRow } from '../src/reviewStats.ts';
 
 const O = 'https://www.chess.com/openings/';
 assert.deepEqual(openingFromEco(O + 'Italian-Game-Two-Knights-Defense'), { full: 'Italian Game Two Knights Defense', family: 'Italian Game' });
@@ -69,6 +69,16 @@ assert.equal(o.byTimeClass[0].rating, 1039);
 assert.equal(o.ratingSeries?.points.length, 40);
 assert.equal(o.openings.w.find((r) => r.name === 'Italian Game')?.repertoireId, 'italian');
 const tips = buildTips(o, null);
+
+// ---- strongest / weakest openings ----
+const row = (name: string, games: number, score: number): OpeningRow => ({ name, games, score, wins: 0, draws: 0, losses: 0 });
+const rows = [row('A', 80, 62), row('B', 20, 65), row('C', 9, 90), row('D', 40, 56), row('E', 30, 42), row('F', 4, 0), row('G', 12, 61),
+  row('Undefined', 14, 71), row('Unknown', 30, 10)]; // games with no recognized opening are neither strong nor weak
+// average 55: C has too few games, D is not 5 points above, the order is by score
+assert.deepEqual(strongestOpenings(rows, 55).map((r) => r.name), ['B', 'A', 'G']);
+assert.deepEqual(strongestOpenings(rows, 70).map((r) => r.name), []); // nothing clearly above a high average
+// weakest: 5+ games (F is out), lowest first
+assert.deepEqual(weakestOpenings(rows).map((r) => r.name), ['E', 'D', 'G']);
 assert.ok(tips.length > 0 && tips.length <= 3);
 console.log('tips:', tips.map((t) => t.title));
 

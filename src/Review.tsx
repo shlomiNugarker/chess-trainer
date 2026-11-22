@@ -5,8 +5,8 @@ import { getAnalysis, saveAnalysis } from './analysisCache';
 import { saveMistake } from './mistakes';
 import Branches from './Branches';
 import {
-  phaseLabel, reasonLabel, timeClassLabel, MIN_OPENING_GAMES, SHORT_GAME,
-  analyzeGame, buildOverview, buildTips, summarizeDeep,
+  phaseLabel, reasonLabel, timeClassLabel, MIN_OPENING_GAMES, MIN_STRONG_GAMES, SHORT_GAME,
+  analyzeGame, buildOverview, buildTips, strongestOpenings, summarizeDeep, weakestOpenings,
   type GameAnalysis, type GamePhase, type OpeningRow, type Score, type Tip,
 } from './reviewStats';
 import { ltr } from './chessUtils';
@@ -253,9 +253,11 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
             </section>
           </div>
 
+          <Strengths overview={overview} />
+
           <div className="grid2">
-            <OpeningTable title={tr('הפתיחות שלך בלבן', 'Your openings as White')} rows={overview.openings.w} onTrain={onTrain} />
-            <OpeningTable title={tr('הפתיחות שלך בשחור', 'Your openings as Black')} rows={overview.openings.b} onTrain={onTrain} />
+            <OpeningTable title={tr('הפתיחות שלך בלבן', 'Your openings as White')} rows={overview.openings.w} average={overview.byColor.w.score} onTrain={onTrain} />
+            <OpeningTable title={tr('הפתיחות שלך בשחור', 'Your openings as Black')} rows={overview.openings.b} average={overview.byColor.b.score} onTrain={onTrain} />
           </div>
 
           {overview.total.losses > 0 && (
@@ -350,19 +352,50 @@ function ScoreRow({ name, s }: { name: string; s: Score }) {
   );
 }
 
-function OpeningTable({ title, rows, onTrain }: { title: string; rows: OpeningRow[]; onTrain: (id: string) => void }) {
-  const shown = rows.slice(0, 8);
-  const weakest = rows
-    .filter((r) => r.games >= MIN_OPENING_GAMES)
-    .sort((a, b) => a.score - b.score)
-    .slice(0, 3)
-    .map((r) => r.name);
+/** The best opening with each color (enough games, clearly above the user's average with that color). */
+function Strengths({ overview }: { overview: ReturnType<typeof buildOverview> }) {
+  const sides = (['w', 'b'] as const).map((c) => ({
+    c,
+    label: c === 'w' ? tr('בלבן', 'As White') : tr('בשחור', 'As Black'),
+    avg: overview.byColor[c].score,
+    best: strongestOpenings(overview.openings[c], overview.byColor[c].score)[0],
+  }));
+  if (!sides.some((s) => overview.byColor[s.c].games)) return null;
+  return (
+    <section className="card strengths">
+      <h2>{tr('החוזקות שלך', 'Your strengths')}</h2>
+      <ul>
+        {sides.map(({ c, label, avg, best }) => (
+          <li key={c}>
+            <strong>{label}:</strong>{' '}
+            {best
+              ? tr(
+                  `${ltr(best.name)} — ${pct(best.score)} ב-${best.games} משחקים (הממוצע שלך ${label}: ${pct(avg)}).`,
+                  `${best.name} — ${pct(best.score)} in ${best.games} games (your average ${label.toLowerCase()}: ${pct(avg)}).`,
+                )
+              : tr(
+                  `עוד אין פתיחה שבולטת מעל הממוצע שלך (${pct(avg)}, צריך לפחות ${MIN_STRONG_GAMES} משחקים בפתיחה).`,
+                  `No opening stands out above your average yet (${pct(avg)}; it takes ${MIN_STRONG_GAMES}+ games in an opening).`,
+                )}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function OpeningTable({ title, rows, average, onTrain }: { title: string; rows: OpeningRow[]; average: number; onTrain: (id: string) => void }) {
+  const weakest = weakestOpenings(rows).map((r) => r.name);
+  const strongest = strongestOpenings(rows, average).map((r) => r.name);
+  // the 8 most played, plus any marked opening that is played less (rows come sorted by number of games)
+  const shown = rows.filter((r, i) => i < 8 || weakest.includes(r.name) || strongest.includes(r.name));
+  const mark = (name: string) => (strongest.includes(name) ? 'opening strong' : weakest.includes(name) ? 'opening weak' : 'opening');
   return (
     <section className="card">
       <h2>{title}</h2>
       {!shown.length && <p className="muted">{tr('אין משחקים.', 'No games.')}</p>}
       {shown.map((r) => (
-        <div key={r.name} className={weakest.includes(r.name) ? 'opening weak' : 'opening'}>
+        <div key={r.name} className={mark(r.name)}>
           <Bar label={r.name} value={r.score / 100} text={`${pct(r.score)} · ${r.games}`} />
           {r.repertoireId && (
             <button className="small" onClick={() => onTrain(r.repertoireId!)}>{tr('תאמן', 'Train')}</button>
@@ -371,8 +404,8 @@ function OpeningTable({ title, rows, onTrain }: { title: string; rows: OpeningRo
       ))}
       <p className="muted">
         {tr(
-          `ניקוד % · מספר משחקים. מסומנות באדום: 3 החלשות (מ-${MIN_OPENING_GAMES} משחקים ומעלה).`,
-          `Score % · number of games. In red: the 3 weakest (with ${MIN_OPENING_GAMES}+ games).`,
+          `ניקוד % · מספר משחקים. בירוק: 3 החזקות (מ-${MIN_STRONG_GAMES} משחקים, מעל הממוצע שלך: ${pct(average)}). באדום: 3 החלשות (מ-${MIN_OPENING_GAMES} משחקים).`,
+          `Score % · number of games. In green: the 3 strongest (${MIN_STRONG_GAMES}+ games, above your average of ${pct(average)}). In red: the 3 weakest (${MIN_OPENING_GAMES}+ games).`,
         )}
       </p>
     </section>

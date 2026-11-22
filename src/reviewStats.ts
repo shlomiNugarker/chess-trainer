@@ -23,6 +23,29 @@ export type Overview = {
 
 export const SHORT_GAME = 25;
 export const MIN_OPENING_GAMES = 5;
+/** A "strongest" opening needs more games than a weak one: a high score from a handful of games is mostly luck. */
+export const MIN_STRONG_GAMES = 10;
+/** ...and must beat the user's own average with that color by this many points. */
+export const STRONG_MARGIN = 5;
+
+/** Chess.com files games with no recognized opening as "Undefined" (and we say "Unknown" when there is no name) — not an opening. */
+const isNamed = (r: OpeningRow) => !/^(Undefined|Unknown|לא ידוע)$/.test(r.name);
+
+/** The (up to) 3 lowest-scoring openings with enough games. */
+export function weakestOpenings(rows: OpeningRow[]): OpeningRow[] {
+  return rows
+    .filter((r) => isNamed(r) && r.games >= MIN_OPENING_GAMES)
+    .sort((a, b) => a.score - b.score || b.games - a.games)
+    .slice(0, 3);
+}
+
+/** The (up to) 3 best-scoring openings with enough games that clearly beat the user's average with that color. */
+export function strongestOpenings(rows: OpeningRow[], average: number): OpeningRow[] {
+  return rows
+    .filter((r) => isNamed(r) && r.games >= MIN_STRONG_GAMES && r.score >= average + STRONG_MARGIN)
+    .sort((a, b) => b.score - a.score || b.games - a.games)
+    .slice(0, 3);
+}
 
 // labels are functions, not constants, so they follow the current language
 const REASONS: Record<string, [string, string]> = {

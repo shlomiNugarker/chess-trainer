@@ -690,6 +690,9 @@ aside {
 .opening .bar-row { flex: 1; }
 .opening.weak .bar-label { color: var(--error); font-weight: 700; }
 .opening.weak .bar-fill { background: var(--error); }
+.opening.strong .bar-label { color: var(--accent); font-weight: 700; }
+.opening.strong .bar-label::before { content: '★ '; }
+.strengths ul { margin: 0; padding-inline-start: 18px; display: grid; gap: 6px; }
 
 .progress {
   height: 6px;
