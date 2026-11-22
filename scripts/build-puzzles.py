@@ -1,6 +1,6 @@
-"""Builds public/puzzles-v2.json from the Lichess puzzle database (CC0, https://database.lichess.org/#puzzles).
+"""Builds public/puzzles-v3.json from the Lichess puzzle database (CC0, https://database.lichess.org/#puzzles).
 
-usage: python scripts/build-puzzles.py path/to/lichess_db_puzzle.csv.zst public/puzzles-v2.json
+usage: python scripts/build-puzzles.py path/to/lichess_db_puzzle.csv.zst public/puzzles-v3.json
 needs: pip install zstandard
 
 Keeps well-tested, popular puzzles spread evenly over the rating range, plus extra puzzles from games
@@ -15,7 +15,7 @@ LOW, HIGH, STEP = 500, 2500, 100
 PER_BUCKET = 150
 MAX_MATES_PER_BUCKET = 45  # enough for the "mates" mode without crowding out other tactics
 PER_OPENING = 150
-OPENINGS = {'London_System': 'london', 'Italian_Game': 'italian', 'Caro-Kann_Defense': 'caro', 'Slav_Defense': 'slav', 'Sicilian_Defense': 'sicilian'}
+OPENINGS = {'London_System': 'london', 'Italian_Game': 'italian', 'Caro-Kann_Defense': 'caro', 'Slav_Defense': 'slav', 'Sicilian_Defense': 'sicilian', 'Queens_Gambit_Accepted': 'qga'}
 # only themes the app names (src/puzzles.ts); the rest would just be bytes
 THEMES = {
     'fork', 'pin', 'skewer', 'discoveredAttack', 'doubleCheck', 'hangingPiece', 'sacrifice', 'deflection',

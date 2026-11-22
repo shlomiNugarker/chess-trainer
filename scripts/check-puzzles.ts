@@ -1,9 +1,9 @@
-// Checks public/puzzles-v2.json: every puzzle's moves are legal from its FEN, plus a few counts.
+// Checks public/puzzles-v3.json: every puzzle's moves are legal from its FEN, plus a few counts.
 // node --experimental-strip-types scripts/check-puzzles.ts
 import { readFileSync } from 'node:fs';
 import { Chess } from 'chess.js';
 
-const rows: [string, string, string, number, string, string][] = JSON.parse(readFileSync('public/puzzles-v2.json', 'utf8'));
+const rows: [string, string, string, number, string, string][] = JSON.parse(readFileSync('public/puzzles-v3.json', 'utf8'));
 let ok = true;
 const themes = new Map<string, number>();
 const openings = new Map<string, number>();

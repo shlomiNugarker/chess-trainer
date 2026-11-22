@@ -633,6 +633,11 @@ aside {
 }
 
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.manage-chip { opacity: 0.8; }
+.manage-card { display: flex; flex-direction: column; gap: 8px; }
+.manage-card h3, .manage-card p { margin: 0; }
+.manage-row { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.manage-row input { width: 18px; height: 18px; }
 
 .chip {
   border-radius: 999px;

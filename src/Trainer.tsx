@@ -3,6 +3,7 @@ import { Chess, type Move } from 'chess.js';
 import { Chessboard, type Arrow } from 'react-chessboard';
 import { Engine, whiteWinPercent, winPercent } from './engine';
 import { REPERTOIRES, buildBook, lineInfo, noteForNext, posKey, repName } from './repertoire';
+import { useHiddenRepertoires, visibleOf } from './hiddenReps';
 import { useRepertoire, withCustom } from './customLines';
 import { loadMistakes, saveMistake } from './mistakes';
 import { BLUE_ARROW, BOARD_THEME, GREEN_ARROW, LAST_MOVE, WRONG_MOVE, judge, ltr, pvToSan, sanToUci, uciToArrow, uciToSan } from './chessUtils';
@@ -64,6 +65,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
   const [storedRepId, setRepId] = useStored('repertoire', REPERTOIRES[0].id);
   const rep = useRepertoire(storedRepId); // includes the branches added from your games
   const repId = rep.id;
+  const { hidden: hiddenReps } = useHiddenRepertoires(); // hidden ones leave the picker (the current one stays)
   const book = useMemo(() => buildBook(rep), [rep]);
   const [learnedVersion, setLearnedVersion] = useState(0); // bump to re-read the learned store
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -240,6 +242,16 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
     },
     [repId, mode, colorChoice, opponentMove, startPreAnalysis, sync],
   );
+
+  // An opening hidden in "Learn" leaves the trainer too: move to the first one shown. Declared before the
+  // "train this opening" effect, so an explicit request from the review still wins.
+  useEffect(() => {
+    if (!hiddenReps.includes(storedRepId)) return;
+    const next = visibleOf(hiddenReps)[0].id;
+    setRepId(next);
+    if (engineReady) newGame({ repertoireId: next });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hiddenReps]);
 
   // Start a game once the engines are up
   useEffect(() => {
@@ -548,7 +560,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
                   newGame({ repertoireId: e.target.value });
                 }}
               >
-                {REPERTOIRES.map((r) => (
+                {REPERTOIRES.filter((r) => r.id === repId || !hiddenReps.includes(r.id)).map((r) => (
                   <option key={r.id} value={r.id}>{repName(r)}</option>
                 ))}
               </select>

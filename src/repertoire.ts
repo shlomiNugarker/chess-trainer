@@ -1860,7 +1860,8 @@ export const REPERTOIRES: Repertoire[] = [
 ];
 
 /** The repertoire's name in the current language. */
-export const repName = (r: Repertoire) => (getLang() === 'en' && EN[r.id]?.name) || r.name;
+// moves like "1.e4" inside a Hebrew name are isolated as left-to-right text, or they show as "e4.1"
+export const repName = (r: Repertoire) => (getLang() === 'en' && EN[r.id]?.name) || r.name.replace(/\d+\.\S+/g, (m) => `⁦${m}⁩`);
 
 /** A line's name, idea and notes in the current language (Hebrew when a translation is missing). */
 export function lineText(r: Repertoire, l: Line) {

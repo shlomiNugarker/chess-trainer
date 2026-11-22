@@ -61,7 +61,7 @@ The MIT and Apache-2.0 license texts are included with each package in `node_mod
 
 ### Lichess puzzle database — CC0 1.0
 
-`public/puzzles-v2.json` is a selection from the [Lichess puzzle database](https://database.lichess.org/#puzzles), released into the public domain (CC0). Thanks to Lichess and its players.
+`public/puzzles-v3.json` is a selection from the [Lichess puzzle database](https://database.lichess.org/#puzzles), released into the public domain (CC0). Thanks to Lichess and its players.
 
 ## Loaded at runtime (not in this repository)
 

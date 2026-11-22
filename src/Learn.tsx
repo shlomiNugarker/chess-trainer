@@ -14,6 +14,7 @@ import { useScrollToMove } from './useScrollToMove';
 import { useFitBoard } from './useFitBoard';
 import { useStored } from './storage';
 import { hasAnyMastery, isMastered, loadMastery, recordRun } from './mastery';
+import { useHiddenRepertoires } from './hiddenReps';
 
 const START = new Chess().fen();
 
@@ -27,7 +28,11 @@ type QuizState = { wrong?: { san: string; correctUci: string }; mistakes: number
 type Props = { onTrain: (repertoireId: string) => void; onDrill: () => void; onPuzzles: () => void };
 
 export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
-  const [repId, setRepId] = useStored('learn-repertoire', REPERTOIRES[0].id);
+  const [storedRepId, setRepId] = useStored('learn-repertoire', REPERTOIRES[0].id);
+  const { hidden, visible, toggle: toggleHidden } = useHiddenRepertoires();
+  const [manageOpen, setManageOpen] = useState(false);
+  // a hidden repertoire is not studied here: fall back to the first one shown
+  const repId = visible.some((r) => r.id === storedRepId) ? storedRepId : visible[0].id;
   const rep = useRepertoire(repId); // includes the branches added from your games
   const [storedLine, setLineIdx] = useStored('learn-line', 0);
   const lineIdx = storedLine < rep.lines.length ? storedLine : 0;
@@ -207,7 +212,7 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
 
       <header className="learn-header">
         <div className="chips" role="tablist">
-          {REPERTOIRES.map((r) => (
+          {visible.map((r) => (
             <button
               key={r.id}
               className={r.id === rep.id ? 'chip active' : 'chip'}
@@ -216,6 +221,14 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
               {repName(r)}
             </button>
           ))}
+          <button
+            className="chip manage-chip"
+            aria-expanded={manageOpen}
+            onClick={() => setManageOpen((o) => !o)}
+            title={tr('בחר אילו פתיחות להציג', 'Choose which openings to show')}
+          >
+            ⚙{hidden.length ? ` ${tr(`${hidden.length} מוסתרות`, `${hidden.length} hidden`)}` : ''}
+          </button>
         </div>
         <button
           className="pill progress-pill"
@@ -248,6 +261,32 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
           ＋ {tr('ייבא קו (PGN)', 'Import a line (PGN)')}
         </button>
       </header>
+
+      {manageOpen && (
+        <section className="card manage-card">
+          <h3>{tr('אילו פתיחות להציג', 'Which openings to show')}</h3>
+          <p className="muted">
+            {tr(
+              'פתיחה מוסתרת לא מופיעה כאן ובבחירת הפתיחה באימון. שום דבר לא נמחק — אפשר להחזיר אותה בכל רגע.',
+              'A hidden opening doesn’t appear here or in the training opening picker. Nothing is deleted — you can show it again any time.',
+            )}
+          </p>
+          {REPERTOIRES.map((r) => {
+            const shown = !hidden.includes(r.id);
+            return (
+              <label key={r.id} className="manage-row">
+                <input
+                  type="checkbox"
+                  checked={shown}
+                  disabled={shown && visible.length === 1}
+                  onChange={() => toggleHidden(r.id)}
+                />
+                {repName(r)}
+              </label>
+            );
+          })}
+        </section>
+      )}
 
       {importOpen && (
         <section className="card import-card">

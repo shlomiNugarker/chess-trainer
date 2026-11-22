@@ -38,7 +38,7 @@ npm run lint
 npm run build
 node --experimental-strip-types scripts/check-lines.ts    # every repertoire line is legal, notes exist in both languages
 node --experimental-strip-types scripts/check-review.ts   # Chess.com review logic
-node --experimental-strip-types scripts/check-puzzles.ts  # every puzzle in public/puzzles-v2.json is legal
+node --experimental-strip-types scripts/check-puzzles.ts  # every puzzle in public/puzzles-v3.json is legal
 node --experimental-strip-types scripts/check-sync.ts     # merge rules for syncing between devices
 ```
 
@@ -68,7 +68,7 @@ Without configuration the app works fully, with progress kept in the browser. To
 | `src/cloud.ts`, `src/firebase.ts`, `src/syncMerge.ts`, `src/Account.tsx` | Optional sign-in and sync |
 | `src/i18n.ts` | Two languages without a library: `tr('עברית', 'English')` |
 | `public/engine/` | Stockfish 19 lite (WASM) |
-| `public/puzzles-v2.json` | Puzzle set, built by `scripts/build-puzzles.py` |
+| `public/puzzles-v3.json` | Puzzle set, built by `scripts/build-puzzles.py` |
 | `public/sw.js` | Offline cache |
 
 The roadmap is in [`PLAN.md`](PLAN.md) (Hebrew).
