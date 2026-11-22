@@ -140,6 +140,37 @@ export function buildOverview(games: GameSummary[]): Overview {
   };
 }
 
+// ---------- accuracy over time ----------
+
+export type MonthPoint = { month: string; t: number; avg: number; n: number }; // month "2026-11", t = its middle (ms)
+export const MIN_MONTH_GAMES = 3; // fewer games in a month is mostly noise
+
+/** Average accuracy per calendar month (months with too few games are left out), oldest first. */
+export function accuracyByMonth(items: { t: number; acc: number }[], minGames = MIN_MONTH_GAMES): MonthPoint[] {
+  const by = new Map<string, number[]>();
+  for (const { t, acc } of items) {
+    const d = new Date(t);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    by.set(key, [...(by.get(key) ?? []), acc]);
+  }
+  return [...by]
+    .filter(([, accs]) => accs.length >= minGames)
+    .map(([month, accs]) => {
+      const [y, m] = month.split('-').map(Number);
+      return { month, t: new Date(y, m - 1, 15).getTime(), avg: accs.reduce((s, a) => s + a, 0) / accs.length, n: accs.length };
+    })
+    .sort((a, b) => a.t - b.t);
+}
+
+/** The latest month against the average of the (up to) 3 months before it; null without enough months. */
+export function accuracyTrend(points: MonthPoint[]): { last: MonthPoint; before: number; delta: number } | null {
+  if (points.length < 2) return null;
+  const last = points[points.length - 1];
+  const prev = points.slice(-4, -1);
+  const before = prev.reduce((s, p) => s + p.avg, 0) / prev.length;
+  return { last, before, delta: last.avg - before };
+}
+
 // ---------- deep (engine) analysis ----------
 
 export type GamePhase = 'opening' | 'middlegame' | 'endgame';

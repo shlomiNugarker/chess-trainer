@@ -223,3 +223,15 @@ export function saveReview(url: string, evals: Eval[]) {
 }
 
 export const isReviewed = (url: string) => !!readStore().games[url];
+
+/** Games with a stored review (for the accuracy-over-time chart). */
+export const reviewedUrls = () => Object.keys(readStore().games);
+
+/** The user's accuracy in a stored review, or null if there is none (or it does not fit the game). */
+export function storedAccuracy(game: { url: string; pgn: string; color: 'w' | 'b' }, reps: Repertoire[]): number | null {
+  const evals = loadReview(game.url);
+  const g = evals && parseGame(game.pgn);
+  if (!evals || !g || evals.length !== g.fens.length) return null;
+  const book = bookInfo(g.moves.map((m) => m.san), game.color, reps);
+  return buildReview(g, evals, book?.plies ?? 0).sides[game.color].accuracy;
+}

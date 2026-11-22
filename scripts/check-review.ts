@@ -4,7 +4,7 @@ import { Chess } from 'chess.js';
 import { countMoves, openingFromEco, summarize, type GameSummary } from '../src/chesscom.ts';
 import { findDeviations, movesText } from '../src/deviations.ts';
 import { REPERTOIRES } from '../src/repertoire.ts';
-import { buildOverview, buildTips, matchRepertoire, phaseOf, strongestOpenings, summarizeDeep, weakestOpenings, type GameAnalysis, type OpeningRow } from '../src/reviewStats.ts';
+import { accuracyByMonth, accuracyTrend, buildOverview, buildTips, matchRepertoire, phaseOf, strongestOpenings, summarizeDeep, weakestOpenings, type GameAnalysis, type OpeningRow } from '../src/reviewStats.ts';
 
 const O = 'https://www.chess.com/openings/';
 assert.deepEqual(openingFromEco(O + 'Italian-Game-Two-Knights-Defense'), { full: 'Italian Game Two Knights Defense', family: 'Italian Game' });
@@ -117,6 +117,23 @@ assert.equal(movesText(dv.opp[0].prefix), '1.d4 d5 2.Bf4 Nf6 3.e3 g6');
 assert.deepEqual([dv.opp[1].repId, dv.opp[1].label], ['caro', '2.Bc4']);
 assert.equal(dv.mine.length, 1);
 assert.deepEqual([dv.mine[0].repId, dv.mine[0].played, dv.mine[0].expected, dv.mine[0].label], ['london', 'Nf3', ['e3'], '3.e3']);
+
+// ---- accuracy over time ----
+{
+  const at = (y: number, m: number, d: number) => new Date(y, m - 1, d).getTime();
+  const items = [
+    { t: at(2026, 9, 2), acc: 60 }, { t: at(2026, 9, 20), acc: 70 }, { t: at(2026, 9, 28), acc: 80 }, // Sep: 70 avg
+    { t: at(2026, 10, 5), acc: 90 }, { t: at(2026, 10, 6), acc: 50 }, // Oct: only 2 games, left out
+    { t: at(2026, 11, 1), acc: 80 }, { t: at(2026, 11, 3), acc: 80 }, { t: at(2026, 11, 30), acc: 83 }, // Nov
+  ];
+  const months = accuracyByMonth(items);
+  assert.deepEqual(months.map((p) => [p.month, Math.round(p.avg), p.n]), [['2026-09', 70, 3], ['2026-11', 81, 3]]);
+  assert.equal(accuracyByMonth(items, 1).length, 3);
+  const tr = accuracyTrend(months)!;
+  assert.equal(tr.last.month, '2026-11');
+  assert.equal(Math.round(tr.delta), 11);
+  assert.equal(accuracyTrend(months.slice(0, 1)), null);
+}
 
 // ---- reviewing one game ----
 {

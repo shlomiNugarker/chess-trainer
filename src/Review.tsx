@@ -5,15 +5,17 @@ import { getAnalysis, saveAnalysis } from './analysisCache';
 import { saveMistake } from './mistakes';
 import Branches from './Branches';
 import GameReview from './GameReview';
-import { isReviewed } from './gameAnalysis';
+import { isReviewed, reviewedUrls, storedAccuracy } from './gameAnalysis';
+import { REPERTOIRES } from './repertoire';
+import { withCustom } from './customLines';
 import {
-  phaseLabel, reasonLabel, timeClassLabel, MIN_OPENING_GAMES, MIN_STRONG_GAMES, SHORT_GAME,
-  analyzeGame, buildOverview, buildTips, strongestOpenings, summarizeDeep, weakestOpenings,
-  type GameAnalysis, type GamePhase, type OpeningRow, type Score, type Tip,
+  phaseLabel, reasonLabel, timeClassLabel, MIN_MONTH_GAMES, MIN_OPENING_GAMES, MIN_STRONG_GAMES, SHORT_GAME,
+  accuracyByMonth, accuracyTrend, analyzeGame, buildOverview, buildTips, strongestOpenings, summarizeDeep, weakestOpenings,
+  type GameAnalysis, type GamePhase, type MonthPoint, type OpeningRow, type Score, type Tip,
 } from './reviewStats';
 import { ltr } from './chessUtils';
 import { useStored } from './storage';
-import { formatDate, tr, useLang } from './i18n';
+import { formatDate, getLang, tr, useLang } from './i18n';
 
 const pct = (n: number) => ltr(`${Math.round(n)}%`);
 const date = formatDate;
@@ -89,6 +91,17 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
     [games, timeClass],
   );
   const overview = useMemo(() => (filtered.length ? buildOverview(filtered) : null), [filtered]);
+  // accuracy over time: games reviewed on Chess.com, and games reviewed here (recomputed after a review closes)
+  const accuracy = useMemo(() => {
+    const chesscom = accuracyByMonth(filtered.filter((g) => g.accuracy !== undefined).map((g) => ({ t: g.endTime, acc: g.accuracy! })));
+    const urls = new Set(reviewedUrls());
+    const reps = REPERTOIRES.map(withCustom);
+    const ownItems = filtered
+      .filter((g) => urls.has(g.url))
+      .map((g) => ({ t: g.endTime, acc: storedAccuracy(g, reps) }))
+      .filter((x): x is { t: number; acc: number } => x.acc !== null);
+    return { chesscom, own: accuracyByMonth(ownItems, 1), ownGames: ownItems.length };
+  }, [filtered, reviewing]); // eslint-disable-line react-hooks/exhaustive-deps
   const deepSummary = useMemo(() => (deep?.length ? summarizeDeep(deep) : null), [deep]);
   // recent games without a stored analysis (deep changes whenever one is added)
   const pending = useMemo(
@@ -263,6 +276,8 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
               <RatingChart points={overview.ratingSeries.points} />
             </section>
           )}
+
+          <AccuracyCard chesscom={accuracy.chesscom} own={accuracy.own} ownGames={accuracy.ownGames} />
 
           <div className="grid2">
             <section className="card">
@@ -512,6 +527,115 @@ function DeepResults({ summary, onDrill }: { summary: ReturnType<typeof summariz
 }
 
 /** Single-series rating line with a hover crosshair + tooltip. */
+/** Accuracy month by month: games reviewed on Chess.com, and games reviewed here. */
+/** The chart's width in CSS pixels (640 until measured): charts are drawn at their real size, so the text stays
+ * readable on a phone instead of shrinking with the whole drawing. */
+function useChartWidth() {
+  const [el, setEl] = useState<HTMLDivElement | null>(null);
+  const [w, setW] = useState(640);
+  useEffect(() => {
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => setW(Math.max(260, Math.round(e.contentRect.width)) || 640));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [el]);
+  return [setEl, w] as const;
+}
+
+function AccuracyCard({ chesscom, own, ownGames }: { chesscom: MonthPoint[]; own: MonthPoint[]; ownGames: number }) {
+  if (!chesscom.length && !own.length) return null;
+  const trend = accuracyTrend(chesscom.length >= 2 ? chesscom : own);
+  const monthName = (p: MonthPoint) => new Date(p.t).toLocaleDateString(getLang() === 'he' ? 'he-IL' : 'en-GB', { month: 'long', year: 'numeric' });
+  return (
+    <section className="card accuracy-card">
+      <h2>{tr('הדיוק שלך לאורך זמן', 'Your accuracy over time')}</h2>
+      {trend ? (
+        <p className={trend.delta >= 2 ? 'trend up' : trend.delta <= -2 ? 'trend down' : 'trend'}>
+          {tr(
+            `${monthName(trend.last)}: ${pct(trend.last.avg)} (${trend.last.n} משחקים) — ${trend.delta >= 2 ? 'עלייה' : trend.delta <= -2 ? 'ירידה' : 'בערך כמו'} ${trend.delta >= 2 || trend.delta <= -2 ? `של ${ltr(Math.abs(Math.round(trend.delta)))} נקודות לעומת` : ''} הממוצע של החודשים שלפני (${pct(trend.before)}).`,
+            `${monthName(trend.last)}: ${pct(trend.last.avg)} (${trend.last.n} games) — ${trend.delta >= 2 ? `up ${Math.round(trend.delta)} points from` : trend.delta <= -2 ? `down ${Math.abs(Math.round(trend.delta))} points from` : 'about the same as'} the months before (${pct(trend.before)}).`,
+          )}
+        </p>
+      ) : (
+        <p className="muted">{tr('עוד אין מספיק חודשים כדי לראות מגמה.', 'Not enough months yet to see a trend.')}</p>
+      )}
+      <AccuracyChart series={[
+        { key: 'chesscom', label: tr('Chess.com (משחקים שסקרת שם)', 'Chess.com (games you reviewed there)'), points: chesscom },
+        { key: 'own', label: ownGames === 1 ? tr('הסקירה כאן (משחק אחד)', 'Reviewed here (1 game)') : tr(`הסקירה כאן (${ownGames} משחקים)`, `Reviewed here (${ownGames} games)`), points: own },
+      ]} />
+      <p className="muted">
+        {tr(
+          `ממוצע לפי חודש. מ-Chess.com נספרים רק חודשים עם ${MIN_MONTH_GAMES} משחקים לפחות. שני המנועים שונים, אז הקווים לא זהים — חשוב הכיוון של כל קו.`,
+          `Monthly average. Chess.com months count from ${MIN_MONTH_GAMES} games. The two engines differ, so the lines are not identical — what matters is where each one goes.`,
+        )}
+      </p>
+    </section>
+  );
+}
+
+function AccuracyChart({ series }: { series: { key: string; label: string; points: MonthPoint[] }[] }) {
+  const [hover, setHover] = useState<string | null>(null); // a month: the tooltip shows every series in it
+  const [ref, W] = useChartWidth();
+  const all = series.flatMap((s) => s.points);
+  const H = 180, L = 40, R = 12, T = 12, B = 24;
+  const t0 = Math.min(...all.map((p) => p.t));
+  const t1 = Math.max(...all.map((p) => p.t));
+  const lo = Math.max(0, Math.floor(Math.min(...all.map((p) => p.avg)) / 10) * 10 - (all.length === 1 ? 10 : 0));
+  const hi = Math.min(100, Math.ceil(Math.max(...all.map((p) => p.avg)) / 10) * 10 + (all.length === 1 ? 10 : 0)) || 100;
+  const x = (t: number) => (t1 === t0 ? (L + W - R) / 2 : L + ((t - t0) / (t1 - t0)) * (W - L - R));
+  const y = (a: number) => T + (1 - (a - lo) / Math.max(1, hi - lo)) * (H - T - B);
+  const atHover = hover ? series.map((s) => ({ s, p: s.points.find((p) => p.month === hover) })).filter((x) => x.p) : [];
+  const hoverT = atHover[0]?.p?.t;
+  const month = (t: number) => new Date(t).toLocaleDateString(getLang() === 'he' ? 'he-IL' : 'en-GB', { month: 'short', year: '2-digit' });
+  return (
+    <>
+      <div className="chart" dir="ltr" ref={ref}>
+        <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={tr('הדיוק שלך לפי חודש', 'Your accuracy by month')} onMouseLeave={() => setHover(null)}>
+          {[lo, (lo + hi) / 2, hi].map((a) => (
+            <g key={a}>
+              <line x1={L} x2={W - R} y1={y(a)} y2={y(a)} className="grid" />
+              <text x={L - 6} y={y(a) + 4} textAnchor="end" className="axis">{Math.round(a)}%</text>
+            </g>
+          ))}
+          <text x={L} y={H - 6} className="axis">{month(t0)}</text>
+          {t1 !== t0 && <text x={W - R} y={H - 6} textAnchor="end" className="axis">{month(t1)}</text>}
+          {series.map((s) => (
+            <g key={s.key} className={`acc-${s.key}`}>
+              {s.points.length > 1 && <path d={s.points.map((p, i) => `${i ? 'L' : 'M'}${x(p.t).toFixed(1)},${y(p.avg).toFixed(1)}`).join('')} className="line" />}
+              {s.points.map((p) => (
+                <circle
+                  key={p.month}
+                  cx={x(p.t)}
+                  cy={y(p.avg)}
+                  r={hover === p.month ? 6 : 4}
+                  className="dot"
+                  onMouseEnter={() => setHover(p.month)}
+                  onClick={() => setHover(p.month)}
+                />
+              ))}
+            </g>
+          ))}
+        </svg>
+        {hoverT !== undefined && (
+          <div className="tooltip" style={{ left: `${Math.min(85, Math.max(15, (x(hoverT) / W) * 100))}%` }}>
+            {month(hoverT)}
+            {atHover.map(({ s, p }) => (
+              <div key={s.key} className={`legend acc-${s.key}`}>
+                <i /><strong>{Math.round(p!.avg)}%</strong> · {p!.n === 1 ? tr('משחק אחד', '1 game') : tr(`${p!.n} משחקים`, `${p!.n} games`)}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="chart-legend">
+        {series.filter((s) => s.points.length).map((s) => (
+          <span key={s.key} className={`legend acc-${s.key}`}><i />{s.label}</span>
+        ))}
+      </div>
+    </>
+  );
+}
+
 function RatingChart({ points: raw }: { points: { t: number; r: number }[] }) {
   const [hover, setHover] = useState<number | null>(null);
   // thousands of games -> keep one point per bucket so the line stays readable
@@ -520,7 +644,8 @@ function RatingChart({ points: raw }: { points: { t: number; r: number }[] }) {
     return raw.filter((_, i) => i % step === 0 || i === raw.length - 1);
   }, [raw]);
 
-  const W = 640, H = 200, L = 44, R = 12, T = 12, B = 24;
+  const [ref, W] = useChartWidth();
+  const H = 200, L = 44, R = 12, T = 12, B = 24;
   const rs = points.map((p) => p.r);
   const lo = Math.floor(Math.min(...rs) / 50) * 50;
   const hi = Math.ceil(Math.max(...rs) / 50) * 50 || lo + 50;
@@ -530,7 +655,7 @@ function RatingChart({ points: raw }: { points: { t: number; r: number }[] }) {
   const h = hover !== null ? points[hover] : null;
 
   return (
-    <div className="chart" dir="ltr">
+    <div className="chart" dir="ltr" ref={ref}>
       <svg
         viewBox={`0 0 ${W} ${H}`}
         role="img"

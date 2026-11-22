@@ -228,6 +228,9 @@ def review(pg):
     txt = pg.locator('.review').inner_text()
     for h in ['Your openings as White', 'Your openings as Black', 'How you lose', 'By time control', 'Where your games leave your lines']:
         r.check(h in txt, f'review section "{h}"')
+    acc = text(pg, '.accuracy-card')
+    r.check('Your accuracy over time' in acc and pg.locator('.accuracy-card .acc-chesscom .dot').count() >= 2, 'accuracy over time: Chess.com months on the chart', acc[:120])
+    r.check(pg.evaluate("[...document.querySelectorAll('.chart svg')].every(s => Math.abs(Number(s.getAttribute('viewBox').split(' ')[2]) - s.getBoundingClientRect().width) < 2)"), 'charts are drawn at their real width')
     strengths = text(pg, '.strengths')
     r.check('Your strengths' in strengths and 'As White' in strengths and 'As Black' in strengths, 'the strengths card', strengths[:160])
     r.check(pg.locator('.opening.strong').count() > 0 or 'No opening stands out' in strengths, 'strongest openings marked in the tables',
@@ -289,6 +292,7 @@ def review(pg):
     r.shot(pg, 'game-review')
     pg.click('.game-review-head button')
     r.check(pg.wait_for_selector('.recent-games', timeout=5000) is not None and pg.locator('.recent-game .pill').count() >= 1, 'game review: back to the list, the game is marked reviewed')
+    r.check(pg.locator('.accuracy-card .acc-own .dot').count() >= 1, 'accuracy over time: the game reviewed here shows on the chart')
     pg.locator('.recent-game').first.click()
     r.check(pg.wait_for_selector('.review-summary', timeout=5000) is not None and not pg.locator('.review-progress').count(), 'game review: a reviewed game opens at once')
     pg.click('.game-review-head button')

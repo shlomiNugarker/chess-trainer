@@ -730,6 +730,16 @@ aside {
 .chart .crosshair { stroke: var(--text-3); stroke-width: 1; stroke-dasharray: 3 3; }
 .chart .dot { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
 
+.acc-own .line { stroke: var(--info); }
+.acc-own .dot { fill: var(--info); }
+.accuracy-card .dot { cursor: pointer; }
+.chart-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 6px; font-size: 12px; color: var(--text-2); }
+.legend i { display: inline-block; width: 10px; height: 10px; margin-inline-end: 6px; border-radius: 50%; background: var(--accent); vertical-align: -1px; }
+.legend.acc-own i { background: var(--info); }
+.accuracy-card .trend { margin-bottom: 8px; }
+.accuracy-card .trend.up { color: var(--accent); }
+.accuracy-card .trend.down { color: var(--warn); }
+.accuracy-card > p.muted:last-child { margin-top: 8px; }
 .chart .tooltip {
   position: absolute;
   top: 0;
