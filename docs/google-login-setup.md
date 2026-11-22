@@ -115,3 +115,15 @@ Also mention whether any step showed an error or looked different from these ins
 - Puts the values in `.env.local` and in Vercel (Production, Preview, Development).
 - Adds `vercel.json`, which proxies `/__/auth/*` to `https://<projectId>.firebaseapp.com/__/auth/*` (Google sign-in on the app's own domain), and redeploys.
 - **The owner then verifies:** open the site → **Account** (👤) → **Sign in with Google** → choose an account. The panel shows the name and "Synced ✓". In Firebase → Firestore → Data, a document appears under `users`.
+
+---
+
+## Adding another address for the app
+
+The app is served at `opening-trainer-app.vercel.app` and, as before, at `chess-trainer-seven-pink.vercel.app` (both are domains of the same Vercel project). On any `*.vercel.app` address, sign-in runs on the address the page was opened from (`src/cloudConfig.ts`), so a new address must be allowed in three places, next to the existing ones:
+
+1. **Firebase → Authentication → Settings → Authorized domains:** add the host, e.g. `opening-trainer-app.vercel.app`.
+2. **Google Cloud → APIs & Services → Credentials → Browser key (auto created by Firebase) → Website restrictions:** add `https://<host>/*`. Without it every Firebase call from the new address fails with "Requests from referer … are blocked".
+3. **Google Cloud → Credentials → Web client (auto created by Google Service):** add `https://<host>` to Authorized JavaScript origins and `https://<host>/__/auth/handler` to Authorized redirect URIs.
+
+Check: from the new address, Account → Sign in with Google opens the Google window with no error. Progress is saved per address in the browser, so on a new address sign in once to load it from the cloud.

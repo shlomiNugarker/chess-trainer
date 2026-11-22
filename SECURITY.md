@@ -16,4 +16,4 @@ The Firebase web configuration (API key, project id) is public by design; access
 
 ## Supported versions
 
-Only the latest version on `main` (deployed at https://chess-trainer-seven-pink.vercel.app) is supported.
+Only the latest version on `main` (deployed at https://opening-trainer-app.vercel.app) is supported.

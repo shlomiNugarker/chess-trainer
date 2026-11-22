@@ -5,7 +5,7 @@
   "description": "Learn chess openings step by step, train them against Stockfish, solve puzzles and review your Chess.com games — a free PWA in Hebrew and English.",
   "license": "GPL-3.0-or-later",
   "author": "Shlomi Nugarker",
-  "homepage": "https://chess-trainer-seven-pink.vercel.app",
+  "homepage": "https://opening-trainer-app.vercel.app",
   "repository": {
     "type": "git",
     "url": "https://github.com/shlomiNugarker/chess-trainer.git"

@@ -4,7 +4,7 @@ import argparse, json, pathlib, subprocess, sys, time
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 OUT = pathlib.Path(__file__).resolve().parent / 'out'
 SHOTS = OUT / 'shots'
-LIVE = 'https://chess-trainer-seven-pink.vercel.app'
+LIVE = 'https://opening-trainer-app.vercel.app'
 
 
 def args(description, extra=None):
