@@ -40,6 +40,8 @@ assert.equal(matchRepertoire('Caro Kann Defense', 'b'), 'caro');
 assert.equal(matchRepertoire('Caro Kann Defense Two Knights Attack', 'w'), undefined); // not the Italian
 assert.equal(matchRepertoire('English Opening Caro Kann Defensive System', 'b'), undefined); // not the Caro-Kann
 assert.equal(matchRepertoire('Indian Game London System', 'w'), 'london');
+assert.equal(matchRepertoire('Owens Defense', 'w'), 'italian');
+assert.equal(matchRepertoire('Pirc Defense', 'b'), undefined);
 
 assert.equal(phaseOf(new Chess().fen(), 5), 'opening');
 assert.equal(phaseOf(new Chess().fen(), 20), 'middlegame');
