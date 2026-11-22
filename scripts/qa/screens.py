@@ -8,7 +8,7 @@ so by default it is checked on the live site.
 """
 import json, time
 from playwright.sync_api import sync_playwright
-from common import LIVE, OUT, Report, args, hscroll, lines, wait_until
+from common import LIVE, Report, args, hscroll, lines, puzzles_by_board, wait_until
 
 
 def extra(p):
@@ -20,6 +20,7 @@ a = args('Screens QA', extra)
 r = Report('screens')
 data = lines()
 SICILIAN = next(x for x in data if x['id'] == 'sicilian')
+PUZZLES = puzzles_by_board()
 
 
 def open_page(b, tag, locale, w, h, url=None):
@@ -129,6 +130,72 @@ def puzzles(pg):
         r.check('Find the best move' in status(pg) and not pg.locator('.drill-empty').count(), f'puzzle mode "{m}" loads', status(pg))
     pg.click('button:visible:has-text("Skip")'); time.sleep(1)
     r.check('Find the best move' in status(pg), 'skip loads another puzzle')
+    # solving all the way: clean, after a hint, after a wrong move, and in the other two modes
+    rating = lambda: int(''.join(ch for ch in text(pg, '.puzzle-rating') if ch.isdigit()) or 0)
+    solved = lambda: int(text(pg, '.puzzle-stats').split()[1])
+    solved0 = solved()
+    for mode, how, want in [('For my level', 'clean', 'Solved ✓'), ('For my level', 'hint', 'half credit'),
+                            ('For my level', 'wrong', 'with help'), ('From my openings', 'clean', 'Solved ✓'),
+                            ('Mates', 'clean', 'Solved ✓')]:
+        pg.click(f'.puzzle-header .chips button:has-text("{mode}")'); time.sleep(1.5)
+        before = rating()
+        res = solve_puzzle(pg, how)
+        after = rating()
+        r.check(want in res, f'puzzle solved to the end ({mode}, {how})', f'-> "{res}", rating {before} -> {after}')
+        if how == 'clean': r.check(after > before, f'  a clean solve raises the rating ({mode})')
+        if how == 'wrong': r.check(after < before, '  a solve after a wrong move lowers the rating')
+        pg.click('button:visible:has-text("Next puzzle")'); time.sleep(1)
+    r.check(solved() >= solved0 + 3, 'puzzle stats count the solves', f'{solved0} -> {solved()} ({text(pg, ".puzzle-stats")})')
+
+
+PUZZLE_BOARD_JS = """() => {
+  const board = [...document.querySelectorAll('.board')].find(b => b.offsetParent !== null);
+  const rows = [];
+  for (let r = 8; r >= 1; r--) {
+    let row = '', empty = 0;
+    for (const f of 'abcdefgh') {
+      const p = board.querySelector(`[data-square="${f}${r}"] [data-piece]`)?.getAttribute('data-piece');
+      if (!p) { empty++; continue; }
+      if (empty) { row += empty; empty = 0; }
+      row += p[0] === 'w' ? p[1].toUpperCase() : p[1].toLowerCase();
+    }
+    rows.push(row + (empty || ''));
+  }
+  return rows.join('/');
+}"""
+DOTS_JS = """() => [...document.querySelectorAll('[data-square]')].filter(e => e.offsetParent !== null && e.outerHTML.includes('radial-gradient')).map(e => e.dataset.square)"""
+
+
+def solve_puzzle(pg, how='clean'):
+    """Recognizes the puzzle on the board (puzzles-vN.json) and plays its solution; returns the final status."""
+    board = lambda: pg.evaluate(PUZZLE_BOARD_JS)
+    tap = lambda sq: pg.click(f'[data-square="{sq}"]:visible')
+    if not wait_until(lambda: 'Find the best move' in status(pg), 15): return 'never got to solve: ' + status(pg)
+    p = PUZZLES.get(board())
+    if not p: return 'puzzle not recognized'
+    if how == 'hint':
+        pg.click('button:visible:has-text("Hint")'); time.sleep(0.3)
+    if how == 'wrong':  # a legal move that is not the solution, then "try again"
+        sol = p['moves'][0]
+        me = 'w' if 'White' in status(pg) else 'b'
+        own = pg.evaluate("(c) => [...document.querySelectorAll('[data-square] [data-piece]')].filter(e => e.offsetParent !== null && e.dataset.piece[0] === c).map(e => e.closest('[data-square]').dataset.square)", me)
+        for sq in own:
+            tap(sq); dots = [d for d in pg.evaluate(DOTS_JS) if sq + d != sol[:4]]
+            if dots: tap(dots[0]); break
+            tap(sq)
+        time.sleep(1)
+        if pg.locator('button:visible:has-text("Try again")').count(): pg.click('button:visible:has-text("Try again")')
+        wait_until(lambda: 'Find the best move' in status(pg), 10)
+    for i, u in enumerate(p['moves']):
+        if i % 2: continue  # the opponent's replies
+        before = board()
+        tap(u[:2]); tap(u[2:4])
+        if i + 1 < len(p['moves']):
+            wait_until(lambda: board() != before, 5, 0.1)
+            mine = board()
+            wait_until(lambda: board() != mine and 'Find the best move' in status(pg), 10)
+    wait_until(lambda: 'Solved' in status(pg), 10)
+    return status(pg)
 
 
 @section('mistakes')
@@ -262,7 +329,7 @@ with sync_playwright() as p:
     b = p.chromium.launch()
     ctx, pg = open_page(b, 'desktop-en', 'en-US', 1280, 900)
     if not a.only: tour(pg, 'desktop-en')
-    learn(pg); puzzles(pg); mistakes(pg); review(pg)
+    learn(pg); mistakes(pg); puzzles(pg); review(pg)  # mistakes first: the puzzle section adds its own
     ctx.close()
     account(b); phone(b); offline(b)
     b.close()

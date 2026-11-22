@@ -18,7 +18,7 @@ npm run build
 npx vite preview --port 4173          # in a second terminal
 python scripts/qa/learn_lines.py      # "Test me" on every line of every repertoire (~15 min)
 python scripts/qa/play.py             # Play: training in every repertoire, leaving the line, a regular game (~3 min)
-python scripts/qa/screens.py          # Learn extras, puzzles, my mistakes, review, account, phone, offline (~3 min)
+python scripts/qa/screens.py          # Learn extras, puzzles (solved to the end), my mistakes, review, account, phone, offline (~4 min)
 ```
 
 On Windows you can start and stop the preview server from PowerShell:
@@ -41,6 +41,6 @@ Each script prints every check, ends with a summary, and exits non-zero if a che
 
 ## Notes
 
-- The lines are read from `src/repertoire.ts` on every run (`dump-lines.ts`), so new lines are tested without changes here.
+- The lines are read from `src/repertoire.ts` on every run (`dump-lines.ts`), so new lines are tested without changes here. Puzzles are read from the newest `public/puzzles-vN.json` (`dump-puzzles.ts`): the script recognizes the puzzle on screen by its board and plays the solution — cleanly, after a hint, and after a wrong move — checking the result and the rating change.
 - The scripts play by tapping squares (`[data-square]`), the same tap-to-move path phone users take. After starting a test, the board animates back to the start for a moment; the scripts wait for it.
-- Not covered: signing in with Google and the cloud sync (check by hand, signed in, on two devices), solving a puzzle all the way, and analysing every game.
+- Not covered: signing in with Google and the cloud sync (check by hand, signed in, on two devices), and analysing every game.

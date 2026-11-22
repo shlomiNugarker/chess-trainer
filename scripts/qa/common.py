@@ -26,6 +26,14 @@ def lines():
     return json.loads(raw)
 
 
+def puzzles_by_board():
+    """The current puzzle set (the newest public/puzzles-vN.json), keyed by the board the solver sees."""
+    files = sorted((ROOT / 'public').glob('puzzles-v*.json'), key=lambda f: int(f.stem.split('-v')[1]))
+    raw = subprocess.run(['node', '--experimental-strip-types', str(ROOT / 'scripts/qa/dump-puzzles.ts'), str(files[-1])],
+                         cwd=ROOT, capture_output=True, text=True, encoding='utf-8', check=True).stdout
+    return json.loads(raw)
+
+
 class Report:
     """Collects checks and page errors; `done()` prints a summary and exits non-zero on any failure."""
 
