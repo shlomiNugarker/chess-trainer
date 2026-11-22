@@ -12,11 +12,11 @@ Learn a chess opening repertoire step by step, train it against Stockfish until 
 
 ## Features
 
-- **Learn** — every line of the repertoire on a board, move by move, with the idea of the line and a one-sentence reason for each of your moves. "Test me" quizzes you on the line; per-line success rate and the move you miss most. Import your own lines from PGN — each is checked against the repertoire and added as a branch.
+- **Learn** — every line of the repertoire on a board, move by move, with the idea of the line and a one-sentence reason for each of your moves. "Test me" quizzes you on the line; per-line success rate and the move you miss most. Import your own lines from PGN — each is checked against the repertoire and added as a branch. Hide the openings you don’t play (⚙) — nothing is deleted.
 - **Play** — train the repertoire against the computer. Leave the line and the game stops, shows the right move and why, and lets you **try again** or **continue**. After the book, a full-strength coach keeps correcting you up to move 15 and remembers the best moves, so the line grows from your own games. Or play a regular game at any level.
 - **Repertoire** — London System and 1.e4 as White (the Italian Game reached through the Bishop’s Opening, 2.Bc4, plus lines against the Scandinavian, Sicilian (Alapin), French and Caro-Kann (Advance), the Modern, the Pirc, the Philidor, the Owen and the Nimzowitsch), Caro-Kann and the Sicilian with ...e6 (vs 1.e4) and the Slav or the Queen’s Gambit Accepted (vs 1.d4) as Black: 90 lines, every user move checked with Stockfish.
-- **Practice** — 3,600 puzzles from the Lichess puzzle database with a personal rating, modes *for my level* / *from my openings* / *mates*, and a daily goal with a streak. **My mistakes** brings back every position you got wrong with spaced repetition (Leitner).
-- **My review** — enter a Chess.com username: the three most useful things to improve, results by color / time control / opening, how you lose, a rating chart, and an optional Stockfish pass over recent games (its mistakes become drills). It also shows **where your games leave your lines**: add Stockfish's answer to an opponent's unexpected move as a new branch of your repertoire, or practice the spots where you left the line yourself.
+- **Practice** — 3,900 puzzles from the Lichess puzzle database with a personal rating, modes *for my level* / *from my openings* (150 from each repertoire) / *mates*, a hint counts as half a point, and a daily goal with a streak. **My mistakes** brings back every position you got wrong with spaced repetition (Leitner).
+- **My review** — enter a Chess.com username (up to your latest 5,000 games, reloaded automatically next time): the three most useful things to improve, results by color / time control / opening, how you lose, a rating chart, and an optional Stockfish pass over recent games (its mistakes become drills). It also shows **where your games leave your lines**: add Stockfish's answer to an opponent's unexpected move as a new branch of your repertoire, or practice the spots where you left the line yourself.
 - **Installable, offline** — a PWA; learning, training, puzzles and the engine work without internet.
 - **Optional Google sign-in** — syncs all progress between devices (Firebase Auth + Firestore).
 
@@ -58,7 +58,7 @@ Without configuration the app works fully, with progress kept in the browser. To
 |---|---|
 | `src/App.tsx` | Tab shell |
 | `src/Trainer.tsx` | Training / regular game: book phase, coach, corrections |
-| `src/Learn.tsx`, `src/lineStats.ts` | Learn page, "test me", per-line stats |
+| `src/Learn.tsx`, `src/lineStats.ts`, `src/hiddenReps.ts` | Learn page, "test me", per-line stats, hidden openings |
 | `src/repertoire.ts`, `src/repertoire.en.ts` | The opening lines (SAN), ideas and notes — Hebrew and English |
 | `src/Practice.tsx`, `src/Puzzles.tsx`, `src/puzzleData.ts`, `src/daily.ts` | Puzzles, rating, daily goal |
 | `src/Drill.tsx`, `src/mistakes.ts` | "My mistakes" spaced repetition |
@@ -68,7 +68,7 @@ Without configuration the app works fully, with progress kept in the browser. To
 | `src/cloud.ts`, `src/firebase.ts`, `src/syncMerge.ts`, `src/Account.tsx` | Optional sign-in and sync |
 | `src/i18n.ts` | Two languages without a library: `tr('עברית', 'English')` |
 | `public/engine/` | Stockfish 19 lite (WASM) |
-| `public/puzzles-v3.json` | Puzzle set, built by `scripts/build-puzzles.py` |
+| `public/puzzles-v3.json` | Puzzle set, built by `scripts/build-puzzles.py` (a new set gets a new file name — the service worker caches by name) |
 | `public/sw.js` | Offline cache |
 
 The roadmap is in [`PLAN.md`](PLAN.md) (Hebrew).
