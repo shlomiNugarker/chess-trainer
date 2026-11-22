@@ -118,4 +118,58 @@ assert.deepEqual([dv.opp[1].repId, dv.opp[1].label], ['caro', '2.Bc4']);
 assert.equal(dv.mine.length, 1);
 assert.deepEqual([dv.mine[0].repId, dv.mine[0].played, dv.mine[0].expected, dv.mine[0].label], ['london', 'Nf3', ['e3'], '3.e3']);
 
+// ---- reviewing one game ----
+{
+  const { parseGame, dropOf, classify, moveAccuracy, gameAccuracy, bookInfo, buildReview, analyzePositions } = await import('../src/gameAnalysis.ts');
+  assert.equal(parseGame('[Event "x"]\n\n*'), null); // no moves
+  const g = parseGame('1. e4 c5 2. Nf3 e6 3. Qe2 Qh4 4. Nxh4 1-0')!;
+  assert.equal(g.moves.length, 7);
+  assert.equal(g.fens.length, 8);
+  // drop: the mover's win% before minus after (the after-eval is from the opponent's side)
+  assert.equal(dropOf({ cp: 0, mate: null }, { cp: 0, mate: null }), 0);
+  assert.ok(dropOf({ cp: 0, mate: null }, { cp: 500, mate: null }) > 30); // gave the opponent +5
+  assert.equal(dropOf({ cp: 0, mate: null }, { cp: -300, mate: null }), 0); // improved: no drop
+  assert.equal(dropOf({ cp: 0, mate: null }, { cp: null, mate: 0 }), 0); // delivered mate: no drop
+  assert.equal(dropOf({ cp: null, mate: 3 }, { cp: null, mate: 1 }), 100); // had mate, now gets mated
+  // classes
+  assert.equal(classify(40, 'e2e4', 'd2d4', true), 'book');
+  assert.equal(classify(15, 'e2e4', 'e2e4', false), 'best'); // the engine's own move is never a mistake
+  assert.equal(classify(1, 'e2e4', 'd2d4', false), 'best');
+  assert.equal(classify(5, 'e2e4', 'd2d4', false), 'good');
+  assert.deepEqual([10, 20, 30].map((d) => classify(d, 'a', 'b', false)), ['inaccuracy', 'mistake', 'blunder']);
+  // accuracy
+  assert.equal(Math.round(moveAccuracy(0)), 100);
+  assert.ok(moveAccuracy(30) < 30 && moveAccuracy(5) > 80);
+  assert.equal(gameAccuracy([]), null);
+  assert.ok(gameAccuracy([100, 100, 100, 5])! < gameAccuracy([100, 100, 100, 60])!); // a blunder weighs
+  // book: the London, left by the user at move 3 (3.Nf3 instead of 3.e3)
+  const b = bookInfo(['d4', 'd5', 'Bf4', 'Nf6', 'Nf3', 'e6'], 'w', REPERTOIRES)!;
+  assert.deepEqual([b.repId, b.plies, b.left?.ply, b.left?.mine, b.left?.expected], ['london', 4, 4, true, ['e3']]);
+  assert.ok(b.lineMoves.startsWith('d4 d5 Bf4 Nf6'));
+  assert.equal(bookInfo(['a4'], 'w', REPERTOIRES), null); // not a repertoire opening at all
+  // the review from evals: 3...Qh4?? hangs the queen (Black's eval goes from 0 to -900)
+  const ev = (cp: number, best: string) => ({ cp, mate: null, bestMove: best, pv: [best] });
+  const evals = [ev(30, 'e2e4'), ev(-30, 'g1f3'), ev(30, 'b1c3'), ev(-30, 'd2d4'), ev(30, 'g8f6'), ev(-30, 'b8c6'), ev(900, 'f3h4'), ev(-900, 'e8d8')];
+  const r = buildReview(g, evals, 2);
+  assert.equal(r.moves.length, 7);
+  assert.deepEqual(r.moves.slice(0, 2).map((m) => m.cls), ['book', 'book']);
+  const qh4 = r.moves[5];
+  assert.deepEqual([qh4.san, qh4.cls, qh4.best], ['Qh4', 'blunder', 'Nc6']);
+  assert.equal(r.moves[6].cls, 'best'); // 4.Nxh4 is the engine's move
+  assert.equal(r.sides.b.counts.blunder, 1);
+  assert.ok(r.sides.w.accuracy! > r.sides.b.accuracy!);
+  assert.ok(Math.abs(r.white[0] - 52.8) < 1 && r.white[7] > 90); // White's win% per position
+  // partial evals (still analyzing): moves without both evals are left out
+  assert.equal(buildReview(g, evals.slice(0, 3), 0).moves.length, 2);
+  // the engine pass: a quick look at every position, then a longer one around suspects
+  const calls: string[] = [];
+  const fake = { analyze: async (fen: string, go: string) => { calls.push(go); return { cp: fen === g.fens[6] ? 900 : 0, mate: null, bestMove: 'a2a3', pv: ['a2a3'] }; } };
+  const out = (await analyzePositions(fake, g, { movetime: 10 }))!;
+  assert.equal(out.length, 8);
+  assert.equal(calls.filter((c) => c === 'movetime 10').length, 8);
+  assert.ok(calls.some((c) => c === 'movetime 40')); // 3...Qh4 (White +9 after it) is a suspect: both sides of it get a longer look
+  let stop = false;
+  assert.equal(await analyzePositions(fake, g, { movetime: 10, cancelled: () => stop, onUpdate: () => { stop = true; } }), null);
+}
+
 console.log('check-review: all good');

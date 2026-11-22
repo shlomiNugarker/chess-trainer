@@ -4,7 +4,7 @@
 export const PREFIX = 'chess-trainer:';
 
 /** Keys that belong to this device only (where you are in the app, sync bookkeeping). */
-const LOCAL_ONLY = new Set(['screen', 'practice-view', 'learn-repertoire', 'learn-line', 'sync-stamps', 'cloud-signed-in', 'cloud-signing-in', 'cloud-last-sync', 'analyses']);
+const LOCAL_ONLY = new Set(['screen', 'practice-view', 'learn-repertoire', 'learn-line', 'sync-stamps', 'cloud-signed-in', 'cloud-signing-in', 'cloud-last-sync', 'analyses', 'game-reviews']);
 
 /** Should this localStorage key travel between devices? (`key` includes the prefix) */
 export const isSynced = (key: string) => key.startsWith(PREFIX) && !LOCAL_ONLY.has(key.slice(PREFIX.length));

@@ -755,6 +755,89 @@ aside {
 .deep { margin-top: 12px; }
 .deep .tiles { margin-bottom: 4px; }
 
+/* ---------- game review (one game, move by move) ---------- */
+
+.cls-book { --cls: var(--info); }
+.cls-best { --cls: var(--accent); }
+.cls-good { --cls: var(--text-2); }
+.cls-inaccuracy { --cls: var(--warn); }
+.cls-mistake { --cls: #e68a4c; }
+.cls-blunder { --cls: var(--error); }
+
+.recent-games-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+.recent-games-head h2 { margin: 0; }
+.recent-list { list-style: none; margin: 10px 0 6px; padding: 0; display: grid; gap: 6px; }
+.recent-game {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  text-align: start;
+  background: var(--surface-2);
+}
+.recent-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.recent-opp, .recent-meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recent-go { color: var(--accent); font-weight: 600; white-space: nowrap; }
+.result-badge {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 13px;
+  color: #111;
+}
+.result-badge.result-win, .pill.result-win { background: var(--accent); color: #111; }
+.result-badge.result-loss, .pill.result-loss { background: var(--error); color: #111; }
+.result-badge.result-draw, .pill.result-draw { background: var(--text-3); color: #111; }
+
+.game-review-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-bottom: 14px; }
+.game-review-title { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; min-width: 0; }
+.game-review-title strong { overflow-wrap: anywhere; }
+.small-link { font-size: 13px; }
+
+.review-move { display: flex; flex-direction: column; gap: 6px; }
+.review-move-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.review-move-head strong { font-size: 18px; font-family: var(--mono); }
+.review-move .pill[class*='cls-'] { background: color-mix(in srgb, var(--cls) 22%, transparent); color: var(--cls); font-weight: 700; }
+.review-move > button { align-self: flex-start; }
+.review-progress { font-size: 14px; }
+.next-mistake { padding: 10px; }
+
+.review-moves .move[class*='cls-'] { color: var(--cls); }
+.review-moves .move.cls-best, .review-moves .move.cls-good { color: var(--text-2); }
+.review-moves .move.last { color: var(--text); }
+.review-moves button.move { background: none; border: none; padding: 1px 6px; border-radius: 4px; font: inherit; text-align: start; cursor: pointer; }
+.review-moves button.move:hover { background: var(--surface-2); }
+.review-moves button.move.last { background: rgba(95, 179, 107, 0.22); font-weight: 700; }
+
+.eval-graph { position: relative; height: 64px; border-radius: var(--r-md); overflow: hidden; border: 1px solid var(--border); cursor: pointer; flex-shrink: 0; }
+.eval-graph svg { display: block; width: 100%; height: 100%; }
+.eval-graph-black { fill: #2b2e36; }
+.eval-graph-white { fill: #d9dbe0; }
+.eval-graph-mid { stroke: rgba(128, 128, 128, 0.6); stroke-width: 0.6; vector-effect: non-scaling-stroke; }
+.eval-graph-now { stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.eval-graph-mark {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 50%;
+  background: var(--cls);
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+.review-summary table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.review-summary th, .review-summary td { padding: 4px 6px; text-align: center; }
+.review-summary tbody th { text-align: start; font-weight: 600; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.review-summary thead th[class*='cls-'] { color: var(--cls); }
+.review-summary p { margin-top: 10px; }
+.review-summary > button { margin-top: 10px; }
+
 /* ---------- tablet ---------- */
 
 @media (max-width: 900px) {

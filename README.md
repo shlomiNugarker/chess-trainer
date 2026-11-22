@@ -17,6 +17,7 @@ Learn a chess opening repertoire step by step, train it against Stockfish until 
 - **Repertoire** — London System and 1.e4 as White (the Italian Game reached through the Bishop’s Opening, 2.Bc4, plus lines against the Scandinavian, Sicilian (Alapin), French and Caro-Kann (Advance), the Modern, the Pirc, the Philidor, the Owen and the Nimzowitsch), Caro-Kann and the Sicilian with ...e6 (vs 1.e4) and the Slav or the Queen’s Gambit Accepted (vs 1.d4) as Black: 90 lines, every user move checked with Stockfish.
 - **Practice** — 3,900 puzzles from the Lichess puzzle database with a personal rating, modes *for my level* / *from my openings* (150 from each repertoire) / *mates*, a hint counts as half a point, and a daily goal with a streak. **My mistakes** brings back every position you got wrong with spaced repetition (Leitner).
 - **My review** — enter a Chess.com username (up to your latest 5,000 games, reloaded automatically next time): the three most useful things to improve, results by color / time control / opening, how you lose, a rating chart, and an optional Stockfish pass over recent games (its mistakes become drills). It also shows **where your games leave your lines**: add Stockfish's answer to an opponent's unexpected move as a new branch of your repertoire, or practice the spots where you left the line yourself.
+- **Game review** — pick any recent game (or "Review my last game") and go through it move by move: every move labeled (book, best, good, inaccuracy, mistake, blunder) with the better move as a green arrow and the engine's line, both players' accuracy, a win-chance graph you can tap, "my next mistake", where the game left your repertoire, and one tap to practice a position. Stockfish runs on your device, so there is no daily limit; a reviewed game opens at once the next time.
 - **Installable, offline** — a PWA; learning, training, puzzles and the engine work without internet.
 - **Optional Google sign-in** — syncs all progress between devices (Firebase Auth + Firestore).
 
@@ -63,6 +64,7 @@ Without configuration the app works fully, with progress kept in the browser. To
 | `src/Practice.tsx`, `src/Puzzles.tsx`, `src/puzzleData.ts`, `src/daily.ts` | Puzzles, rating, daily goal |
 | `src/Drill.tsx`, `src/mistakes.ts` | "My mistakes" spaced repetition |
 | `src/Review.tsx`, `src/reviewStats.ts`, `src/chesscom.ts`, `src/analysisCache.ts` | Chess.com review |
+| `src/GameReview.tsx`, `src/gameAnalysis.ts` | Reviewing one game move by move |
 | `src/Branches.tsx`, `src/deviations.ts`, `src/customLines.ts` | Where games leave the repertoire; branches added from your games |
 | `src/engine.ts` | Stockfish Web Worker wrapper and the Lichess win% formula |
 | `src/cloud.ts`, `src/firebase.ts`, `src/syncMerge.ts`, `src/Account.tsx` | Optional sign-in and sync |

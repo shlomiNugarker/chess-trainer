@@ -4,6 +4,8 @@ import { Engine } from './engine';
 import { getAnalysis, saveAnalysis } from './analysisCache';
 import { saveMistake } from './mistakes';
 import Branches from './Branches';
+import GameReview from './GameReview';
+import { isReviewed } from './gameAnalysis';
 import {
   phaseLabel, reasonLabel, timeClassLabel, MIN_OPENING_GAMES, MIN_STRONG_GAMES, SHORT_GAME,
   analyzeGame, buildOverview, buildTips, strongestOpenings, summarizeDeep, weakestOpenings,
@@ -34,6 +36,7 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
   const [error, setError] = useState('');
   const [timeClass, setTimeClass] = useState<TimeClass | 'all'>('all');
   const loadToken = useRef({ cancelled: false });
+  const [reviewing, setReviewing] = useState<GameSummary | null>(null); // one game, move by move
 
   const [deepCount, setDeepCount] = useStored('deep-count', 10);
   const [deep, setDeep] = useState<GameAnalysis[] | null>(null);
@@ -52,6 +55,7 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
     setError('');
     setGames(null);
     setDeep(null);
+    setReviewing(null);
     setLoading({ fraction: 0, count: 0 });
     try {
       const { games: all, partial } = await fetchGames(user, (fraction, count) => !token.cancelled && setLoading({ fraction, count }), token);
@@ -144,6 +148,25 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
     else if (t.action?.type === 'deep') document.getElementById('deep')?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  if (reviewing) {
+    return (
+      <GameReview
+        key={reviewing.url}
+        game={reviewing}
+        username={username}
+        active={active}
+        onClose={() => setReviewing(null)}
+        onLearn={onLearn}
+        onDrill={onDrill}
+      />
+    );
+  }
+
+  const openReview = (g: GameSummary) => {
+    setReviewing(g);
+    window.scrollTo({ top: 0 });
+  };
+
   return (
     <div className="review">
       <form
@@ -180,6 +203,8 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
       )}
       {error && <div className="notice">{error}</div>}
       {games && !games.length && <div className="notice">{tr('לא נמצאו משחקי שחמט רגיל למשתמש הזה.', 'No standard chess games found for this user.')}</div>}
+
+      {games && games.length > 0 && <RecentGames games={games} onReview={openReview} />}
 
       {games && games.length > 0 && overview && (
         <>
@@ -321,6 +346,46 @@ function Tile({ label, value }: { label: string; value: string }) {
       <div className="tile-value">{value}</div>
       <div className="muted">{label}</div>
     </div>
+  );
+}
+
+/** The latest games, each one a tap away from a move-by-move review. */
+function RecentGames({ games, onReview }: { games: GameSummary[]; onReview: (g: GameSummary) => void }) {
+  const [shown, setShown] = useState(5);
+  const recent = games.slice(-50).reverse();
+  const res = (g: GameSummary) =>
+    g.result === 'win' ? tr('נ', 'W') : g.result === 'loss' ? tr('ה', 'L') : tr('ת', 'D');
+  return (
+    <section className="card recent-games">
+      <div className="recent-games-head">
+        <h2>{tr('סקירת משחק', 'Game review')}</h2>
+        <button className="primary" onClick={() => onReview(recent[0])}>{tr('סקור את המשחק האחרון', 'Review my last game')}</button>
+      </div>
+      <p className="muted">
+        {tr(
+          'כל מהלך מקבל ציון מהמנוע (ספר, הטוב ביותר, אי-דיוק, טעות, בלאנדר), עם המהלך הטוב והדיוק של שני הצדדים. בלי הגבלה יומית — המנוע רץ אצלך.',
+          'Every move gets the engine’s verdict (book, best, inaccuracy, mistake, blunder), with the better move and both players’ accuracy. No daily limit — the engine runs on your device.',
+        )}
+      </p>
+      <ul className="recent-list">
+        {recent.slice(0, shown).map((g) => (
+          <li key={g.url}>
+            <button className="recent-game" onClick={() => onReview(g)}>
+              <span className={`result-badge result-${g.result}`}>{res(g)}</span>
+              <span className="recent-main">
+                <span className="recent-opp">{g.color === 'w' ? '♔' : '♚'} {tr('מול', 'vs')} {g.opponent} <span className="muted">({g.opponentRating})</span></span>
+                <span className="muted recent-meta">{date(g.endTime)} · {timeClassLabel(g.timeClass)} · {g.opening}</span>
+              </span>
+              {isReviewed(g.url) && <span className="pill" title={tr('נסקר — ייפתח מיד', 'Reviewed — opens at once')}>✓</span>}
+              <span className="recent-go">{tr('סקור ›', 'Review ›')}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      {shown < recent.length && (
+        <button className="link" onClick={() => setShown((n) => Math.min(n + 10, recent.length))}>{tr('עוד משחקים', 'More games')}</button>
+      )}
+    </section>
   );
 }
 
