@@ -21,6 +21,7 @@ import { BOARD_THEME, GREEN_ARROW, LAST_MOVE, ltr, uciToArrow } from './chessUti
 import { useClickToMove } from './useClickToMove';
 import { playSound, useMoveSound } from './sound';
 import { useFitBoard } from './useFitBoard';
+import { useSidePanel } from './useSidePanel';
 
 /**
  * intro: the opponent's first move is about to be played · solving: your turn · opponent: their reply is coming
@@ -169,6 +170,7 @@ export default function Puzzles() {
     onMove,
   );
   const boardRef = useFitBoard<HTMLDivElement>();
+  const panelRef = useSidePanel<HTMLElement>();
   useMoveSound(fen);
 
   const showHint = () => {
@@ -290,7 +292,7 @@ export default function Puzzles() {
             />
           </div>
         </div>
-        <aside data-puzzle-id={puzzle.id}>
+        <aside ref={panelRef} data-puzzle-id={puzzle.id}>
           <div className={done ? 'status status-user' : status === 'solving' ? 'status status-user' : 'status status-opponent'}>
             <span className="status-dot" aria-hidden />
             <span className="status-text">

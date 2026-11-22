@@ -339,6 +339,24 @@ aside {
   min-width: 260px;
 }
 
+/* side by side (wider than the tablet breakpoint): the panel is as tall as the room left on screen
+   (--fit-h, the same measure the board uses, set on <main> by useFitBoard) and scrolls inside, so a long
+   explanation never makes the whole page scroll. Never shorter than the board's own minimum (320px);
+   in a window too short even for that, board and panel share the same minimum. The gutter stays
+   reserved, so the panel's width does not change when its scrollbar comes and goes. */
+@media (min-width: 901px) {
+  aside {
+    max-height: max(var(--fit-h, 100dvh), 320px);
+    overflow-y: auto;
+    overscroll-behavior: contain; /* reaching the end of the panel does not start scrolling the page */
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+    padding-inline-end: 2px; /* focus rings and card borders are not cut by the scroll edge */
+  }
+  aside > * { flex-shrink: 0; } /* cards keep their height; the panel scrolls instead of squeezing them */
+}
+
 .status {
   display: flex;
   align-items: center;

@@ -9,6 +9,7 @@ import { BOARD_THEME, GREEN_ARROW, ltr, sanToUci, uciToArrow } from './chessUtil
 import { useClickToMove } from './useClickToMove';
 import { playSound, useMoveSound } from './sound';
 import { useFitBoard } from './useFitBoard';
+import { useSidePanel } from './useSidePanel';
 
 /** An alternative move that loses less than this (win%) also counts as correct for engine-found mistakes. */
 const ALT_TOLERANCE = 10;
@@ -78,6 +79,7 @@ export default function Drill() {
     (from, to) => onPieceDrop({ sourceSquare: from, targetSquare: to }),
   );
   const boardRef = useFitBoard<HTMLDivElement>();
+  const panelRef = useSidePanel<HTMLElement>();
   useMoveSound(fen);
 
   const reveal = () => {
@@ -144,7 +146,7 @@ export default function Drill() {
         />
         </div>
       </div>
-      <aside>
+      <aside ref={panelRef}>
         <div className={checking ? 'status status-checking' : 'status status-user'}>
           <span className="status-dot" aria-hidden />
           <span className="status-text">

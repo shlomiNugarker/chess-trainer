@@ -32,7 +32,9 @@
 
 * { box-sizing: border-box; }
 
-html { background: var(--bg); }
+/* the page scrollbar's room is always kept, so switching between a screen that scrolls (My review) and one
+   that does not never shifts the layout sideways */
+html { background: var(--bg); scrollbar-gutter: stable; }
 
 body {
   margin: 0;

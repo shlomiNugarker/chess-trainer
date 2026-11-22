@@ -12,6 +12,7 @@ import { playSound, useMoveSound } from './sound';
 import { DAILY_GOAL, dayStreak, todayCount, daysLabel } from './daily';
 import { useScrollToMove } from './useScrollToMove';
 import { useFitBoard } from './useFitBoard';
+import { useSidePanel } from './useSidePanel';
 import { useStored } from './storage';
 import { hasAnyMastery, isMastered, loadMastery, recordRun } from './mastery';
 import { useHiddenRepertoires } from './hiddenReps';
@@ -149,6 +150,7 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
     onMove,
   );
   const boardRef = useFitBoard<HTMLDivElement>();
+  const panelRef = useSidePanel<HTMLElement>();
   const movesRef = useScrollToMove<HTMLOListElement>(`${lineIdx}:${ply}`);
   useMoveSound(fen);
 
@@ -379,7 +381,7 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
           </div>
         </div>
 
-        <aside>
+        <aside ref={panelRef}>
           {quiz ? (
             <div className={quiz.wrong ? 'status status-paused' : userTurn || done ? 'status status-user' : 'status status-opponent'}>
               <span className="status-dot" aria-hidden />

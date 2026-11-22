@@ -14,6 +14,7 @@ import { useClickToMove } from './useClickToMove';
 import { playSound, setSoundOn, useMoveSound, useSoundOn } from './sound';
 import { useScrollToMove } from './useScrollToMove';
 import { useFitBoard } from './useFitBoard';
+import { useSidePanel } from './useSidePanel';
 import { tr, useLang } from './i18n';
 
 /** Below this win% loss a non-best move is not worth a remark. */
@@ -428,6 +429,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
     (from, to) => onPieceDrop({ sourceSquare: from, targetSquare: to }),
   );
   const boardRef = useFitBoard<HTMLDivElement>();
+  const panelRef = useSidePanel<HTMLElement>();
   const movesRef = useScrollToMove<HTMLOListElement>(history.length);
 
   const retry = () => {
@@ -637,7 +639,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
           </div>
         </div>
 
-        <aside>
+        <aside ref={panelRef}>
           <div className={`status status-${status}`}>
             <span className="status-dot" aria-hidden />
             <span className="status-text">{!engineReady ? tr('טוען מנוע…', 'Loading engine…') : statusText[status]}</span>
