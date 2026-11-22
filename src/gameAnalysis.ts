@@ -159,16 +159,20 @@ export function buildReview(game: ParsedGame, evals: (Eval | undefined)[], bookP
 }
 
 /**
- * Evaluates every position: a quick pass over the whole game first (so the review fills in fast), then a longer
- * look at both sides of every move that seems to lose 10% or more, since a quick search is noisy.
+ * Evaluates every position: a pass over the whole game first (so the review fills in fast), then a deeper look
+ * at both sides of every move that seems to lose 10% or more. Searches are by depth, not by time: a fresh
+ * single-threaded engine given the same positions in the same order then always returns the same evals, so the
+ * same game always gets the same review (by time, results moved with how busy the device was). In the browser
+ * depth 14 takes ~0.1s a position and depth 16 ~0.4s on a desktop.
  * `onUpdate` gets the evals so far after every position.
  */
 export async function analyzePositions(
   engine: { analyze: (fen: string, go: string) => Promise<Analysis> },
   game: ParsedGame,
-  opts: { movetime?: number; start?: (Eval | undefined)[]; onUpdate?: (evals: (Eval | undefined)[], done: number, total: number) => void; cancelled?: () => boolean } = {},
+  opts: { depth?: number; refineDepth?: number; start?: (Eval | undefined)[]; onUpdate?: (evals: (Eval | undefined)[], done: number, total: number) => void; cancelled?: () => boolean } = {},
 ): Promise<(Eval | undefined)[] | null> {
-  const movetime = opts.movetime ?? 250;
+  const depth = opts.depth ?? 14;
+  const refineDepth = opts.refineDepth ?? 16;
   const evals: (Eval | undefined)[] = opts.start ? [...opts.start] : new Array(game.fens.length).fill(undefined);
   const trim = (a: Analysis): Eval => ({ cp: a.cp, mate: a.mate, bestMove: a.bestMove, pv: a.pv.slice(0, 8) });
   const total = game.fens.length;
@@ -176,14 +180,14 @@ export async function analyzePositions(
   for (let i = 0; i < total; i++) {
     if (evals[i]) continue;
     if (opts.cancelled?.()) return null;
-    evals[i] = trim(await engine.analyze(game.fens[i], `movetime ${movetime}`));
+    evals[i] = trim(await engine.analyze(game.fens[i], `depth ${depth}`));
     opts.onUpdate?.([...evals], ++done, total);
   }
   const suspects = game.moves.map((_, i) => i).filter((i) => dropOf(evals[i]!, evals[i + 1]!) >= 10);
   for (const i of suspects) {
     for (const k of [i, i + 1]) {
       if (opts.cancelled?.()) return null;
-      evals[k] = trim(await engine.analyze(game.fens[k], `movetime ${movetime * 4}`));
+      evals[k] = trim(await engine.analyze(game.fens[k], `depth ${refineDepth}`));
     }
     opts.onUpdate?.([...evals], total, total);
   }
@@ -193,7 +197,7 @@ export async function analyzePositions(
 // ---- device-only cache (listed as local in syncMerge.ts: it can be large and is cheap to rebuild) ----
 
 const KEY = 'chess-trainer:game-reviews';
-const VERSION = 1; // bump when the analysis changes in a way that makes stored evals wrong
+const VERSION = 2; // bump when the analysis changes; 2: searches by depth (stable), not by time
 const MAX = 40;
 type Store = { v: number; games: Record<string, { evals: Eval[]; at: number }> };
 

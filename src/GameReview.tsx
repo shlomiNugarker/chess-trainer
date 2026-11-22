@@ -15,7 +15,6 @@ import { useFitBoard } from './useFitBoard';
 import { useSidePanel } from './useSidePanel';
 import { formatDate, tr, useLang } from './i18n';
 
-const MOVETIME = 250; // ms per position in the quick pass (suspects then get 4x)
 
 const CLASS_LABEL: Record<MoveClass, [string, string]> = {
   book: ['ספר', 'Book'],
@@ -71,7 +70,6 @@ export default function GameReview({ game, username, active, onClose, onLearn, o
     const engine = new Engine();
     let cancelled = false;
     void analyzePositions(engine, parsed, {
-      movetime: MOVETIME,
       cancelled: () => cancelled,
       onUpdate: (e, done, total) => {
         if (cancelled) return;

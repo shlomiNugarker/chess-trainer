@@ -181,12 +181,12 @@ assert.deepEqual([dv.mine[0].repId, dv.mine[0].played, dv.mine[0].expected, dv.m
   // the engine pass: a quick look at every position, then a longer one around suspects
   const calls: string[] = [];
   const fake = { analyze: async (fen: string, go: string) => { calls.push(go); return { cp: fen === g.fens[6] ? 900 : 0, mate: null, bestMove: 'a2a3', pv: ['a2a3'] }; } };
-  const out = (await analyzePositions(fake, g, { movetime: 10 }))!;
+  const out = (await analyzePositions(fake, g, { depth: 10, refineDepth: 12 }))!;
   assert.equal(out.length, 8);
-  assert.equal(calls.filter((c) => c === 'movetime 10').length, 8);
-  assert.ok(calls.some((c) => c === 'movetime 40')); // 3...Qh4 (White +9 after it) is a suspect: both sides of it get a longer look
+  assert.equal(calls.filter((c) => c === 'depth 10').length, 8); // by depth: the same game always gets the same review
+  assert.ok(calls.some((c) => c === 'depth 12')); // 3...Qh4 (White +9 after it) is a suspect: both sides of it get a longer look
   let stop = false;
-  assert.equal(await analyzePositions(fake, g, { movetime: 10, cancelled: () => stop, onUpdate: () => { stop = true; } }), null);
+  assert.equal(await analyzePositions(fake, g, { depth: 10, cancelled: () => stop, onUpdate: () => { stop = true; } }), null);
 }
 
 console.log('check-review: all good');
