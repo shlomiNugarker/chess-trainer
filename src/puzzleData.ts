@@ -1,4 +1,4 @@
-// Puzzles from the Lichess puzzle database (CC0), bundled as public/puzzles-v1.json by scripts/build-puzzles.py.
+// Puzzles from the Lichess puzzle database (CC0), bundled as public/puzzles-v2.json by scripts/build-puzzles.py.
 // Lichess format: `fen` is the position BEFORE the opponent's move; moves[0] is that move, then the solver and
 // the opponent alternate. The solver plays the side to move after moves[0].
 
@@ -17,7 +17,7 @@ export type Puzzle = {
 
 export type PuzzleMode = 'level' | 'openings' | 'mates';
 
-export const PUZZLES_URL = `${import.meta.env.BASE_URL}puzzles-v1.json`;
+export const PUZZLES_URL = `${import.meta.env.BASE_URL}puzzles-v2.json`;
 
 let cache: Promise<Puzzle[]> | null = null;
 

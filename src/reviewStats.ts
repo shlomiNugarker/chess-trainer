@@ -64,6 +64,7 @@ export function matchRepertoire(openingFull: string, color: 'w' | 'b'): string |
   // the Pirc, the Philidor, the Owen and the Nimzowitsch
   if (color === 'w' && /^(Scandinavian Defense|Sicilian Defense Alapin|French Defense Advance|Caro Kann Defense Advance|Modern Defense|Pirc Defense|Philidor Defense|Owens Defense|Nimzowitsch Defense)/.test(openingFull)) return 'italian';
   if (color === 'b' && /^Caro Kann Defense/.test(openingFull)) return 'caro';
+  if (color === 'b' && /^Sicilian Defense/.test(openingFull)) return 'sicilian';
   // the Slav repertoire also has lines against the London and the Colle
   if (color === 'b' && /^(Slav Defense|Queens Gambit Declined Slav)|London System|Colle System/.test(openingFull)) return 'slav';
   return undefined;

@@ -37,6 +37,8 @@ assert.equal(summarize({ ...api('me', 'win', 'x', 'resigned'), rules: 'chess960'
 assert.equal(matchRepertoire('Italian Game Two Knights Defense', 'w'), 'italian');
 assert.equal(matchRepertoire('Italian Game', 'b'), undefined);
 assert.equal(matchRepertoire('Caro Kann Defense', 'b'), 'caro');
+assert.equal(matchRepertoire('Sicilian Defense Alapin Variation', 'b'), 'sicilian');
+assert.equal(matchRepertoire('Sicilian Defense Alapin Variation', 'w'), 'italian');
 assert.equal(matchRepertoire('Caro Kann Defense Two Knights Attack', 'w'), undefined); // not the Italian
 assert.equal(matchRepertoire('English Opening Caro Kann Defensive System', 'b'), undefined); // not the Caro-Kann
 assert.equal(matchRepertoire('Indian Game London System', 'w'), 'london');
