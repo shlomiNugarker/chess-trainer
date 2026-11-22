@@ -26,6 +26,8 @@ node --experimental-strip-types scripts/check-sync.ts
 
 Please also try your change in the browser, on a narrow phone-sized window as well as on desktop.
 
+For larger changes, also run the browser QA scripts in [`scripts/qa/`](scripts/qa/README.md): they play every repertoire line through the real UI and go through every screen on desktop and phone, in both languages and offline.
+
 ## Conventions
 
 - **Two languages.** Every user-facing string is written in place as `tr('עברית', 'English')` (`src/i18n.ts`). Add both; if you don't speak Hebrew, write the English and say so in the PR — we'll add the Hebrew.
