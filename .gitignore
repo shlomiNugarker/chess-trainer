@@ -32,3 +32,4 @@ dist-emu
 
 # Browser QA reports and screenshots
 scripts/qa/out
+__pycache__
