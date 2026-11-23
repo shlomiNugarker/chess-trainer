@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Chess, type Move } from 'chess.js';
 import { Chessboard, type Arrow } from 'react-chessboard';
-import { Engine, whiteWinPercent, winPercent } from './engine';
+import { DROP, Engine, whiteWinPercent, winPercent } from './engine';
 import { REPERTOIRES, buildBook, lineInfo, noteForNext, posKey, repName } from './repertoire';
 import { useHiddenRepertoires, visibleOf } from './hiddenReps';
 import { useRepertoire, withCustom } from './customLines';
-import { loadMistakes, saveMistake } from './mistakes';
+import { MISTAKES_CHANGED, loadMistakes, saveMistake } from './mistakes';
 import { BLUE_ARROW, BOARD_THEME, GREEN_ARROW, LAST_MOVE, WRONG_MOVE, judge, ltr, pvToSan, sanToUci, uciToArrow, uciToSan } from './chessUtils';
 import { useStored } from './storage';
 import { LEARN_UNTIL, clearLearned, learnMove, loadLearned } from './learned';
@@ -122,6 +122,12 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
   useEffect(() => {
     opponent.current?.setOption('Skill Level', skill);
   }, [skill]);
+
+  useEffect(() => {
+    const refresh = () => setMistakeCount(loadMistakes().length);
+    window.addEventListener(MISTAKES_CHANGED, refresh);
+    return () => window.removeEventListener(MISTAKES_CHANGED, refresh);
+  }, []);
 
   const sync = useCallback(() => {
     const g = gameRef.current;
@@ -250,7 +256,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
     if (!hiddenReps.includes(storedRepId)) return;
     const next = visibleOf(hiddenReps)[0].id;
     setRepId(next);
-    if (engineReady) newGame({ repertoireId: next });
+    if (engineReady && modeRef.current === 'train') newGame({ repertoireId: next });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hiddenReps]);
 
@@ -373,8 +379,8 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
         playSound('error', 0.12);
         setFeedback({
           kind: 'engine',
-          tone: drop >= 10 ? 'error' : 'warn',
-          title: drop >= 10 ? `${judge(drop)}: ${ltr(move.san)}` : tr(`אפשר טוב יותר: ${ltr(bestSan)}`, `There is better: ${bestSan}`),
+          tone: drop >= DROP.inaccuracy ? 'error' : 'warn',
+          title: drop >= DROP.inaccuracy ? `${judge(drop)}: ${ltr(move.san)}` : tr(`אפשר טוב יותר: ${ltr(bestSan)}`, `There is better: ${bestSan}`),
           text: tr(
             `המהלך הטוב ביותר: ${ltr(bestSan)} (המהלך שלך איבד ${ltr(Math.round(drop) + '%')}; ` +
               `סיכויי הניצחון שלך: ${ltr(Math.round(before) + '%')} ← ${ltr(Math.round(after) + '%')}).` +
@@ -474,6 +480,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
     setStatus('user');
     setNotice('');
     setUndoable(null);
+    setHint(null);
     // back inside the book?
     if (mode === 'train' && book.get(posKey(g.fen()))?.length) setPhase('book');
     startPreAnalysis();
@@ -489,8 +496,11 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
       setHint(uciToArrow(sanToUci(g.fen(), expected[0]), BLUE_ARROW));
       return;
     }
-    const a = preAnalysis.current?.key === g.fen() ? await preAnalysis.current.promise : await coach.current!.analyze(g.fen());
-    setHint(uciToArrow(a.bestMove, BLUE_ARROW));
+    const id = gameId.current;
+    const fen = g.fen();
+    const a = preAnalysis.current?.key === fen ? await preAnalysis.current.promise : await coach.current!.analyze(fen);
+    // the user may have moved (or taken back, or started over) while the coach was thinking
+    if (gameId.current === id && gameRef.current.fen() === fen) setHint(uciToArrow(a.bestMove, BLUE_ARROW));
   };
 
   const arrows: Arrow[] = [];

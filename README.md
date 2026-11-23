@@ -35,12 +35,12 @@ Production build: `npm run build`, then `npm run preview`.
 ### Checks
 
 ```bash
-npm run lint
-npm run build
-node --experimental-strip-types scripts/check-lines.ts    # every repertoire line is legal, notes exist in both languages
-node --experimental-strip-types scripts/check-review.ts   # Chess.com review logic
-node --experimental-strip-types scripts/check-puzzles.ts  # every puzzle in public/puzzles-v3.json is legal
-node --experimental-strip-types scripts/check-sync.ts     # merge rules for syncing between devices
+npm run check   # lint + build + all the checks below
+npm test        # just the checks:
+                #   scripts/check-lines.ts    every repertoire line is legal, notes exist in both languages
+                #   scripts/check-review.ts   Chess.com review logic and the move-by-move game review
+                #   scripts/check-puzzles.ts  every puzzle in public/puzzles-v3.json is legal
+                #   scripts/check-sync.ts     merge rules for syncing between devices
 ```
 
 The same checks run on every push and pull request (GitHub Actions).

@@ -11,8 +11,12 @@ import { tr } from './i18n';
 const KEY = 'chess-trainer:custom-lines';
 export const CUSTOM_CHANGED = 'chess-trainer:custom-lines-changed';
 
-/** moves: SAN from the start; dev: label of the opponent's deviating move ("2.Bc4"). */
-export type CustomLine = { moves: string; dev: string; at: number };
+/**
+ * moves: SAN from the start; dev: label of the opponent's deviating move ("2.Bc4"); at: when it was added.
+ * A removed branch stays as a marker (`removed`: when), so syncing with a device that still has it does not
+ * bring it back; adding it again later wins over the marker.
+ */
+export type CustomLine = { moves: string; dev: string; at: number; removed?: number };
 type Store = Record<string, CustomLine[]>; // repertoire id -> branches
 
 function read(): Store {
@@ -32,20 +36,22 @@ function write(s: Store) {
   }
 }
 
-export const loadCustom = (repId: string): CustomLine[] => read()[repId] ?? [];
+export const loadCustom = (repId: string): CustomLine[] => (read()[repId] ?? []).filter((c) => !c.removed);
 
-/** Adds a branch (once per move list). */
+/** Adds a branch (once per move list; a removed one comes back). */
 export function addCustomLine(repId: string, moves: string[], dev: string) {
   const s = read();
   const list = (s[repId] ??= []);
   const m = moves.join(' ');
-  if (!list.some((c) => c.moves === m)) list.push({ moves: m, dev, at: Date.now() });
+  const old = list.find((c) => c.moves === m);
+  if (!old) list.push({ moves: m, dev, at: Date.now() });
+  else if (old.removed) Object.assign(old, { dev, at: Date.now(), removed: undefined });
   write(s);
 }
 
 export function removeCustomLine(repId: string, moves: string) {
   const s = read();
-  s[repId] = (s[repId] ?? []).filter((c) => c.moves !== moves);
+  for (const c of s[repId] ?? []) if (c.moves === moves) c.removed = Date.now();
   write(s);
 }
 

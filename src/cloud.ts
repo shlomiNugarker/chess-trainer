@@ -71,8 +71,12 @@ let pushTimer: number | undefined;
 
 function installHook() {
   Storage.prototype.setItem = function (key: string, value: string) {
+    const watched = this === localStorage && isSynced(key);
+    const unchanged = watched && this.getItem(key) === value;
     nativeSet.call(this, key, value);
-    if (this !== localStorage || !isSynced(key)) return;
+    // rewriting the same value is not a change: otherwise a device that is behind becomes "newer" just by
+    // opening the app (useStored writes its value on mount) and overwrites the other device's change
+    if (!watched || unchanged) return;
     const stamps = readStamps();
     stamps[key] = Date.now();
     set(STAMPS, JSON.stringify(stamps));
@@ -86,22 +90,34 @@ function installHook() {
 // ---- Firebase, loaded on demand ----
 
 let fbPromise: Promise<typeof import('./firebase')> | null = null;
+/** A sign-in window is open in this page right now (its result is still to come). */
+let signInOpen = false;
 
 function firebase() {
-  fbPromise ??= import('./firebase').then((fb) => {
-    fb.watchUser((user) => {
-      update({ user });
-      if (user) {
-        set(SIGNED_IN, '1');
-        remove(SIGNING_IN);
-        void sync(true);
-      } else {
-        remove(SIGNED_IN);
-        if (state.status !== 'signing-in') update({ status: 'idle' });
-      }
-    });
-    return fb;
-  });
+  fbPromise ??= import('./firebase').then(
+    (fb) => {
+      fb.watchUser((user) => {
+        update({ user });
+        if (user) {
+          set(SIGNED_IN, '1');
+          remove(SIGNING_IN);
+          void sync(true);
+        } else {
+          remove(SIGNED_IN);
+          // no user and no sign-in window open: also the end of a redirect sign-in the user cancelled
+          if (!signInOpen) {
+            remove(SIGNING_IN);
+            update({ status: 'idle' });
+          }
+        }
+      });
+      return fb;
+    },
+    (e) => {
+      fbPromise = null; // e.g. offline, or an old page asking for a file a new deploy replaced: try again later
+      throw e;
+    },
+  );
   return fbPromise;
 }
 
@@ -112,7 +128,7 @@ export function startCloud() {
   // reconnect a signed-in user (or finish a redirect sign-in) without making everyone else load Firebase
   if (get(SIGNED_IN) || get(SIGNING_IN)) {
     if (get(SIGNING_IN)) update({ status: 'signing-in' });
-    void firebase();
+    firebase().catch(() => update({ status: navigator.onLine ? 'error' : 'offline' }));
   }
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && state.user) void sync(true);
@@ -122,25 +138,33 @@ export function startCloud() {
 
 /** Loads Firebase ahead of a likely sign-in (the account panel opened), so the Google window opens at once. */
 export function preloadCloud() {
-  if (cloudEnabled) void firebase();
+  if (cloudEnabled) firebase().catch(() => {}); // signIn() tries again and reports the error
 }
 
 export async function signIn() {
   update({ status: 'signing-in' });
   set(SIGNING_IN, '1'); // survives the redirect on phones
+  signInOpen = true;
   try {
     const fb = await firebase();
     await fb.signIn();
   } catch {
     remove(SIGNING_IN);
     update({ status: state.user ? 'synced' : 'error' });
+  } finally {
+    signInOpen = false;
   }
 }
 
 export async function signOut() {
   clearTimeout(pushTimer);
-  const fb = await firebase();
-  await fb.signOut();
+  try {
+    const fb = await firebase();
+    await fb.signOut();
+  } catch {
+    update({ status: navigator.onLine ? 'error' : 'offline' });
+    return;
+  }
   remove(SIGNED_IN);
   update({ user: null, status: 'idle' });
 }
@@ -148,7 +172,8 @@ export async function signOut() {
 // ---- syncing ----
 
 let running: Promise<void> | null = null;
-let again = false;
+/** Another sync was asked for while one was running (null: none); true if any of them asked to reload. */
+let again: boolean | null = null;
 
 function localSide(): Side {
   const data: Record<string, string> = {};
@@ -170,7 +195,7 @@ const addPrefix = <T>(o: Record<string, T> = {}) => Object.fromEntries(Object.en
  */
 export function sync(reloadOnChange: boolean): Promise<void> {
   if (running) {
-    again = true;
+    again = (again ?? false) || reloadOnChange;
     return running;
   }
   running = (async () => {
@@ -205,9 +230,10 @@ export function sync(reloadOnChange: boolean): Promise<void> {
     }
   })().finally(() => {
     running = null;
-    if (again) {
-      again = false;
-      void sync(false);
+    if (again !== null) {
+      const reload = again;
+      again = null;
+      void sync(reload);
     }
   });
   return running;

@@ -25,6 +25,9 @@ dist-ssr
 
 .vercel
 
+# Claude Code local settings
+.claude/
+
 # Firebase emulator logs
 firebase-debug.log
 firestore-debug.log

@@ -33,10 +33,10 @@ const toCloudUser = (u: User): CloudUser => ({ uid: u.uid, name: u.displayName ?
 
 /** Calls back with the signed-in user (or null) now and on every change; also completes a redirect sign-in. */
 export function watchUser(cb: (u: CloudUser | null) => void) {
-  getRedirectResult(auth).catch(() => {
-    /* no redirect in progress, or it failed — onAuthStateChanged still reports the state */
-  });
-  return onAuthStateChanged(auth, (u) => cb(u ? toCloudUser(u) : null));
+  // first finish a redirect sign-in, so "no user" really means it did not happen (cancelled or failed)
+  void getRedirectResult(auth)
+    .catch(() => null) // no redirect in progress, or it failed — onAuthStateChanged still reports the state
+    .then(() => onAuthStateChanged(auth, (u) => cb(u ? toCloudUser(u) : null)));
 }
 
 /** Popups are unreliable on phones and in an installed app; there the page redirects to Google and back. */

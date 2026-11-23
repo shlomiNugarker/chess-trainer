@@ -176,6 +176,7 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
   }
 
   const openReview = (g: GameSummary) => {
+    stopDeep(); // one engine at a time — both would compete for the CPU (the games done so far are kept)
     setReviewing(g);
     window.scrollTo({ top: 0 });
   };

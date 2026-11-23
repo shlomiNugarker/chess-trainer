@@ -67,12 +67,20 @@ const MERGERS: Record<string, (a: string, b: string) => string> = {
   },
 };
 
+type Branch = { moves: string; at: number; removed?: number };
+const lastTouch = (c: Branch) => Math.max(c.at ?? 0, c.removed ?? 0);
+
 MERGERS['custom-lines'] = (a, b) => {
-  // repertoire -> branches: every branch from both devices (by move list)
-  const x = parse<Record<string, { moves: string }[]>>(a, {});
-  for (const [rep, list] of Object.entries(parse<Record<string, { moves: string }[]>>(b, {}))) {
-    const have = new Set((x[rep] ??= []).map((c) => c.moves));
-    for (const c of list) if (!have.has(c.moves)) x[rep].push(c);
+  // repertoire -> branches: every branch from both devices (by move list); for the same one, the later of
+  // adding and removing it, so a branch removed on one device is not brought back by the other
+  const x = parse<Record<string, Branch[]>>(a, {});
+  for (const [rep, list] of Object.entries(parse<Record<string, Branch[]>>(b, {}))) {
+    const mine = (x[rep] ??= []);
+    for (const c of list) {
+      const i = mine.findIndex((d) => d.moves === c.moves);
+      if (i < 0) mine.push(c);
+      else if (lastTouch(c) > lastTouch(mine[i])) mine[i] = c;
+    }
   }
   return JSON.stringify(x);
 };

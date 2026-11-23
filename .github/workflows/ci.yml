@@ -20,7 +20,4 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run build
-      - run: node --experimental-strip-types scripts/check-lines.ts
-      - run: node --experimental-strip-types scripts/check-review.ts
-      - run: node --experimental-strip-types scripts/check-puzzles.ts
-      - run: node --experimental-strip-types scripts/check-sync.ts
+      - run: npm test

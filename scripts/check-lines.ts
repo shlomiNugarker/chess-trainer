@@ -28,4 +28,13 @@ for (const r of REPERTOIRES) {
   const b = buildBook(r);
   for (const [k, v] of b) if (k.split(' ')[1] === r.userColor && v.length > 1) console.log('  multiple user moves at', k, v);
 }
+// the other way round: English text for a repertoire or line that no longer exists (e.g. a renamed line,
+// which would quietly show its Hebrew text in English)
+for (const [id, rep] of Object.entries(EN)) {
+  const r = REPERTOIRES.find((x) => x.id === id);
+  if (!r) { console.error(`EN repertoire with no Hebrew one: ${id}`); ok = false; continue; }
+  for (const name of Object.keys(rep.lines)) {
+    if (!r.lines.some((l) => l.name === name)) { console.error(`EN line with no Hebrew one: ${id}/${name}`); ok = false; }
+  }
+}
 process.exit(ok ? 0 : 1);

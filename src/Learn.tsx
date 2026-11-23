@@ -228,8 +228,9 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
             aria-expanded={manageOpen}
             onClick={() => setManageOpen((o) => !o)}
             title={tr('בחר אילו פתיחות להציג', 'Choose which openings to show')}
+            aria-label={tr('בחר אילו פתיחות להציג', 'Choose which openings to show') + (hidden.length ? ` (${tr(`${hidden.length} מוסתרות`, `${hidden.length} hidden`)})` : '')}
           >
-            ⚙{hidden.length ? ` ${tr(`${hidden.length} מוסתרות`, `${hidden.length} hidden`)}` : ''}
+            <span aria-hidden="true">⚙</span>{hidden.length ? ` ${tr(`${hidden.length} מוסתרות`, `${hidden.length} hidden`)}` : ''}
           </button>
         </div>
         <button
@@ -469,10 +470,10 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
           ) : (
             <>
               <div className="stepper">
-                <button onClick={() => go(0)} disabled={ply === 0} aria-label={tr('להתחלה', 'To the start')}>⏮</button>
+                <button onClick={() => go(0)} disabled={ply === 0} aria-label={tr('להתחלה', 'To the start')}><span className="rtl-flip" aria-hidden="true">⏮</span></button>
                 <button onClick={() => go(ply - 1)} disabled={ply === 0}>‹ {tr('הקודם', 'Previous')}</button>
                 <button className="primary" onClick={() => go(ply + 1)} disabled={!next}>{tr('הבא', 'Next')} ›</button>
-                <button onClick={() => go(moves.length)} disabled={!next} aria-label={tr('לסוף', 'To the end')}>⏭</button>
+                <button onClick={() => go(moves.length)} disabled={!next} aria-label={tr('לסוף', 'To the end')}><span className="rtl-flip" aria-hidden="true">⏭</span></button>
               </div>
               <div className="actions actions-2">
                 <button onClick={startQuiz}>

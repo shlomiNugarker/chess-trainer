@@ -108,32 +108,50 @@ export function summarize(g: ApiGame, username: string): GameSummary | null {
 }
 
 // Past months never change, so their archives are kept in the browser's Cache Storage (not localStorage:
-// they can be megabytes, and localStorage is synced to the cloud). Only the current month is fetched again.
-const ARCHIVE_CACHE = 'chesscom-archives-v1';
+// they can be megabytes, and localStorage is synced to the cloud). A copy counts as final only if it was
+// fetched after its month ended — a copy of the current month is refreshed every time, and once the month is
+// over it is fetched one last time (so games from its last days are not lost).
+const ARCHIVE_CACHE = 'chesscom-archives-v2';
+const FETCHED_AT = 'x-fetched-at';
+const DAY = 86_400_000;
+let oldCacheGone = false;
+
+/** When a month's archive (".../games/2026/11") can no longer change: a day after the month ends (UTC). */
+function monthOver(url: string): number {
+  const m = url.match(/\/(\d{4})\/(\d{2})$/);
+  return m ? Date.UTC(Number(m[1]), Number(m[2]), 1) + DAY : Infinity;
+}
 
 async function getMonth(url: string, past: boolean): Promise<{ games: ApiGame[] }> {
+  if (!oldCacheGone && typeof caches !== 'undefined') {
+    oldCacheGone = true;
+    void caches.delete('chesscom-archives-v1').catch(() => {}); // its copies have no fetch time
+  }
   const cache = typeof caches !== 'undefined' ? await caches.open(ARCHIVE_CACHE).catch(() => null) : null;
-  const cached = async () => {
+  const cached = async (final: boolean) => {
     try {
-      return ((await (await cache?.match(url))?.json()) as { games: ApiGame[] } | undefined) ?? null;
+      const res = await cache?.match(url);
+      if (!res || (final && Number(res.headers.get(FETCHED_AT)) < monthOver(url))) return null;
+      return ((await res.json()) as { games: ApiGame[] } | undefined) ?? null;
     } catch {
       return null; // broken entry — fetch it again
     }
   };
   if (past) {
-    const hit = await cached();
+    const hit = await cached(true);
     if (hit) return hit;
   }
   let data: { games: ApiGame[] };
   try {
     data = await getJson<{ games: ApiGame[] }>(url);
   } catch (e) {
-    // this month changes, so it is fetched every time — but offline, the last copy is better than nothing
-    const hit = await cached();
+    // offline: the last copy is better than nothing
+    const hit = await cached(false);
     if (hit) return hit;
     throw e;
   }
-  if (cache) void cache.put(url, new Response(JSON.stringify(data), { headers: { 'Content-Type': 'application/json' } })).catch(() => {});
+  const headers = { 'Content-Type': 'application/json', [FETCHED_AT]: String(Date.now()) };
+  if (cache) void cache.put(url, new Response(JSON.stringify(data), { headers })).catch(() => {});
   return data;
 }
 

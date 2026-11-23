@@ -284,10 +284,10 @@ export default function GameReview({ game, username, active, onClose, onLearn, o
           </div>
 
           <div className="stepper">
-            <button onClick={() => go(0)} disabled={ply === 0} aria-label={tr('להתחלה', 'To the start')}>⏮</button>
+            <button onClick={() => go(0)} disabled={ply === 0} aria-label={tr('להתחלה', 'To the start')}><span className="rtl-flip" aria-hidden="true">⏮</span></button>
             <button onClick={() => go(ply - 1)} disabled={ply === 0}>‹ {tr('הקודם', 'Previous')}</button>
             <button className="primary" onClick={() => go(ply + 1)} disabled={ply === total}>{tr('הבא', 'Next')} ›</button>
-            <button onClick={() => go(total)} disabled={ply === total} aria-label={tr('לסוף', 'To the end')}>⏭</button>
+            <button onClick={() => go(total)} disabled={ply === total} aria-label={tr('לסוף', 'To the end')}><span className="rtl-flip" aria-hidden="true">⏭</span></button>
           </div>
           <button className="next-mistake" onClick={nextMistake} disabled={!myMistakes.length}>
             {progress

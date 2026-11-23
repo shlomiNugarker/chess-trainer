@@ -4,7 +4,8 @@
 // plus a small device-only cache so a reviewed game opens at once the next time.
 
 import { Chess, type Move } from 'chess.js';
-import { winPercent, type Analysis } from './engine.ts';
+import { DROP, winPercent, type Analysis } from './engine.ts';
+import { uciToSan } from './chessUtils.ts';
 import { buildBook, posKey, type Repertoire } from './repertoire.ts';
 
 export type Eval = Pick<Analysis, 'cp' | 'mate' | 'bestMove' | 'pv'>; // side-to-move perspective
@@ -33,12 +34,12 @@ export function dropOf(before: Pick<Eval, 'cp' | 'mate'>, after: Pick<Eval, 'cp'
   return Math.max(0, winPercent(before) - (100 - winPercent(after)));
 }
 
-/** Same thresholds as the rest of the app: 10% inaccuracy, 20% mistake, 30% blunder. */
+/** The app's thresholds (DROP); a move within 2% of the best counts as the best. */
 export function classify(drop: number, playedUci: string, bestUci: string, inBook: boolean): MoveClass {
   if (inBook) return 'book';
   if (playedUci === bestUci || drop < 2) return 'best';
-  if (drop < 10) return 'good';
-  return drop >= 30 ? 'blunder' : drop >= 20 ? 'mistake' : 'inaccuracy';
+  if (drop < DROP.inaccuracy) return 'good';
+  return drop >= DROP.blunder ? 'blunder' : drop >= DROP.mistake ? 'mistake' : 'inaccuracy';
 }
 
 /** Lichess's per-move accuracy from the win% lost (100 for a perfect move). */
@@ -120,14 +121,6 @@ export type GameReviewResult = {
 
 const emptyCounts = (): Record<MoveClass, number> => ({ book: 0, best: 0, good: 0, inaccuracy: 0, mistake: 0, blunder: 0 });
 
-const sanOf = (fen: string, uci: string) => {
-  try {
-    return new Chess(fen).move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] ?? 'q' }).san;
-  } catch {
-    return uci;
-  }
-};
-
 /** Labels and summary from the evals (one per position; missing ones — still being analyzed — are skipped). */
 export function buildReview(game: ParsedGame, evals: (Eval | undefined)[], bookPlies: number): GameReviewResult {
   const white = game.fens.map((fen, i) => {
@@ -149,7 +142,7 @@ export function buildReview(game: ParsedGame, evals: (Eval | undefined)[], bookP
     const uci = m.from + m.to + (m.promotion ?? '');
     const drop = dropOf(before, after);
     const cls = classify(drop, uci, before.bestMove, i < bookPlies);
-    moves.push({ ply: i, san: m.san, uci, color: m.color, cls, drop, best: sanOf(m.before, before.bestMove), bestUci: before.bestMove, pv: before.pv });
+    moves.push({ ply: i, san: m.san, uci, color: m.color, cls, drop, best: uciToSan(m.before, before.bestMove), bestUci: before.bestMove, pv: before.pv });
     sides[m.color].counts[cls]++;
     accs[m.color].push(cls === 'book' ? 100 : moveAccuracy(drop));
   });
@@ -183,7 +176,7 @@ export async function analyzePositions(
     evals[i] = trim(await engine.analyze(game.fens[i], `depth ${depth}`));
     opts.onUpdate?.([...evals], ++done, total);
   }
-  const suspects = game.moves.map((_, i) => i).filter((i) => dropOf(evals[i]!, evals[i + 1]!) >= 10);
+  const suspects = game.moves.map((_, i) => i).filter((i) => dropOf(evals[i]!, evals[i + 1]!) >= DROP.inaccuracy);
   for (const i of suspects) {
     for (const k of [i, i + 1]) {
       if (opts.cancelled?.()) return null;

@@ -1293,3 +1293,6 @@ button.progress-pill { border: none; cursor: pointer; font: inherit; }
 .import-results { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
 .import-results .ok { color: var(--accent); }
 .import-results .warn { color: #e0a85f; }
+
+/* direction glyphs that the browser does not mirror by itself (‹ › are mirrored, ⏮ ⏭ are not) */
+[dir='rtl'] .rtl-flip { display: inline-block; transform: scaleX(-1); }

@@ -16,13 +16,13 @@ Open an issue first for anything larger than a small fix, so we can agree on the
 All of these must pass (CI runs them too):
 
 ```bash
-npm run lint
-npm run build
-node --experimental-strip-types scripts/check-lines.ts
-node --experimental-strip-types scripts/check-review.ts
-node --experimental-strip-types scripts/check-puzzles.ts
-node --experimental-strip-types scripts/check-sync.ts
+npm run check   # = npm run lint && npm run build && npm test (the four scripts/check-*.ts)
 ```
+
+The engine in `public/engine/` is a copy of the `stockfish` package (pinned in `package.json`); when updating
+it, copy `node_modules/stockfish/bin/stockfish-<version>-lite-single.{js,wasm}` there, update the file name in
+`src/engine.ts` and `public/sw.js`, bump `CACHE` in `public/sw.js` (installed apps keep the engine, the icons and
+the manifest until it changes) and update `THIRD_PARTY_NOTICES.md`.
 
 Please also try your change in the browser, on a narrow phone-sized window as well as on desktop.
 

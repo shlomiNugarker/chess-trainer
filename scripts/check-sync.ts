@@ -66,4 +66,13 @@ const cl = JSON.parse(m.data[P + 'custom-lines']);
 assert.deepEqual(cl.london.map((c: { moves: string }) => c.moves), ['a', 'b']);
 assert.equal(cl.caro.length, 1);
 
+// custom-lines: a branch removed on one device stays removed; added again later, it is back
+m = mergeSides(
+  { data: { [P + 'custom-lines']: j({ london: [{ moves: 'a', dev: 'x', at: 1, removed: 5 }, { moves: 'b', dev: 'y', at: 9 }] }) }, stamps: {} },
+  { data: { [P + 'custom-lines']: j({ london: [{ moves: 'a', dev: 'x', at: 1 }, { moves: 'b', dev: 'y', at: 2, removed: 4 }] }) }, stamps: {} },
+);
+const rm = JSON.parse(m.data[P + 'custom-lines']).london as { moves: string; removed?: number }[];
+assert.equal(rm.find((c) => c.moves === 'a')!.removed, 5);
+assert.equal(rm.find((c) => c.moves === 'b')!.removed, undefined);
+
 console.log('check-sync: all good');

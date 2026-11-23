@@ -1,6 +1,6 @@
 // Offline support: the app (and the Stockfish engine) keep working without internet.
 // - pages: network first, so a new version arrives as soon as you are online; the cached copy offline
-// - /assets (hashed names), /engine, icons: cache first — their content never changes under the same name
+// - /assets (hashed names, all of them kept: see cacheIndex), /engine, icons: cache first — their content never changes under the same name
 // - Google Fonts: cached after the first load
 // - everything else (the Chess.com API, Google sign-in, Firestore) is left alone
 const CACHE = 'chess-trainer-v2';
@@ -9,12 +9,32 @@ const CORE = ['/', '/manifest.webmanifest', '/icon-192.png', '/engine/stockfish-
 // the hashed js/css that a given index.html points at
 const assetsOf = (html) => [...html.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)].map((m) => m[1]);
 
+// every file of the build, also the chunks loaded later with import() (e.g. Firebase), which index.html does
+// not name; written by Vite (build.manifest in vite.config.ts). null if it cannot be read.
+async function buildFiles() {
+  try {
+    const res = await fetch('/asset-manifest.json', { cache: 'no-store' });
+    if (!res.ok) return null;
+    const files = [];
+    for (const e of Object.values(await res.json())) files.push(e.file, ...(e.css ?? []), ...(e.assets ?? []));
+    return files.map((f) => '/' + f);
+  } catch {
+    return null;
+  }
+}
+
 async function cacheIndex(cache, res) {
   const html = await res.clone().text();
   await cache.put('/', res);
-  const keep = new Set(assetsOf(html));
-  // fetch the current version's files, drop the old versions' files
+  const linked = assetsOf(html);
+  const all = await buildFiles();
+  // the manifest belongs to this version only if it names everything the page links to
+  const complete = all !== null && linked.every((a) => all.includes(a));
+  const keep = new Set(complete ? [...linked, ...all] : linked);
+  // fetch the current version's files
   await Promise.all([...keep].map((a) => cache.match(a).then((hit) => hit || cache.add(a))));
+  // drop the old versions' files (only when the full list is known: never a chunk the page may still load)
+  if (!complete) return;
   for (const req of await cache.keys()) {
     const path = new URL(req.url).pathname;
     if (path.startsWith('/assets/') && !keep.has(path)) await cache.delete(req);

@@ -3,7 +3,7 @@
 
 import { Chess } from 'chess.js';
 import type { GameSummary, TimeClass } from './chesscom.ts';
-import { type Engine, winPercent } from './engine.ts';
+import { DROP, type Engine, winPercent } from './engine.ts';
 import { tr } from './i18n.ts';
 
 export type Score = { games: number; wins: number; draws: number; losses: number; score: number }; // score 0..100
@@ -198,7 +198,7 @@ export type GameMistake = {
 export type GameAnalysis = { url: string; userMoves: number; mistakes: GameMistake[] };
 
 export const kindOf = (drop: number): MoveKind | null =>
-  drop >= 30 ? 'blunder' : drop >= 20 ? 'mistake' : drop >= 10 ? 'inaccuracy' : null;
+  drop >= DROP.blunder ? 'blunder' : drop >= DROP.mistake ? 'mistake' : drop >= DROP.inaccuracy ? 'inaccuracy' : null;
 
 /** Opening up to move 12; endgame once at most 6 pieces (not kings/pawns) are left; middlegame otherwise. */
 export function phaseOf(fen: string, moveNumber: number): GamePhase {
@@ -207,7 +207,7 @@ export function phaseOf(fen: string, moveNumber: number): GamePhase {
   return pieces <= 6 ? 'endgame' : 'middlegame';
 }
 
-/** Evaluate every position of the game once and flag the user's moves that lost >= 10% win chance. */
+/** Evaluate every position of the game once and flag the user's moves that lost at least DROP.inaccuracy win%. */
 export async function analyzeGame(
   engine: Engine,
   game: GameSummary,

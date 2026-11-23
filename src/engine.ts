@@ -86,6 +86,12 @@ export class Engine {
   }
 }
 
+/**
+ * Win% a move loses to count as an inaccuracy / mistake / blunder (Lichess's thresholds). The one place for
+ * the whole app: the trainer's feedback, "My review" and the move-by-move game review all use these.
+ */
+export const DROP = { inaccuracy: 10, mistake: 20, blunder: 30 } as const;
+
 /** Lichess win% model: 0..100 for the side whose perspective the score is in. */
 export function winPercent(a: Pick<Analysis, 'cp' | 'mate'>): number {
   if (a.mate !== null) return a.mate > 0 ? 100 : 0; // mate 0 = side to move is mated
