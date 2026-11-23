@@ -233,14 +233,14 @@ export default function GameReview({ game, username, active, onClose, onLearn, o
         </div>
 
         <aside ref={panelRef}>
-          {progress && (
-            <div className="card review-progress">
-              {tr(`מנתח את המשחק… ${progress.done}/${progress.total}`, `Analyzing the game… ${progress.done}/${progress.total}`)}
-              <div className="progress"><div style={{ width: `${(progress.done / progress.total) * 100}%` }} /></div>
-            </div>
-          )}
-
+          {/* fixed height: stepping through the game never moves the buttons below; longer text scrolls inside */}
           <div className={`card coach${current ? ` cls-${current.cls}` : ''}`}>
+            {progress && (
+              <div className="review-progress coach-progress" role="progressbar" aria-valuemin={0} aria-valuemax={progress.total} aria-valuenow={progress.done}>
+                <div style={{ width: `${(progress.done / progress.total) * 100}%` }} />
+              </div>
+            )}
+            <div className="coach-scroll">
             {current ? (
               <>
                 <div className="coach-head">
@@ -280,6 +280,7 @@ export default function GameReview({ game, username, active, onClose, onLearn, o
                 </div>
               </div>
             )}
+            </div>
           </div>
 
           <div className="stepper">
@@ -289,9 +290,13 @@ export default function GameReview({ game, username, active, onClose, onLearn, o
             <button onClick={() => go(total)} disabled={ply === total} aria-label={tr('לסוף', 'To the end')}>⏭</button>
           </div>
           <button className="next-mistake" onClick={nextMistake} disabled={!myMistakes.length}>
-            {myMistakes.length
-              ? tr(`לטעות הבאה שלי (${myMistakes.length})`, `My next mistake (${myMistakes.length})`)
-              : progress ? tr('מחפש טעויות…', 'Looking for mistakes…') : tr('אין לך טעויות במשחק הזה 🎉', 'No mistakes of yours in this game 🎉')}
+            {progress
+              ? myMistakes.length
+                ? tr(`לטעות הבאה שלי (${myMistakes.length}) · מנתח ${progress.done}/${progress.total}`, `My next mistake (${myMistakes.length}) · analyzing ${progress.done}/${progress.total}`)
+                : tr(`מנתח את המשחק… ${progress.done}/${progress.total}`, `Analyzing the game… ${progress.done}/${progress.total}`)
+              : myMistakes.length
+                ? tr(`לטעות הבאה שלי (${myMistakes.length})`, `My next mistake (${myMistakes.length})`)
+                : tr('אין לך טעויות במשחק הזה 🎉', 'No mistakes of yours in this game 🎉')}
           </button>
 
           <EvalGraph white={review.white} ply={ply} marks={keyMoments} onPick={go} />

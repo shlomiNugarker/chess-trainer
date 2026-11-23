@@ -272,6 +272,13 @@ def review(pg):
     r.check('Accuracy' in summary and pg.locator('.rv-acc').count() == 2 and pg.locator('.rv-count').count() == 12, 'game review: accuracy boxes and the count of every move class for both players', summary[:120])
     moves = pg.locator('.review-moves button.move').count()
     r.check(moves > 0 and pg.locator('.review-moves button.move[class*="cls-"]').count() == moves, 'game review: every move has a label', f'{moves} moves')
+    # stepping through the game never moves the buttons (the coach card has one fixed height)
+    pg.keyboard.press('Home'); time.sleep(0.2)
+    tops = set()
+    for _ in range(min(moves, 30)):
+        pg.locator('.stepper button.primary').click()
+        tops.add(round(pg.locator('.stepper').bounding_box()['y']))
+    r.check(len(tops) == 1, 'game review: the buttons stay in place while stepping through the moves', f'{len(tops)} different positions')
     pg.keyboard.press('End'); time.sleep(0.3)
     r.check(pg.locator('.review-moves button.move.last').count() == 1, 'game review: End jumps to the last move')
     nm = pg.locator('.next-mistake')
