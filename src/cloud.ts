@@ -5,7 +5,7 @@
 
 import { useSyncExternalStore } from 'react';
 import { cloudEnabled } from './cloudConfig';
-import { PREFIX, isSynced, mergeSides, type Side } from './syncMerge';
+import { PREFIX, asNewDevice, isSynced, mergeSides, type Side } from './syncMerge';
 import type { CloudUser } from './firebase';
 
 export type CloudStatus = 'idle' | 'signing-in' | 'syncing' | 'synced' | 'offline' | 'error';
@@ -74,8 +74,8 @@ function installHook() {
     const watched = this === localStorage && isSynced(key);
     const unchanged = watched && this.getItem(key) === value;
     nativeSet.call(this, key, value);
-    // rewriting the same value is not a change: otherwise a device that is behind becomes "newer" just by
-    // opening the app (useStored writes its value on mount) and overwrites the other device's change
+    // rewriting the same value is not a change: otherwise a device that is behind becomes "newer" and
+    // overwrites the other device's change
     if (!watched || unchanged) return;
     const stamps = readStamps();
     stamps[key] = Date.now();
@@ -90,12 +90,15 @@ function installHook() {
 // ---- Firebase, loaded on demand ----
 
 let fbPromise: Promise<typeof import('./firebase')> | null = null;
+/** Firebase did not load (offline, or an old page asking for a file that a new deploy replaced). */
+let loadFailed = false;
 /** A sign-in window is open in this page right now (its result is still to come). */
 let signInOpen = false;
 
 function firebase() {
   fbPromise ??= import('./firebase').then(
     (fb) => {
+      loadFailed = false;
       fb.watchUser((user) => {
         update({ user });
         if (user) {
@@ -114,7 +117,8 @@ function firebase() {
       return fb;
     },
     (e) => {
-      fbPromise = null; // e.g. offline, or an old page asking for a file a new deploy replaced: try again later
+      loadFailed = true;
+      fbPromise = null; // some browsers fetch the file again; Chrome remembers the failure until a reload (signIn)
       throw e;
     },
   );
@@ -134,6 +138,13 @@ export function startCloud() {
     if (document.visibilityState === 'visible' && state.user) void sync(true);
   });
   window.addEventListener('online', () => state.user && void sync(false));
+  // back from Google's page without signing in, and the browser shows this page as it was (not loaded again)
+  window.addEventListener('pageshow', (e) => {
+    if (!e.persisted || state.user || state.status !== 'signing-in') return;
+    signInOpen = false;
+    remove(SIGNING_IN);
+    update({ status: 'idle' });
+  });
 }
 
 /** Loads Firebase ahead of a likely sign-in (the account panel opened), so the Google window opens at once. */
@@ -142,6 +153,11 @@ export function preloadCloud() {
 }
 
 export async function signIn() {
+  // the user tries again after "sign-in did not work" because Firebase could not load: only a fresh page helps
+  if (loadFailed && state.status === 'error') {
+    location.reload();
+    return;
+  }
   update({ status: 'signing-in' });
   set(SIGNING_IN, '1'); // survives the redirect on phones
   signInOpen = true;
@@ -206,7 +222,8 @@ export function sync(reloadOnChange: boolean): Promise<void> {
       const fb = await firebase();
       const remoteDoc = await fb.readDoc(user.uid);
       const remote: Side = { data: addPrefix(remoteDoc?.data), stamps: addPrefix(remoteDoc?.stamps) };
-      const local = localSide();
+      // the first sync of this device: what is in the account wins over the settings found here
+      const local = get(LAST_SYNC) ? localSide() : asNewDevice(localSide());
       const merged = mergeSides(local, remote);
 
       let localChanged = false;

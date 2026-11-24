@@ -1,7 +1,7 @@
 // Checks the merge rules used to sync progress between devices (src/syncMerge.ts).
 // node --experimental-strip-types scripts/check-sync.ts
 import assert from 'node:assert/strict';
-import { isSynced, mergeSides } from '../src/syncMerge.ts';
+import { asNewDevice, isSynced, mergeSides } from '../src/syncMerge.ts';
 
 const P = 'chess-trainer:';
 const j = JSON.stringify;
@@ -74,5 +74,19 @@ m = mergeSides(
 const rm = JSON.parse(m.data[P + 'custom-lines']).london as { moves: string; removed?: number }[];
 assert.equal(rm.find((c) => c.moves === 'a')!.removed, 5);
 assert.equal(rm.find((c) => c.moves === 'b')!.removed, undefined);
+
+// the first sync of a device: the cloud's settings win even over a newer stamp (or when the cloud has none);
+// progress is still merged, and a setting only this device has is kept
+m = mergeSides(
+  asNewDevice({
+    data: { [P + 'skill']: '3', [P + 'threshold']: '20', [P + 'sound']: 'false', [P + 'daily']: j({ d1: 4 }) },
+    stamps: { [P + 'skill']: 999, [P + 'threshold']: 999, [P + 'sound']: 999 },
+  }),
+  { data: { [P + 'skill']: '11', [P + 'threshold']: '30', [P + 'daily']: j({ d1: 2, d2: 1 }) }, stamps: { [P + 'skill']: 5 } },
+);
+assert.equal(m.data[P + 'skill'], '11');
+assert.equal(m.data[P + 'threshold'], '30');
+assert.equal(m.data[P + 'sound'], 'false');
+assert.deepEqual(JSON.parse(m.data[P + 'daily']), { d1: 4, d2: 1 });
 
 console.log('check-sync: all good');

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 // Small settings that should survive a reload (level, threshold, username...).
 
@@ -13,9 +13,17 @@ export function readStored<T>(key: string, fallback: T): T {
   }
 }
 
+/**
+ * State that is saved when it changes. The first render saves nothing: a default nobody chose must not look like
+ * a new change, or a new device would overwrite the settings in the cloud when it signs in (see cloud.ts).
+ * For simple values (string, number, boolean).
+ */
 export function useStored<T>(key: string, initial: T) {
   const [value, setValue] = useState<T>(() => readStored(key, initial));
+  const saved = useRef(value);
   useEffect(() => {
+    if (Object.is(saved.current, value)) return;
+    saved.current = value;
     try {
       localStorage.setItem(PREFIX + key, JSON.stringify(value));
     } catch {

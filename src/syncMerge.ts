@@ -87,6 +87,15 @@ MERGERS['custom-lines'] = (a, b) => {
 
 export type Side = { data: Record<string, string>; stamps: Record<string, number> };
 
+/**
+ * A device that has never synced: its settings may be defaults or leftovers, so for a key both sides have, the
+ * cloud's wins (progress is still merged item by item, and what only this device has is kept).
+ */
+export const asNewDevice = (side: Side): Side => ({
+  data: side.data,
+  stamps: Object.fromEntries(Object.keys(side.data).map((k) => [k, -1])),
+});
+
 /** The merged state of both sides. Keys are full localStorage keys (with the prefix). */
 export function mergeSides(local: Side, remote: Side): Side {
   const data: Record<string, string> = {};
