@@ -10,34 +10,55 @@ export type Analysis = {
 
 /** Fired on window when an engine could not start (detail: false), and if it starts after all (true). */
 export const ENGINE_STATUS = 'chess-trainer:engine-status';
+/** A worker that has not answered by now may be stuck: another one is started beside it (the first may just be downloading). */
+const SECOND_TRY = 8_000;
 const START_TIMEOUT = 25_000;
 
 const announce = (ok: boolean) => window.dispatchEvent(new CustomEvent(ENGINE_STATUS, { detail: ok }));
 
 export class Engine {
-  private worker: Worker;
+  private worker: Worker | null = null; // the one that answered first
+  private starting: Worker[] = [];
   private queue: Promise<unknown> = Promise.resolve();
   private listener: ((line: string) => void) | null = null;
-  /** Settles once the engine has started (cancel() does not touch it). */
+  /** Settles once the engine has started (cancel() does not touch it). Everything else waits for it. */
   readonly ready: Promise<void>;
   private round = 0; // cancel() starts a new one: searches of an older round are dropped
   private searching = false;
-  private startTimer: ReturnType<typeof setTimeout>;
+  private timers: ReturnType<typeof setTimeout>[] = [];
 
   constructor() {
-    // resolved here, not at module load, so pure helpers in this file also run under Node (scripts/)
-    this.worker = new Worker(`${import.meta.env.BASE_URL}engine/stockfish-19-lite-single.js`);
-    this.worker.onmessage = (e: MessageEvent) => {
-      const line = typeof e.data === 'string' ? e.data : String(e.data);
-      this.listener?.(line);
-    };
-    this.worker.onerror = () => announce(false);
-    this.startTimer = setTimeout(() => announce(false), START_TIMEOUT); // e.g. the .wasm file did not arrive
-    this.ready = this.exec(['uci'], (l) => l === 'uciok').then(() =>
-      this.exec(['isready'], (l) => l === 'readyok'),
-    ).then(() => {
-      clearTimeout(this.startTimer);
-      announce(true);
+    this.ready = new Promise<void>((resolve) => {
+      let failed = 0;
+      const start = () => {
+        if (this.worker) return;
+        // the address is resolved here, not at module load, so pure helpers in this file also run under Node (scripts/)
+        const w = new Worker(`${import.meta.env.BASE_URL}engine/stockfish-19-lite-single.js`);
+        this.starting.push(w);
+        w.onerror = () => {
+          failed++;
+          if (this.worker) return;
+          if (this.starting.length < 2) start();
+          else if (failed === this.starting.length) announce(false);
+        };
+        w.onmessage = (e: MessageEvent) => {
+          const line = typeof e.data === 'string' ? e.data : String(e.data);
+          if (this.worker === w) this.listener?.(line);
+          else if (!this.worker && line === 'uciok') {
+            this.worker = w;
+            this.starting.filter((x) => x !== w).forEach((x) => x.terminate());
+            this.timers.forEach(clearTimeout);
+            announce(true);
+            resolve();
+          }
+        };
+        w.postMessage('uci');
+      };
+      this.timers = [
+        setTimeout(() => this.starting.length < 2 && start(), SECOND_TRY),
+        setTimeout(() => announce(false), START_TIMEOUT), // e.g. the .wasm file did not arrive
+      ];
+      start();
     });
   }
 
@@ -55,7 +76,7 @@ export class Engine {
             resolve();
           }
         };
-        cmds.forEach((c) => this.worker.postMessage(c));
+        cmds.forEach((c) => this.worker?.postMessage(c));
       });
     const p = this.queue.then(run, run);
     this.queue = p;
@@ -78,7 +99,7 @@ export class Engine {
    */
   cancel() {
     this.round++;
-    if (this.searching) this.worker.postMessage('stop');
+    if (this.searching) this.worker?.postMessage('stop');
   }
 
   /** Search a position. `go` is e.g. "movetime 700" or "depth 14". */
@@ -112,8 +133,8 @@ export class Engine {
   }
 
   terminate() {
-    clearTimeout(this.startTimer);
-    this.worker.terminate();
+    this.timers.forEach(clearTimeout);
+    this.starting.forEach((w) => w.terminate());
   }
 }
 

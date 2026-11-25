@@ -159,6 +159,23 @@ with sync_playwright() as p:
             ok = False
         r.check('Loading' in loading and ok, 'settings chosen before the engine has loaded are kept, and the game starts', f"{loading} -> {pg.inner_text('.trainer .status-text')} {moves()}")
         c4.close()
+        # a worker that never answers: another one takes over, and only one is left of each engine
+        for stuck, label in ((2, 'both engines of Play are stuck'), (1, 'one engine of Play is stuck')):
+            c5 = b.new_context(locale='en-US', viewport={'width': 1280, 'height': 900}, service_workers='block'); pg = c5.new_page(); r.watch(pg, 'stuck')
+            pg.add_init_script("{ let n = 0; const post = Worker.prototype.postMessage; Worker.prototype.postMessage = function (m, ...x) { if (m === 'uci' && ++n <= %d) return; return post.call(this, m, ...x); }; }" % stuck)
+            t = time.time(); pg.goto(a.url); pg.wait_for_selector('.tabs'); tab(0)
+            try:
+                turn(); took = time.time() - t; wait(1500)
+                ok = not pg.locator('.engine-failed').count() and len(pg.workers) == 2
+            except Exception:
+                ok, took = False, 0
+            pg.locator('.trainer .controls select').first.select_option('play'); wait(800)
+            try:
+                turn(); mine('e2e4'); turn(); played = len(moves()) == 2
+            except Exception:
+                played = False
+            r.check(ok and played, f'{label}: another worker takes over', f'{took:.0f}s, {len(pg.workers)} workers, played {played}')
+            c5.close()
         # the engine cannot load
         c3 = b.new_context(locale='en-US', viewport={'width': 1280, 'height': 900}, service_workers='block'); pg = c3.new_page()
         c3.route('**/engine/*.js', lambda route: route.abort())
