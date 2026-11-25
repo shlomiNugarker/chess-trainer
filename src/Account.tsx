@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useDialog } from './useDialog';
 import { preloadCloud, signIn, signOut, useCloud } from './cloud';
 import { explanationsNote } from './repertoire';
-import { LANGS, hasExplanations, locale, setLang, msg, tr, useLang } from './i18n';
+import { LANGS, hasExplanations, langName, locale, setLang, msg, tr, useLang } from './i18n';
 
 /** The account panel: Google sign-in (to keep progress in sync between devices) and the language. */
 export default function Account({ onClose }: { onClose: () => void }) {
@@ -17,23 +17,23 @@ export default function Account({ onClose }: { onClose: () => void }) {
   const time = cloud.lastSync ? new Date(cloud.lastSync).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' }) : '';
   const statusText = {
     idle: '',
-    'signing-in': tr('מתחבר…', 'Signing in…'),
-    syncing: tr('מסנכרן…', 'Syncing…'),
-    synced: tr(`מסונכרן ✓${time ? ` · ${time}` : ''}`, msg`Synced ✓${time ? ` · ${time}` : ''}`),
-    offline: tr('אין חיבור — יסונכרן כשיחזור האינטרנט', 'Offline — will sync when you are back online'),
-    error: tr('הסנכרון נכשל — ננסה שוב בקרוב', 'Sync failed — will try again soon'),
-    'too-big': tr('יש יותר מדי נתונים לסנכרון, ולכן הם נשמרים רק במכשיר הזה', 'There is too much data to sync, so it is kept on this device only'),
-    'no-room': tr('אין מקום במכשיר לשמור את הנתונים של החשבון הקודם, ולכן החשבון הזה לא מסתנכרן', 'No room on this device to keep the previous account’s data, so this account is not syncing'),
+    'signing-in': tr('Signing in…'),
+    syncing: tr('Syncing…'),
+    synced: time ? tr(msg`Synced ✓ · ${time}`) : tr('Synced ✓'),
+    offline: tr('Offline — will sync when you are back online'),
+    error: tr('Sync failed — will try again soon'),
+    'too-big': tr('There is too much data to sync, so it is kept on this device only'),
+    'no-room': tr('No room on this device to keep the previous account’s data, so this account is not syncing'),
   }[cloud.status];
 
   return (
     <>
       <div className="account-backdrop" onClick={onClose} />
-      <div ref={panel} className="account-panel card" role="dialog" aria-modal="true" aria-label={tr('חשבון', 'Account')}>
+      <div ref={panel} className="account-panel card" role="dialog" aria-modal="true" aria-label={tr('Account')}>
         <div className="sheet-handle" aria-hidden />
         <div className="account-head">
-          <h2>{tr('חשבון', 'Account')}</h2>
-          <button className="ghost icon-btn" onClick={onClose} aria-label={tr('סגור', 'Close')}>✕</button>
+          <h2>{tr('Account')}</h2>
+          <button className="ghost icon-btn" onClick={onClose} aria-label={tr('Close')}>✕</button>
         </div>
 
         {cloud.enabled &&
@@ -49,40 +49,37 @@ export default function Account({ onClose }: { onClose: () => void }) {
                 {cloud.user.name && <span className="muted">{cloud.user.email}</span>}
                 <span className={['error', 'offline', 'too-big', 'no-room'].includes(cloud.status) ? 'sync-status warn' : 'sync-status'}>{statusText}</span>
               </div>
-              <button className="ghost" onClick={() => void signOut()}>{tr('התנתק', 'Sign out')}</button>
+              <button className="ghost" onClick={() => void signOut()}>{tr('Sign out')}</button>
             </div>
           ) : (
             <div className="account-signin">
               <button className="google-btn" onClick={() => void signIn()} disabled={cloud.status === 'signing-in'}>
                 <GoogleMark />
-                {cloud.status === 'signing-in' ? tr('מתחבר…', 'Signing in…') : tr('התחבר עם Google', 'Sign in with Google')}
+                {cloud.status === 'signing-in' ? tr('Signing in…') : tr('Sign in with Google')}
               </button>
               <p className="muted">
-                {tr(
-                  'ההתקדמות שלך (קווים, פאזלים, דירוג, טעויות ורצף ימים) תסתנכרן בין הטלפון למחשב, ותישמר גם אם הדפדפן יימחק.',
-                  'Your progress (lines, puzzles, rating, mistakes and streak) syncs between phone and computer, and is kept even if the browser is cleared.',
-                )}
+                {tr('Your progress (lines, puzzles, rating, mistakes and streak) syncs between phone and computer, and is kept even if the browser is cleared.')}
               </p>
-              {cloud.status === 'error' && <p className="sync-status warn">{tr('ההתחברות לא הצליחה. נסה שוב.', 'Sign-in did not work. Please try again.')}</p>}
+              {cloud.status === 'error' && <p className="sync-status warn">{tr('Sign-in did not work. Please try again.')}</p>}
             </div>
           ))}
 
         <div className="account-row">
-          <span>{tr('שפה', 'Language')}</span>
+          <span>{tr('Language')}</span>
           <div className="chips">
             {LANGS.map((l) => (
-              <button key={l.id} className={l.id === lang ? 'chip active' : 'chip'} aria-pressed={l.id === lang} onClick={() => setLang(l.id)} lang={l.id}>{l.name}</button>
+              <button key={l.id} className={l.id === lang ? 'chip active' : 'chip'} aria-pressed={l.id === lang} onClick={() => setLang(l.id)} lang={l.id}>{langName(l.id)}</button>
             ))}
           </div>
         </div>
-        {!hasExplanations(lang) && <p className="muted lang-note">{explanationsNote()}</p>}
+        {!hasExplanations() && <p className="muted lang-note">{explanationsNote()}</p>}
 
         {/* GPL: whoever gets the app (and the Stockfish engine in it) can get the source */}
         <p className="muted account-foot">
-          {tr('קוד פתוח (GPL-3.0)', 'Open source (GPL-3.0)')} ·{' '}
+          {tr('Open source (GPL-3.0)')} ·{' '}
           <a href="https://github.com/shlomiNugarker/chess-trainer" target="_blank" rel="noreferrer">GitHub</a> ·{' '}
           <a href="https://github.com/shlomiNugarker/chess-trainer/blob/main/THIRD_PARTY_NOTICES.md" target="_blank" rel="noreferrer">
-            {tr('רישיונות', 'Licenses')}
+            {tr('Licenses')}
           </a>
         </p>
       </div>

@@ -17,7 +17,7 @@ import { saveMistake } from './mistakes';
 import { DAILY_GOAL, dayStreak, recordPuzzleDay, todayCount, daysLabel } from './daily';
 import { useStored } from './storage';
 import { msg, tr } from './i18n';
-import { BOARD_THEME, GREEN_ARROW, LAST_MOVE, ltr, uciToArrow } from './chessUtils';
+import { BOARD_THEME, GREEN_ARROW, LAST_MOVE, uciToArrow } from './chessUtils';
 import { useClickToMove } from './useClickToMove';
 import { playSound, useMoveSound } from './sound';
 import { useFitBoard } from './useFitBoard';
@@ -214,26 +214,26 @@ export default function Puzzles() {
   };
 
   const modes: { id: PuzzleMode; label: string }[] = [
-    { id: 'level', label: tr('לרמה שלי', 'For my level') },
-    { id: 'openings', label: tr('מהפתיחות שלי', 'From my openings') },
-    { id: 'mates', label: tr('מטים', 'Mates') },
+    { id: 'level', label: tr('For my level') },
+    { id: 'openings', label: tr('From my openings') },
+    { id: 'mates', label: tr('Mates') },
   ];
 
   const streakDays = dayStreak();
   const header = (
     <header className="learn-header puzzle-header">
-      <div className="chips" role="group" aria-label={tr('פאזלים', 'Puzzles')}>
+      <div className="chips" role="group" aria-label={tr('Puzzles')}>
         {modes.map((m) => (
           <button key={m.id} className={m.id === mode ? 'chip active' : 'chip'} aria-pressed={m.id === mode} onClick={() => changeMode(m.id)}>
             {m.label}
           </button>
         ))}
       </div>
-      <span className="pill puzzle-rating" title={tr('הדירוג שלך בפאזלים', 'Your puzzle rating')}>
-        {tr('דירוג', 'Rating')} <b>{stats.rating}</b>
+      <span className="pill puzzle-rating" title={tr('Your puzzle rating')}>
+        {tr('Rating')} <b>{stats.rating}</b>
       </span>
-      <span className={today >= DAILY_GOAL ? 'pill daily-pill done' : 'pill daily-pill'} title={tr(`המטרה היומית: ${DAILY_GOAL} פאזלים`, msg`Daily goal: ${DAILY_GOAL} puzzles`)}>
-        🎯 {tr('היום', 'Today')} {Math.min(today, DAILY_GOAL)}/{DAILY_GOAL}
+      <span className={today >= DAILY_GOAL ? 'pill daily-pill done' : 'pill daily-pill'} title={tr(msg`Daily goal: ${DAILY_GOAL} puzzles`)}>
+        🎯 {tr('Today')} {Math.min(today, DAILY_GOAL)}/{DAILY_GOAL}
       </span>
       {streakDays > 0 && <span className="pill">🔥 {daysLabel(streakDays)}</span>}
     </header>
@@ -243,9 +243,9 @@ export default function Puzzles() {
     return (
       <div className="card drill-empty">
         <div className="empty-mark" aria-hidden>🧩</div>
-        <h2>{tr('לא הצלחתי לטעון את הפאזלים', 'Could not load the puzzles')}</h2>
-        <p className="muted">{tr('צריך חיבור לאינטרנט בפעם הראשונה. אחר כך הם עובדים גם בלי.', 'The first time needs an internet connection; after that they work offline too.')}</p>
-        <button className="primary" onClick={() => location.reload()}>{tr('נסה שוב', 'Try again')}</button>
+        <h2>{tr('Could not load the puzzles')}</h2>
+        <p className="muted">{tr('The first time needs an internet connection; after that they work offline too.')}</p>
+        <button className="primary" onClick={() => location.reload()}>{tr('Try again')}</button>
       </div>
     );
   }
@@ -255,7 +255,7 @@ export default function Puzzles() {
         {header}
         <div className="card drill-empty">
           <div className="empty-mark" aria-hidden>🧩</div>
-          <p className="muted">{all ? tr('אין פאזלים במצב הזה.', 'No puzzles in this mode.') : tr('טוען פאזלים…', 'Loading puzzles…')}</p>
+          <p className="muted">{all ? tr('No puzzles in this mode.') : tr('Loading puzzles…')}</p>
         </div>
       </>
     );
@@ -269,7 +269,7 @@ export default function Puzzles() {
   const arrows: Arrow[] = wrong ? [uciToArrow(wrong, GREEN_ARROW)] : [];
   const done = status === 'solved' || status === 'shown';
   const themes = themeNames(puzzle);
-  const side = me === 'w' ? tr('לבן', 'White') : tr('שחור', 'Black');
+  const side = me === 'w' ? tr('White') : tr('Black');
 
   return (
     <>
@@ -299,27 +299,24 @@ export default function Puzzles() {
             <span className="status-text">
               {status === 'solved'
                 ? failed
-                  ? tr('פתרת — אחרי עזרה', 'Solved — with help')
+                  ? tr('Solved — with help')
                   : usedHint
-                    ? tr('נפתר עם רמז — חצי נקודה', 'Solved with a hint — half credit')
-                    : tr('נפתר ✓', 'Solved ✓')
+                    ? tr('Solved with a hint — half credit')
+                    : tr('Solved ✓')
                 : status === 'shown'
-                  ? tr('זה הפתרון', 'That is the solution')
+                  ? tr('That is the solution')
                   : status === 'solving'
-                    ? tr(`מצא את המהלך הטוב ביותר ל${side}`, msg`Find the best move for ${side}`)
-                    : tr('היריב משחק…', 'Opponent is moving…')}
+                    ? tr(msg`Find the best move for ${side}`)
+                    : tr('Opponent is moving…')}
             </span>
-            <span className="pill">{tr(`פאזל ${puzzle.rating}`, msg`Puzzle ${puzzle.rating}`)}</span>
+            <span className="pill">{tr(msg`Puzzle ${puzzle.rating}`)}</span>
           </div>
 
           {wrong && status === 'solving' && (
             <div className="card feedback tone-error">
-              <strong>{tr('לא המהלך הזה', 'Not that move')}</strong>
+              <strong>{tr('Not that move')}</strong>
               <p className="muted">
-                {tr(
-                  `החץ הירוק מראה את המהלך הנכון: ${ltr(applyUci(fen, wrong).san)}. שחק אותו כדי להמשיך. העמדה נשמרה ב"הטעויות שלי".`,
-                  msg`The green arrow shows the right move: ${applyUci(fen, wrong).san}. Play it to go on. The position was saved to "My mistakes".`,
-                )}
+                {tr(msg`The green arrow shows the right move: ${applyUci(fen, wrong).san}. Play it to go on. The position was saved to "My mistakes".`)}
               </p>
             </div>
           )}
@@ -329,16 +326,13 @@ export default function Puzzles() {
               <strong>
                 {delta !== null &&
                   (delta >= 0
-                    ? tr(`הדירוג שלך: ${stats.rating} (${ltr('+' + delta)})`, msg`Your rating: ${stats.rating} (+${delta})`)
-                    : tr(`הדירוג שלך: ${stats.rating} (${ltr(String(delta))})`, msg`Your rating: ${stats.rating} (${delta})`))}
+                    ? tr(msg`Your rating: ${stats.rating} (${'+' + delta})`)
+                    : tr(msg`Your rating: ${stats.rating} (${delta})`))}
               </strong>
-              {themes.length > 0 && <p>{tr(`הנושא: ${themes.join(' · ')}`, msg`Theme: ${themes.join(' · ')}`)}</p>}
+              {themes.length > 0 && <p>{tr(msg`Theme: ${themes.join(' · ')}`)}</p>}
               {goalJustMet && (
                 <p className="daily-done">
-                  {tr(
-                    `🎯 המטרה היומית הושגה! 🔥 ${daysLabel(streakDays)} ברצף. אפשר להמשיך או לחזור מחר.`,
-                    msg`🎯 Daily goal reached! 🔥 ${daysLabel(streakDays)} in a row. Keep going, or come back tomorrow.`,
-                  )}
+                  {tr(msg`🎯 Daily goal reached! 🔥 ${daysLabel(streakDays)} in a row. Keep going, or come back tomorrow.`)}
                 </p>
               )}
             </div>
@@ -346,26 +340,26 @@ export default function Puzzles() {
 
           <div className="buttons">
             {done ? (
-              <button className="primary" onClick={() => nextPuzzle()}>{tr('הפאזל הבא ›', 'Next puzzle ›')}</button>
+              <button className="primary" onClick={() => nextPuzzle()}>{tr('Next puzzle ›')}</button>
             ) : (
               <>
                 <button className="ghost" onClick={showHint} disabled={status !== 'solving' || hint}>
-                  💡 {tr('רמז', 'Hint')}
+                  💡 {tr('Hint')}
                 </button>
                 <button className="ghost" onClick={showSolution} disabled={status === 'intro'}>
-                  {tr('הראה פתרון', 'Show solution')}
+                  {tr('Show solution')}
                 </button>
-                <button className="ghost" onClick={() => nextPuzzle()}>{tr('דלג', 'Skip')}</button>
+                <button className="ghost" onClick={() => nextPuzzle()}>{tr('Skip')}</button>
               </>
             )}
           </div>
 
           <div className="muted puzzle-stats">
-            {tr(`פתרת ${stats.solved} מתוך ${stats.played}`, msg`Solved ${stats.solved} of ${stats.played}`)}
-            {stats.best > 1 && ` · ${tr(`שיא רצף: ${stats.best}`, msg`Best streak: ${stats.best}`)}`}
+            {tr(msg`Solved ${stats.solved} of ${stats.played}`)}
+            {stats.best > 1 && ` · ${tr(msg`Best streak: ${stats.best}`)}`}
             {' · '}
             <a href={`https://lichess.org/training/${puzzle.id}`} target="_blank" rel="noreferrer">
-              {tr('פאזלים: Lichess', 'Puzzles: Lichess')}
+              {tr('Puzzles: Lichess')}
             </a>
           </div>
         </aside>

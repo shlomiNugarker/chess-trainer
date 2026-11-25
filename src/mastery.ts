@@ -5,7 +5,7 @@ export type LineRecord = { tries: number; clean: number; last: number; at: numbe
 
 const KEY = 'chess-trainer:mastery';
 
-type Store = Record<string, Record<string, LineRecord>>; // repertoireId -> line name -> record
+type Store = Record<string, Record<string, LineRecord>>; // repertoireId -> line id -> record
 
 function read(): Store {
   try {
@@ -23,11 +23,11 @@ export function hasAnyMastery(): boolean {
   return Object.values(read()).some((lines) => Object.keys(lines).length > 0);
 }
 
-export function recordRun(repertoireId: string, lineName: string, mistakes: number) {
+export function recordRun(repertoireId: string, lineId: string, mistakes: number) {
   const s = read();
   const lines = (s[repertoireId] ??= {});
-  const r = lines[lineName] ?? { tries: 0, clean: 0, last: 0, at: 0 };
-  lines[lineName] = { tries: r.tries + 1, clean: r.clean + (mistakes ? 0 : 1), last: mistakes, at: Date.now() };
+  const r = lines[lineId] ?? { tries: 0, clean: 0, last: 0, at: 0 };
+  lines[lineId] = { tries: r.tries + 1, clean: r.clean + (mistakes ? 0 : 1), last: mistakes, at: Date.now() };
   try {
     localStorage.setItem(KEY, JSON.stringify(s));
   } catch {

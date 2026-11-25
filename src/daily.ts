@@ -47,5 +47,5 @@ export function dayStreak(now = new Date()): number {
   return n;
 }
 
-/** "יום אחד" / "3 ימים", "1 day" / "3 days". */
-export const daysLabel = (n: number) => (n === 1 ? tr('יום אחד', '1 day') : tr(`${n} ימים`, msg`${n} days`));
+/** "1 day", "3 days". */
+export const daysLabel = (n: number) => (n === 1 ? tr('1 day') : tr(msg`${n} days`));

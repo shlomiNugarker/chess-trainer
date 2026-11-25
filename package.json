@@ -2,7 +2,7 @@
   "name": "chess-trainer",
   "private": true,
   "version": "0.0.0",
-  "description": "Learn chess openings step by step, train them against Stockfish, solve puzzles and review your Chess.com games — a free PWA in Hebrew, English and Spanish.",
+  "description": "Learn chess openings step by step, train them against Stockfish, solve puzzles and review your Chess.com games — a free PWA in English, Hebrew and Spanish.",
   "license": "GPL-3.0-or-later",
   "author": "Shlomi Nugarker",
   "homepage": "https://opening-trainer-app.vercel.app",

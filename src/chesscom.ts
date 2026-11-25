@@ -1,7 +1,7 @@
 // Chess.com public API (https://www.chess.com/news/view/published-data-api). No auth, CORS-enabled.
 // We load the monthly archives (newest first, up to MAX_GAMES games) and boil each game down to the few fields the review needs.
 
-import { msg, tr } from './i18n.ts';
+import { msg, tr, trKey } from './i18n.ts';
 
 export type Result = 'win' | 'loss' | 'draw';
 export type TimeClass = 'bullet' | 'blitz' | 'rapid' | 'daily';
@@ -42,7 +42,7 @@ const API = 'https://api.chess.com/pub/player';
 const DRAW_CODES = new Set(['agreed', 'repetition', 'stalemate', 'insufficient', '50move', 'timevsinsufficient']);
 
 export class ChessComError extends Error {}
-const noSuchUser = () => new ChessComError(tr('לא נמצא משתמש בשם הזה ב-Chess.com.', 'No Chess.com user with this name.'));
+const noSuchUser = () => new ChessComError(tr('No Chess.com user with this name.'));
 
 async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
   for (let attempt = 0; ; attempt++) {
@@ -50,14 +50,14 @@ async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
     try {
       res = await fetch(url, { signal });
     } catch {
-      throw new ChessComError(tr('אין חיבור ל-Chess.com. בדוק את החיבור לאינטרנט ונסה שוב.', 'Cannot reach Chess.com. Check your internet connection and try again.'));
+      throw new ChessComError(tr('Cannot reach Chess.com. Check your internet connection and try again.'));
     }
     if (res.status === 429 && attempt < 3) {
       await new Promise((r) => setTimeout(r, 1000 * (attempt + 1))); // rate limited — back off
       continue;
     }
     if (res.status === 404) throw noSuchUser();
-    const failed = () => new ChessComError(tr(`Chess.com החזיר שגיאה (${res.status}). נסה שוב בעוד רגע.`, msg`Chess.com returned an error (${res.status}). Try again in a moment.`));
+    const failed = () => new ChessComError(tr(msg`Chess.com returned an error (${res.status}). Try again in a moment.`));
     if (!res.ok) throw failed();
     try {
       return (await res.json()) as T;
@@ -67,10 +67,14 @@ async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
   }
 }
 
+/** The opening of a game Chess.com gives no opening for (translated where it is shown: openingName). */
+export const UNKNOWN = trKey('Unknown');
+export const openingName = (name: string) => (name === UNKNOWN ? tr(UNKNOWN) : name);
+
 /** "https://www.chess.com/openings/Italian-Game-Two-Knights-Defense" -> "Italian Game Two Knights Defense" */
 export function openingFromEco(eco?: string): { full: string; family: string } {
   const slug = eco?.split('/openings/')[1];
-  if (!slug) return { full: tr('לא ידוע', 'Unknown'), family: tr('לא ידוע', 'Unknown') };
+  if (!slug) return { full: UNKNOWN, family: UNKNOWN };
   const words = slug.replace(/\.{3}/g, '-').split('-'); // "Gambit...5.Bf4" -> "Gambit", "5.Bf4"
   const cut = words.findIndex((w) => /\d/.test(w)); // drop the move-list tail ("3.e5", "...Nf6")
   const full = (cut === -1 ? words : words.slice(0, Math.max(cut, 1))).join(' ');

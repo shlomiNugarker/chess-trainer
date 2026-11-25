@@ -5,7 +5,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Chess } from 'chess.js';
-import { ltr } from './chessUtils';
 import { REPERTOIRES, buildBook, moveLabel, posKey, type Repertoire } from './repertoire';
 import { msg, tr } from './i18n';
 
@@ -56,14 +55,14 @@ export function removeCustomLine(repId: string, moves: string) {
   write(s);
 }
 
-/** Stable id of a branch (used as its line name, so "mastered" marks stick to it). */
+/** Stable id of a branch (so "mastered" marks stick to it). */
 export const customName = (moves: string) => `custom:${moves}`;
 
 /** The repertoire with the user's branches appended to its lines. */
 export function withCustom(rep: Repertoire): Repertoire {
   const extra = loadCustom(rep.id);
   if (!extra.length) return rep;
-  return { ...rep, lines: [...rep.lines, ...extra.map((c) => ({ name: customName(c.moves), moves: c.moves, custom: c.dev }))] };
+  return { ...rep, lines: [...rep.lines, ...extra.map((c) => ({ id: customName(c.moves), name: customName(c.moves), moves: c.moves, custom: c.dev }))] };
 }
 
 /** The repertoire with the user's branches, refreshed whenever a branch is added or removed. */
@@ -98,21 +97,21 @@ export function importPgn(repId: string, text: string): ImportResult[] {
     .filter(Boolean);
   const results: ImportResult[] = [];
   for (const [n, pgn] of games.entries()) {
-    const which = games.length > 1 ? tr(`משחק ${n + 1}: `, msg`Game ${n + 1}: `) : '';
+    const which = games.length > 1 ? tr(msg`Game ${n + 1}: `) : '';
     const c = new Chess();
     try {
       c.loadPgn(pgn);
     } catch {
-      results.push({ ok: false, text: which + tr('לא הצלחתי לקרוא את המהלכים.', 'Could not read the moves.') });
+      results.push({ ok: false, text: which + tr('Could not read the moves.') });
       continue;
     }
     const moves = c.history({ verbose: true });
     if (!moves.length) {
-      results.push({ ok: false, text: which + tr('אין מהלכים.', 'No moves.') });
+      results.push({ ok: false, text: which + tr('No moves.') });
       continue;
     }
     if (moves[0].before !== START) {
-      results.push({ ok: false, text: which + tr('רק קווים מעמדת הפתיחה הרגילה.', 'Only lines from the normal starting position.') });
+      results.push({ ok: false, text: which + tr('Only lines from the normal starting position.') });
       continue;
     }
     const rep = withCustom(REPERTOIRES.find((r) => r.id === repId)!);
@@ -124,10 +123,7 @@ export function importPgn(repId: string, text: string): ImportResult[] {
       const known = book.get(posKey(m.before));
       if (known?.includes(m.san)) continue;
       if (known?.length && m.color === rep.userColor) {
-        conflict = tr(
-          `הקו משחק ${ltr(moveLabel(i, m.san))}, אבל ברפרטואר שלך משחקים כאן ${ltr(moveLabel(i, known[0]))}. אפשר רק מהלך אחד שלך בכל עמדה.`,
-          msg`The line plays ${moveLabel(i, m.san)}, but your repertoire plays ${moveLabel(i, known[0])} here. Only one move of yours per position.`,
-        );
+        conflict = tr(msg`The line plays ${moveLabel(i, m.san)}, but your repertoire plays ${moveLabel(i, known[0])} here. Only one move of yours per position.`);
         break;
       }
       if (firstNew < 0) firstNew = i;
@@ -137,13 +133,13 @@ export function importPgn(repId: string, text: string): ImportResult[] {
       continue;
     }
     if (firstNew < 0) {
-      results.push({ ok: false, text: which + tr('הקו כבר נמצא ברפרטואר.', 'This line is already in the repertoire.') });
+      results.push({ ok: false, text: which + tr('This line is already in the repertoire.') });
       continue;
     }
     const dev = moveLabel(firstNew, sans[firstNew]);
     addCustomLine(repId, sans, dev);
-    results.push({ ok: true, text: which + tr(`נוסף: ★ מול ${ltr(dev)} (${Math.ceil(sans.length / 2)} מהלכים)`, msg`Added: ★ Vs ${dev} (${Math.ceil(sans.length / 2)} moves)`) });
+    results.push({ ok: true, text: which + tr(msg`Added: ★ Vs ${dev} (${Math.ceil(sans.length / 2)} moves)`) });
   }
-  if (!games.length) results.push({ ok: false, text: tr('הדבק PGN או מהלכים.', 'Paste a PGN or moves.') });
+  if (!games.length) results.push({ ok: false, text: tr('Paste a PGN or moves.') });
   return results;
 }

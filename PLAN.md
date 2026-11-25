@@ -1,198 +1,192 @@
-# מאמן פתיחות — תוכנית עבודה
+# Opening trainer — work plan
 
-**המטרה:** ללמוד רפרטואר פתיחות לעומק ולהשתפר. שש פתיחות: עם לבן לונדון ו-1.e4 (פתיחת הרץ/איטלקית ועוד); עם שחור מול 1.e4 קארו-קאן או סיציליאנית עם ...e6, ומול 1.d4 סלאבית או גמביט המלכה המקובל. את מה שלא משחקים אפשר להסתיר. מתרגלים במשחק מול המחשב: בכל טעות המשחק עוצר, מראה את המהלך הנכון ומאפשר לבחור **חזור ונסה** או **המשך בכל זאת**. לצד זה יש פאזלים, חזרה על טעויות, וסקירה של המשחקים שלך ב-Chess.com.
+**Goal:** learn an opening repertoire in depth and improve. Six openings: as White the London and 1.e4 (Bishop's Opening / Italian and more); as Black against 1.e4 the Caro-Kann or the Sicilian with ...e6, and against 1.d4 the Slav or the Queen's Gambit Accepted. Openings you don't play can be hidden. You practice by playing against the computer: at every mistake the game stops, shows the right move and lets you choose **go back and play** or **continue anyway**. Beside it there are puzzles, a review of your mistakes, and a review of your Chess.com games.
 
-**כלל עבודה:** כל שלב מסתיים במשהו שמשחקים בו. לא עוברים לשלב הבא לפני ששיחקת לפחות 3 משחקים בשלב הנוכחי.
+**Working rule:** every stage ends with something you play. No moving to the next stage before playing at least 3 games in the current one.
 
 ---
 
-## ארכיטקטורה (בקצרה)
+## Architecture (in short)
 
-| חלק | בחירה | למה |
+| Part | Choice | Why |
 |---|---|---|
-| UI | Vite + React + TypeScript | מהיר, בלי backend |
-| חוקים | `chess.js` | חוקיות מהלכים, FEN, undo |
-| לוח | `react-chessboard` v5 | תואם React 19, תומך בחיצים ובהדגשות |
-| מנוע | Stockfish 19 lite single-threaded (WASM, Web Worker) | כ-2MB, לא צריך headers מיוחדים |
-| ספר פתיחות | `src/repertoire.ts` (+ `repertoire.en.ts`), קווים ב-SAN שממוזגים למפה לפי עמדה | עובד גם בטרנספוזיציות, בלי תלות ב-API |
-| שמירה | localStorage (מפתחות `chess-trainer:*`) | מספיק לשימוש אישי |
-| סנכרון (רשות) | Firebase Auth (Google) + Firestore, מסמך אחד למשתמש | אותה התקדמות בטלפון ובמחשב, בלי שרת |
-| אופליין | PWA: `public/sw.js` + `manifest.webmanifest` | מתקינים כאפליקציה, עובד גם בלי אינטרנט |
+| UI | Vite + React + TypeScript | Fast, no backend |
+| Rules | `chess.js` | Legal moves, FEN, undo |
+| Board | `react-chessboard` v5 | Works with React 19, supports arrows and highlights |
+| Engine | Stockfish 19 lite single-threaded (WASM, Web Worker) | About 2MB, needs no special headers |
+| Opening book | `src/repertoire.ts`, lines in SAN merged into a map by position | Works through transpositions too, no API needed |
+| Storage | localStorage (`chess-trainer:*` keys) | Enough for personal use |
+| Sync (optional) | Firebase Auth (Google) + Firestore, one document per user | The same progress on phone and computer, no server |
+| Offline | PWA: `public/sw.js` + `manifest.webmanifest` | Installs as an app, works without internet |
 
-**שני "מוחות":**
-1. **בתוך הקו:** הספר הוא השופט. אם סטית מהקו, המשחק עוצר.
-2. **אחרי הקו:** שני מופעים של Stockfish. **יריב** מוחלש (`Skill Level` 0–20) ו**מאמן** בעוצמה מלאה. המאמן ממיר את ההערכה לאחוזי ניצחון (הנוסחה של Lichess) ועוצר אותך כשהם יורדים מעל הסף: 10% אי-דיוק, 20% טעות, 30% בלאנדר.
-
----
-
-## שלב 1 — MVP ✅
-- [x] לוח, בחירת פתיחה (לבן/שחור), כיוון הלוח לפי הצבע
-- [x] 90 קווים: לונדון (8), איטלקית ו-1.e4 (32: 6 איטלקית, 9 פתיחת הרץ, 3 סקנדינבית, 4 אלאפין מול הסיציליאנית, 2 צרפתית מתקדמת, 2 קארו-קאן מתקדמת, מודרנית, פירץ, פילידור, אוון, 2 נימצוביץ׳), קארו-קאן (6), סיציליאנית עם ...e6 (22), גמביט המלכה המקובל (7), סלאבית (15, כולל 7 מול לונדון, קולה, 2.e3 ו-2.Nc3). כולם נבדקו כחוקיים (`scripts/check-lines.ts`), וכל מהלך של המשתמש נבדק עם Stockfish (עומק 20, לא מאבד יותר מכ-2%; החריגים מתועדים בשלב 4)
-- [x] היריב משחק מתוך הספר באקראי בין הענפים, ואחרי הקו עובר למנוע מוחלש
-- [x] עצירה בסטייה מהקו, עם חץ ירוק למהלך הנכון
-- [x] עצירה על טעות במשחק החופשי, לפי ירידה באחוזי הניצחון
-- [x] כפתורים: חזור ונסה / המשך בכל זאת / רמז / החזר מהלך / משחק חדש
-- [x] סליידר לרמת המחשב, ובחירת רגישות העצירה
-- [x] כל טעות נשמרת ב-localStorage, עם שדות שמוכנים לחזרה מרווחת
-- [x] משחק רגיל בכל רמה וצבע, בלי קשר לרפרטואר
-
-**לבדוק בעצמך (עוד לא נעשה):** 3 משחקים בכל פתיחה. רשום מה מעצבן ומה חסר — לפני שמוסיפים פיצ'רים גדולים.
-
-## שלב 2 — הסברים ("למה") ✅
-- [x] לכל קו `idea`, ולכל מהלך של המשתמש (ולמהלכי יריב חשובים) `note` במשפט אחד, בעברית ובאנגלית. המפתחות נבדקים ב-`check-lines`
-- [x] ההסברים מוצגים בעמוד "למד", מהלך אחר מהלך
-- [x] באימון, בתוך הקו: כרטיס עם שם הקו ("ועוד N קווים מכאן") וההסבר לשני המהלכים האחרונים; בטלפון רק האחרון, כדי שהכפתורים יישארו במסך (אפשר לכבות ב"עוד אפשרויות")
-- [x] בעצירה על סטייה מהקו: "למה:" עם ההסבר למהלך הנכון. הקו מזוהה גם בטרנספוזיציה (`lineInfo`, `noteForNext` ב-`src/repertoire.ts`)
-
-## שלב 3 — חזרה על טעויות (spaced repetition) ✅
-- [x] "הטעויות שלי" (בלשונית "תרגול"): מקבל עמדה מתוך `mistakes`, ומבקש את המהלך הנכון
-- [x] Leitner boxes: נכון → box+1, ומועד החזרה הבא בעוד 1, 3, 7, 14 או 30 יום. טעות → חוזר ל-box 0, והעמדה חוזרת בסוף הסבב
-- [x] מונה "לחזרה היום" על הלשונית
-- [x] בטעויות מהמנוע מתקבל גם מהלך חלופי שמאבד פחות מ-10% אחוזי ניצחון
-- [x] מקורות: אימון, "בחן אותי", ניתוח משחקי Chess.com ופאזלים
-
-## שלב 3.5 — סקירת משחקים מ-Chess.com ✅
-- [x] טעינת המשחקים לפי שם משתמש (API ציבורי, ישירות מהדפדפן): מהחודש האחרון אחורה, עד 5,000 משחקים (הערה "הסקירה מבוססת על N המשחקים האחרונים" כשיש יותר)
-- [x] שם המשתמש נשמר, והמשחקים נטענים שוב אוטומטית כשנכנסים ללשונית אחרי רענון; בלי אינטרנט משתמשים בעותק האחרון של החודש הנוכחי
-- [x] "3 הדברים הכי חשובים לשפר": עצות מחוקים פשוטים, עם כפתור פעולה
-- [x] ניקוד לפי צבע, קצב ופתיחה (3 החלשות מסומנות), איך אתה מפסיד, גרף דירוג
-- [x] ניתוח מנוע של 5/10/20 המשחקים האחרונים; טעויות ובלאנדרים נכנסים לחזרה
-- [x] כפתור "תאמן" ליד פתיחה שיש לה קווים ברפרטואר (כולל הסיציליאנית, הסלאבית, גמביט המלכה המקובל, ומשחקי שחור מול לונדון/קולה); כל משחק משויך לרפרטואר שהלך בו הכי רחוק
-- [x] תוצאות ניתוח המנוע נשמרות (`src/analysisCache.ts`, במכשיר בלבד): מוצגות מיד בכניסה, ומנתחים רק משחקים חדשים — וטעויות שכבר בחזרה לא מתאפסות
-- [x] חודשים קודמים נשמרים במטמון הדפדפן (Cache Storage, לא מסונכרן) — רק החודש הנוכחי נטען מחדש
-- [x] סקירת משחק (22.11.2026): "סקור את המשחק האחרון" או כל אחד מ-50 המשחקים האחרונים. כל מהלך מקבל תווית (ספר, הטוב ביותר, טוב, אי-דיוק 10%, טעות 20%, בלאנדר 30% — אותם ספים כמו בשאר האפליקציה), עם המהלך הטוב כחץ ירוק והמשך של המנוע; דיוק לשני הצדדים (נוסחת Lichess לכל מהלך, ממוצע של ממוצע רגיל והרמוני); גרף סיכויים לאורך המשחק (לחיצה קופצת); "לטעות הבאה שלי"; איפה המשחק יצא מהרפרטואר וקישור לקו ב"למד"; "תרגל את העמדה" ו"הוסף את הטעויות שלי לתרגול". המנוע רץ במכשיר ומחפש לפי עומק ולא לפי זמן (עומק 14 לכל עמדה, ואז עומק 16 סביב כל מהלך חשוד) — כך אותו משחק מקבל תמיד בדיוק אותה סקירה (נבדק: 3 הרצות, תוצאה זהה), וזה גם מהיר יותר: 8–20 שניות למשחק במחשב, בלי הגבלה יומית. הניתוח נשמר במכשיר בלבד (`game-reviews`, 40 משחקים) ומשחק שנסקר נפתח מיד (`src/GameReview.tsx`, `src/gameAnalysis.ts`, נבדק ב-`check-review` וב-`scripts/qa/screens.py`). מנוע אחר ועומק אחר מ-Chess.com, אז המספרים לא זהים להם
-- [x] "הדיוק שלך לאורך זמן" ב"הסקירה שלי": ממוצע חודשי של הדיוק משני מקורות — משחקים שנסקרו ב-Chess.com (רק חודשים עם 3 משחקים לפחות) ומשחקים שנסקרו כאן (מהסקירות השמורות במכשיר) — כשני קווים בגרף, עם שורת מגמה (החודש האחרון מול ממוצע 3 החודשים שלפניו) ונקודה שמראה את שני הערכים של אותו חודש. מסנן הקצב חל גם עליו. הגרפים (גם גרף הדירוג) מצוירים ברוחב האמיתי שלהם, כך שהטקסט קריא בטלפון (`accuracyByMonth`/`accuracyTrend` ב-`src/reviewStats.ts`, נבדק ב-`check-review`)
-- [x] עיצוב סקירת המשחק במבנה של סקירה באתר שחמט (בעיצוב של האפליקציה, בלי הגרפיקה שלהם): סימן עגול וצבעוני לכל סוג מהלך (★ הטוב ביותר, ✓ טוב, ספר, ?! ? ??) על פינת המשבצת שהכלי הגיע אליה, בכרטיס "מאמן" ("15...Rc8 הוא בלאנדר" + הערכה מספרית +4.9 / M3), בטבלת הסיכום (שני השחקנים, תיבות דיוק לבן/שחור, ומספר המהלכים מכל סוג לכל צד) וברשימת המהלכים; גרף גבוה יותר עם סימון רגעי המפתח של שני הצדדים; "התחל סקירה" בעמדת הפתיחה
-
-## שלב 3.6 — ללמוד את ההמשך אחרי הספר ✅
-- [x] מד סיכויים לשני הצדדים ליד הלוח (אפשר לכבות)
-- [x] אחרי כל מהלך במשחק החופשי: מה היה המהלך הטוב ביותר, בלי לעצור (עוצר רק מעל הסף)
-- [x] עד מהלך 15 המחשב משחק במלוא הכוח, כדי שהקווים יחזרו על עצמם
-- [x] המהלך הטוב ביותר בכל עמדה עד מהלך 15 נשמר ("מהלכים שלמדת"), ובפעם הבאה נבדק כמו ספר: "זכרת!" / "שכחת את המהלך"
-- [x] "אזור הלמידה" (עד מהלך 15): מהלך שמאבד 5% ומעלה נעצר עם תיקון, חזור ונסה / המשך; ירידה של 2–5% מראה את המהלך הטוב בלי לעצור, עם "חזור ונסה" (אפשר לכבות)
-- [x] בתיקון מוצג גם ההמשך של המנוע (4 חצאי-מהלכים), כדי ללמוד את הרעיון ולא רק מהלך אחד
-- [x] מהלך שלך ששווה למהלך המנוע (פחות מ-2% הפרש) נשמר כמהלך הנלמד — קל יותר לזכור את המהלך שלך
-- [x] מונה "זכרת N מתוך M" במשחק; עמדה שתוקנה באותו משחק לא נספרת
-- [x] מהלך פחות טוב שלא עוצר (מתחת לסף): כפתור "↩ חזור ונסה את X" — מבטל את המהלך (וגם את תשובת המחשב) ומראה חץ למהלך הטוב
-
-## עמוד "למד" ✅
-- [x] לכל פתיחה: כל הקווים שלב אחר שלב על לוח, עם חץ למהלך הבא ומקשי חצים
-- [x] רעיון לכל קו והסבר לכל מהלך של המשתמש בכל 90 הקווים
-- [x] "מכאן בקווים אחרים": קפיצה לקו אחר שעובר באותה עמדה (גם בטרנספוזיציה)
-- [x] "בחן אותי": משחקים את הקו בעצמך; טעות נשמרת לחזרה
-- [x] התקדמות: קו שעברת בבחינה בלי טעויות מסומן ✓, "שולט ב-N מתוך M", והצעה לקו הבא ללמוד
-- [x] כרטיס "איך לומדים כאן" לביקור ראשון (4 צעדים), ופתיחה בלשונית "למד" — אחר כך האפליקציה זוכרת את הלשונית האחרונה
-- [x] כרטיס "היום": רצף ימים 🔥, פאזלים X/5, חזרה (אם יש), הקו הבא ללמוד / "בחן אותי", או משחק אימון — לחיצה אחת
-
-## פאזלים ✅ (לשונית "תרגול")
-- [x] 3,900 פאזלים ממאגר Lichess (CC0, `public/puzzles-v3.json`; השם משתנה כשהתוכן משתנה, כי ה-service worker שומר לפי שם, נבנה ב-`scripts/build-puzzles.py`, נבדק ב-`check-puzzles`)
-- [x] דירוג אישי (Elo), מצבים: לרמה שלי / מהפתיחות שלי (900 פאזלים: 150 מכל אחת משש הפתיחות) / מטים
-- [x] רמז (פאזל שנפתר עם רמז נספר כחצי נקודה, כמו תיקו), הראה פתרון, דלג; שם הטקטיקה בסוף ("מזלג", "ריתוק"…); פאזל שנכשלת בו נכנס ל"הטעויות שלי"
-- [x] מטרה יומית: 5 פאזלים, ורצף ימים 🔥
-
-## סנכרון וחשבון ✅
-- [x] התחברות עם Google (רשות). בלי התחברות הכל עובד כמו קודם
-- [x] סנכרון כל ההתקדמות בין מכשירים, עם מיזוג חכם (`src/syncMerge.ts`, נבדק ב-`check-sync`) — לא מאבדים התקדמות גם אם שיחקת בשני מכשירים
-- [x] חלונית "חשבון": התחברות/התנתקות, מצב סנכרון, ובחירת שפה
-- [x] Firebase `chess-trainer-18bd8` (חינמי), כללי אבטחה: כל משתמש רואה רק את המסמך שלו. ההוראות ב-`docs/google-login-setup.md`
-
-## שפות ✅
-- [x] עברית, אנגלית וספרדית; ברירת מחדל לפי שפת הדפדפן. ההחלפה בחלונית "חשבון" (או בכפתור השפה, אם הסנכרון לא מוגדר)
-- [x] `tr('עברית', 'English')` בכל מקום (`src/i18n.ts`), בלי ספרייה; תוכן הקווים באנגלית ב-`src/repertoire.en.ts` (נבדק ב-`check-lines`)
-- [x] תשתית לעוד שפות (25.11.2026): לכל שפה מילון לפי הטקסט באנגלית (`src/lang/<שפה>.ts`), שנטען רק למי שבחר בה ונשמר למצב לא מקוון; טקסט עם ערכים נכתב ``msg`Step ${n}` `` כדי שהתרגום יוכל לשנות את הסדר; מילון שלא נטען — האפליקציה באנגלית. `check-i18n` (ב-`npm run check`) נכשל על תרגום חסר, מיותר או עם ערכים לא תואמים
-- [x] ספרדית: הממשק בלבד (403 טקסטים). ההסברים על הפתיחות ושמות הקווים באנגלית, והמהלכים באותיות אנגליות, עם הודעה ב"למד" ובחלונית החשבון. התרגום לא עבר עדיין דובר ספרדית ששחקן שחמט
-- [ ] בהמשך, רק אם רואים ביקוש: הסברים מתורגמים (כ-12,300 מילים לשפה, עם שחקן שעובר עליהם) ושפות נוספות. אין מדידת שימוש באפליקציה; הוספה שלה היא החלטה נפרדת
-
-## פשטות ✅
-- [x] הגדרות "שחק": רק מצב, פתיחה ורמה גלויים; השאר תחת "עוד אפשרויות"
-
-## עיצוב וחוויה ✅
-- [x] ערכת צבעים כהה אחת (tokens ב-`src/index.css`), גופן Heebo, לוח ירוק-שמנת
-- [x] כרטיסים עם פס צבע לפי סוג ההודעה (כחול ספר, ענבר "אפשר טוב יותר", אדום טעות, ירוק נכון)
-- [x] מובייל: סרגל לשוניות תחתון, הגדרות במגירה תחתונה, כפתורי אישור מתחת ללוח בלי גלילה; Click-to-move בנוסף לגרירה
-- [x] גובה הלוח לפי המקום שנשאר על המסך (בלי גלילה, מינימום 320px)
-- [x] צלילים: מהלך, לקיחה, שח, טעות, "כל הכבוד" (Web Audio, אפשר להשתיק)
-- [x] PWA: התקנה למסך הבית, אייקון פרש, עובד אופליין (כולל המנוע והפאזלים)
-- [x] deploy ל-Vercel (push ל-main מפרסם)
-
-## שלב 4 — הרחבת הרפרטואר
-- [x] לונדון: 5 הקווים הועמקו ל-11 מהלכים, ו-3 ענפים חדשים: מול ...c5 ו-...cxd4, מול ...c5 ו-...Qb6, ומול ההולנדית (...f5). כל מהלך של לבן נבדק עם Stockfish (עומק 20)
-- [x] קארו-קאן: 6 הקווים הועמקו ל-11 מהלכים של שחור (כל מהלך נבדק עם Stockfish). בשני הפרשים: 7...Qxd4! — הרגל ב-d4 לא מוגן, ושחור מחליף מלכות ונשאר ברגל יותר
-- [x] איטלקית וסלאבית: כל הקווים הועמקו ל-11 מהלכים של המשתמש (כל מהלך נבדק עם Stockfish). בסלאבית מול הלונדון ההמשך זהה לקו הלונדון מהצד השני; "הפרש ל-c3 קודם" ממשיך כמו השיטה השקטה; מול הקולה שחור לוקח ב-c4 ונשאר ברגל יותר
-- [x] **כל 47 הקווים בכל ארבע הפתיחות באורך 10–11 מהלכים של המשתמש**
-- [x] ענפים מהמשחקים שלך ("הסקירה שלי" ← "איפה המשחקים שלך יוצאים מהקווים"): מהלכי יריבים שאין להם קו — "הוסף ענף" מוסיף את התשובה של Stockfish (5 חצאי-מהלכים) לרפרטואר, ללמוד ולאימון; ומקומות שבהם אתה יצאת מהקו — "תרגל" (`src/deviations.ts`, `src/customLines.ts`, `src/Branches.tsx`; הענפים מסונכרנים בין מכשירים)
-- [x] ייבוא PGN (עמוד "למד" ← "＋ ייבא קו"): משחק אחד או כמה, או סתם מהלכים; רק הקו הראשי; כל קו נבדק שהוא חוקי ולא סותר את הרפרטואר, ונוסף כענף ★
-- [x] 1.e4: 12 קווים מול הסקנדינבית, הסיציליאנית (אלאפין), הצרפתית והקארו-קאן (מתקדמת) והמודרנית — מה שהיריבים של הבעלים משחקים באמת
-- [x] האיטלקית עברה ל-2.Bc4 (פתיחת הרץ — 695 משחקים של הבעלים): 1.e4 e5 2.Bc4 Nc6 3.Nf3 מגיע לאותן עמדות בדיוק, ההסברים לא השתנו
-- [x] 9 קווים אחרי 2.Bc4 (מול 2...Nf6 משחקים 3.d3 — אחרי 3.Nf3 Nxe4 שחור טוב יותר): מלכודת 3...Nd4 (הבעלים שיחק 4.Nxe5? ב-10 מתוך 12, ו-4...Qg5 זוכה בחומר), ...h6, ...Nf6 עם ...c6 / ...d5 / ...Bc5, ...d6, ...Bc5 ו-...d6, ...c6, ...Qf6. כל מהלך נבדק בעומק 20; 2.Bc4 עצמו מאבד כ-2.5% — זו בחירת הפתיחה
-- [x] 8 קווים לפערים שנשארו ב"הסקירה שלי": מול 1...d6 (פירץ, פילידור), 1...b6 (אוון) ו-1...Nc6 (נימצוביץ׳ מול ...d5 ומול ...e5) משחקים 2.d4 ולא 2.Bc4 — בעומק 23 שם 2.Bc4 מאבד 30–40 סנטיפון (מול 1...e5 רק 15). כשחור: מול 2.e3 (3.c4 עובר לשיטה השקטה; 3.Bd3) ומול 2.Nc3 Nf6 3.Bf4. כל מהלך נבדק בעומק 20
-- [x] רפרטואר חדש: סיציליאנית עם ...e6 (שחור), 22 קווים. ב-12 החודשים האחרונים הבעלים שיחק 1...c5 ב-502 מתוך 510 משחקים מול 1.e4 (קארו-קאן פעם אחת). פתוחה: טאימנוב (...cxd4, ‏...Nc6, ‏...Qc7, ‏...a6) מול 6.Be3 / 6.Be2 / 5.Nb5 / 5.Nxc6 / 5.c4; מול 2.d4 לוקחים מיד (2...cxd4, כולל סמית׳-מורה); ...e6 ו-...d5 מול 2.Bc4, ‏2.c3, ‏2.Nf3 ו-3.c3 (שם 4...d4), ‏2.Qh5, ‏2.Qf3, ‏2.d3, ‏2.c4. סדרי מהלכים (2.Nc3 / 2.d4 cxd4 3.Nf3) עוברים לטאימנוב. כל מהלך נבדק בעומק 20 (5...Qc7 מאבד כ-2% — המהלך הראשי של הטאימנוב). 150 פאזלים מהסיציליאנית נוספו ל"מהפתיחות שלי"
-- [x] 6 קווים נוספים מול הלונדון בשחור (שם הבעלים קיבל כ-32% ב-41 משחקים בשנה האחרונה): 3.Nf3 ו-4.c3 עוברים לקו הראשי; 4.Bd3 ...Qb6 (b2 לא מוגנת, שחור לוקח רגל); 4.dxc5 e6; 4.Nf3 Nc6 5.Bb5 Qa5+; 5.Bd3 Bg4. כל מהלך נבדק בעומק 20. הערה: כלבן הבעלים שיחק 1.e4 בכל 739 המשחקים של השנה האחרונה — רפרטואר הלונדון לא בשימוש כרגע
-- [x] רפרטואר חדש: גמביט המלכה המקובל (שחור), 7 קווים — מול 2.c4 הבעלים משחק 2...dxc4 (54 מתוך 97 משחקים), לא 2...c6. הסלאבית נשארת; הסקירה משייכת כל משחק לרפרטואר שהוא הלך בו הכי רחוק. מול 3.e4 (e5: 4.Nf3 / 4.d5 / 4.dxe5), 3.e3, 3.Nc3 (10...Bxb5! — ‏...a6 מפסיד 7.5%), 3.Nf3, 3.Qa4+. 2...dxc4 עצמו מאבד פחות מ-1%. כל מהלך נבדק בעומק 20
-- [x] 150 פאזלים מגמביט המלכה המקובל ב"מהפתיחות שלי" (`public/puzzles-v3.json`, 3,900 פאזלים)
-- [x] הסתרת פתיחות (עמוד "למד" ← ⚙): פתיחה מוסתרת יוצאת מהבחירה ב"למד" ובאימון, בלי למחוק התקדמות; תמיד נשארת לפחות אחת; מסונכרן בין מכשירים (`src/hiddenReps.ts`). "1.e4" בשם הרפרטואר מוצג נכון בעברית (היה "e4.1")
-
-## שלב 5 — ליטוש
-- [x] סטטיסטיקה לכל קו (לחיצה על "שולט ב-N מתוך M" בעמוד "למד"): אחוז בחינות בלי טעויות, והמהלך שטעית בו הכי הרבה (באימון או בבחינה) — לחיצה פותחת את הקו בדיוק שם (`src/lineStats.ts`; מונה `misses` לכל עמדה ב-`mistakes`)
-- [x] החוזקות ב"הסקירה שלי": כרטיס "החוזקות שלך" עם הפתיחה הכי טובה בכל צבע, וסימון ★ בירוק ל-3 החזקות בטבלאות הפתיחות (לצד 3 החלשות באדום). פתיחה "חזקה" צריכה 10 משחקים לפחות ו-5 נקודות מעל הממוצע שלך באותו צבע; משחקים בלי פתיחה מזוהה ("Undefined") לא נספרים. הטבלה מציגה גם פתיחה מסומנת שלא בין 8 הנפוצות (`strongestOpenings`/`weakestOpenings` ב-`src/reviewStats.ts`, נבדק ב-`check-review`)
-- [x] גלילה פנימית בלוח הצד: במסך רחב (לוח וחלונית זה לצד זה) החלונית שליד הלוח ב"למד", "שחק", פאזלים ו"הטעויות שלי" גבוהה כמו המקום שנשאר על המסך (אותה מידה כמו הלוח, `--fit-h` על `<main>`), ולא פחות מ-320px, וגוללת בפנים — העמוד עצמו לא נגלל. `scrollbar-gutter: stable` בחלונית ובעמוד, כך שהרוחב לא קופץ כשפס גלילה מופיע. כרטיס משוב שמופיע כשהחלונית גלולה למטה נגלל לתצוגה (`src/useSidePanel.ts`). בטלפון ובטאבלט (החלונית מתחת ללוח) אין שינוי
-- [x] טלפון (25.11.2026, אחרי בדיקה בכרום במצב מובייל עם החשבון של הבעלים): פתיחה מוסתרת יוצאת גם מ"הטעויות שלי" ומכל המונים (סינון ב-`practiceMistakes`, `src/mistakes.ts`; שום דבר לא נמחק, והמסך הריק אומר כמה עמדות ממתינות בפתיחות מוסתרות); תג המספר בסרגל התחתון ליד האייקון ולא עליו; כל מה שלוחצים עליו בגובה 44px בטלפון ובמסכי מגע; בסקירת משחק הכותרת בשורה אחת והלוח מתאים את עצמו, כך שכרטיס המאמן נראה כולו בלי גלילה (667px ומעלה, בלי סרגלי דפדפן). נבדק ב-`screens.py --only touch`
-- [x] תיקונים אחרי משחק חופשי בכרום (25.11.2026): "אפס" ליד "נלמדו" שואל לפני, והסנכרון לא מחזיר את המהלכים (`RESET_MARK` ב-`src/syncMerge.ts`); רשימת המהלכים עוקבת אחרי המהלך גם במחשב וגם בסקירת משחק; ב"בחן אותי" האדום מסמן לאן שיחקת בטעות; מהלכים בתוך עברית לא מתהפכים (`isolateMoves`); שם משתמש לא חוקי ב-Chess.com מקבל "לא נמצא" ולא "אין חיבור"; גופן הכותרת "עמדת הפתיחה"
-- [x] תיקו ב"שחק" אומר למה (פט, חזרה משולשת, 50 מהלכים, חומר לא מספיק), ומד הסיכויים מראה את התוצאה בסוף המשחק (25.11.2026). הכתרה וכל סוגי התיקו נבדקים ב-`nav.py --only ends`
-- [x] כפתור "אחורה" סוגר חלונית, יוצא מסקירת משחק או חוזר ללשונית הקודמת, במקום לצאת מהאפליקציה (`src/nav.ts`, בהיסטוריה של הדפדפן); משחק ב"שחק" ממשיך אחרי רענון או סגירה, עד 24 שעות (`src/savedGame.ts`, במכשיר בלבד); היעד היומי סופר פאזלים שנפתרו (גם עם רמז או אחרי טעות), לא "הצג פתרון"
-- [x] סקירת קוד מלאה (23.11.2026: לוגיקה ואבטחה, ממשק, תשתית). תוקנו:
-  - סנכרון: כתיבה של אותו ערך כבר לא נחשבת שינוי (קודם מכשיר שלא עודכן נעשה "חדש" רק מפתיחת האפליקציה ודרס הגדרות שנשמרו במכשיר אחר); ענף ★ שנמחק לא חוזר מהמכשיר השני (סימן מחיקה, `removed`); ביטול התחברות בטלפון כבר לא משאיר את הכפתור על "מתחבר…"; בקשה לטעינה מחדש לא הולכת לאיבוד כשסנכרון כבר רץ; שגיאה ביציאה מהחשבון מטופלת
-  - השלמת תיקון הסנכרון (24.11.2026; התיקון הראשון היה חלקי): `useStored` כבר לא שומר את ברירת המחדל בטעינה. קודם מכשיר חדש סימן 10 ברירות מחדל כשינוי, ובהתחברות הראשונה דרס איתן את ההגדרות שבענן (גם את שם המשתמש ב-Chess.com, בשדה ריק). בסנכרון הראשון של מכשיר ההגדרות שבענן קובעות (`asNewDevice` ב-`src/syncMerge.ts`; ההתקדמות עדיין ממוזגת פריט-פריט) — גם מכשיר שנפתח לפני התיקון לא דורס. אם קובץ Firebase לא נטען, לחיצה נוספת על ההתחברות טוענת את הדף מחדש (Chrome לא מוריד שוב מודול שנכשל); חזרה מדף Google לדף שהדפדפן שמר כמו שהיה משחררת את הכפתור. נבדק ב-`scripts/qa/sync.py` (כמה מכשירים מול Firebase emulators); הבדיקות של הבאגים האלה נכשלו לפני התיקון. בדיקות הדפדפן האחרות רצות על build בלי Firebase, ולכן לא מריצות את קוד הסנכרון
-  - חשבון אחד בכל פעם (25.11.2026): כשחשבון Google אחר מתחבר באותו מכשיר, הנתונים של הקודם נשמרים בצד במכשיר (`chess-trainer:aside:<uid>`, לא מסונכרן) וחוזרים כשהוא מתחבר שוב; קודם הם התמזגו לחשבון החדש ועלו לענן שלו. שפה וצליל נשארים (שייכים למכשיר). אין מקום לשמור בצד — לא מחליפים ולא מסנכרנים. מה שנעשה לפני ההתחברות הראשונה מצטרף לחשבון (`cloud-owner`, `switchOwner` ב-`src/cloud.ts`)
-  - שני מכשירים שמסתנכרנים באותו רגע כבר לא דורסים זה את זה: קריאה-מיזוג-כתיבה בטרנזקציה (`mergeDoc` ב-`src/firebase.ts`); שינוי במכשיר באמצע סנכרון נשמר
-  - בדיקות שנכשלות על הקוד הישן: חודש של Chess.com שנשמר באמצע (`check-review`), מצבים שלא עוברים בין עמדות ומסכים ב"שחק" (`play.py --only states`), מנוע אחד בסקירת משחק (`screens.py`)
-  - Chess.com: חודש שנשמר באמצעו כבר לא נשאר חסר — עותק נחשב סופי רק אם נשמר אחרי שהחודש נגמר (מטמון `chesscom-archives-v2`)
-  - מצב לא מקוון: ה-service worker שמר רק את מה ש-`index.html` מקשר אליו ומחק בכל ביקור את קובץ ה-Firebase שנטען בהמשך; עכשיו הוא שומר את כל קבצי הגרסה לפי `asset-manifest.json` של Vite
-  - "שחק": רמז שמגיע אחרי שכבר זזת לא מצויר על עמדה אחרת; "החזר מהלך" מוחק את חץ הרמז; הסתרת פתיחה ב"למד" לא מאפסת משחק רגיל; המונה "לחזרה" מתעדכן משינויים במסכים אחרים
-  - סקירת משחק עוצרת את ניתוח המנוע של "הסקירה שלי" (שני מנועים במקביל האטו את שניהם)
-  - ספי הסיווג (10/20/30) מוגדרים במקום אחד, `DROP` ב-`src/engine.ts`, במקום ארבעה
-  - נגישות: ⏮ ⏭ מתהפכים בעברית כמו ‹ ›; תווית לכפתור ⚙ ב"למד"
-  - תשתית: `npm test` ו-`npm run check` (ב-CI ובמסמכים במקום ארבע פקודות); `engines` (Node 24, כמו ב-CI וב-Vercel); `stockfish` עבר ל-devDependencies בגרסה מדויקת (המנוע עצמו הוא עותק ב-`public/engine`); הספריות בקובץ נפרד (`vendor`, נשאר במטמון בין גרסאות; אין יותר אזהרת 500kB); כותרות אבטחה ב-`vercel.json`; `check-lines` נכשל גם על טקסט אנגלי לקו שלא קיים
-  - נשאר בכוונה: אין CSP (צריך לרשום את Google, Firestore, Chess.com והגופנים ולתחזק); המנוע לא מדווח על כישלון טעינה (נשמר במטמון מההתקנה); ביציאה מהחשבון הנתונים נשארים במכשיר (האפליקציה עובדת גם בלי חשבון), ומי שמשתמש במכשיר בלי להתחבר רואה אותם; פיצול הרכיבים הגדולים (`Trainer.tsx`, `Learn.tsx`, `Review.tsx`) ורכיבי ממשק משותפים (רשימת מהלכים, stepper) — שווה לעשות כשנוגעים בהם
-
-## המצב עכשיו והשלב הבא
-- כתובת חדשה (22.11.2026): https://opening-trainer-app.vercel.app — דומיין נוסף של אותו פרויקט ב-Vercel; הכתובת הישנה (chess-trainer-seven-pink.vercel.app) ממשיכה לעבוד. ההתחברות רצה על הכתובת שממנה נפתח הדף (`src/cloudConfig.ts`), ולכן כל כתובת חייבת להיות מורשית בשלושה מקומות: Firebase Auth, מפתח ה-API (Website restrictions) וה-OAuth client — פירוט בסוף `docs/google-login-setup.md`. ההתקדמות נשמרת לפי כתובת: בכתובת חדשה מתחברים פעם אחת עם Google והיא נטענת מהענן
-- הרפרטואר תואם את מה שהבעלים משחק בפועל (לפי 12 החודשים האחרונים ב-Chess.com). הפערים שנשארו ב"הסקירה שלי" הם הרגלים, לא קווים חסרים: 3.d3 מול 2.Bc4 Nf6 (שיחק 3.Nf3 ב-19 משחקים), 2.c3 מול 1...c5 (שיחק 2.Bc4 ב-14), 2...cxd4 מול 2.d4 בסיציליאנית (שיחק 2...e6 ב-13) — מתרגלים עם "תרגל"
-- אחרי 3–4 שבועות של משחקים: לטעון שוב את "הסקירה שלי" ולבחור את השלב הבא לפי מה שעולה שם
-- נבדק באתר החי (Playwright): משחקי אימון בסיציליאנית ובגמביט המלכה המקובל, "בחן אותי", פאזלים, הסקירה, הסתרת פתיחות, אנגלית בטלפון. גם הסנכרון לענן של הסתרת הפתיחות נבדק (22.11.2026, בכרום עם משתמש Google מחובר): ההסתרה עלתה לענן תוך שניות, ואחרי שנמחקה מהמכשיר היא חזרה מהענן בחזרה לאפליקציה והדף נטען מחדש. לונדון וקארו-קאן מוסתרים עכשיו בחשבון של הבעלים
-- QA מלא (22.11.2026, Playwright על build מקומי; חלונית החשבון באתר החי): אף באג באפליקציה, אף שגיאת דף, ואין גלילה אופקית במחשב (1280px) ובטלפון (390px), בעברית ובאנגלית
-  - "בחן אותי" על כל 90 הקווים בכל 6 הרפרטוארים — כולם עברו בלי טעויות; ניווט בקו, סטטיסטיקה לפי קו, הסתרת פתיחות (אי אפשר להסתיר את כולן), ייבוא PGN (ענף ★ נוסף ונמחק; ייבוא שסותר את הרפרטואר נדחה)
-  - "שחק": אימון בכל 6 הרפרטוארים — מהלכי הספר עד סוף הקו, ואחריו המאמן עוצר על טעות גדולה ומציע "חזור ונסה" על ירידה קטנה; יציאה מהקו עם "נסה שוב" / "המשך בכל זאת"; משחק רגיל כלבן וכשחור (רמז, החזרת מהלך, משחק חדש)
-  - תרגול: פאזלים בשלושת המצבים (רמז, פתרון, דילוג, דירוג); "הטעויות שלי" — טעות מהאימון נשמרת, תשובה שגויה חוזרת בסוף הסבב, תשובה נכונה מסמנת "נכון"
-  - הסקירה (`shlomin1231`): 5,000 משחקים ב-12–18 שניות, כל הסעיפים, סינון לפי סוג משחק, "הוסף ענף" ופתיחתו ב"למד", "תרגל", ניתוח מנוע ועצירה, טעינה מחדש אוטומטית אחרי רענון
-  - חשבון ושפה, ומצב לא מקוון (אחרי ביקור אחד: האפליקציה עולה, המנוע עונה, פאזלים ו"למד" עובדים)
-  - לא נבדק: התחברות עם Google בפועל (הסנכרון נבדק בנפרד בכרום), ניתוח מנוע מלא של כל המשחקים. פתרון פאזל עד הסוף נוסף אחר כך ל-`screens.py`: פתרון נקי (הדירוג עולה), עם רמז (חצי נקודה), ואחרי מהלך שגוי (הדירוג יורד), בשלושת המצבים
-  - הבדיקות נשמרו בריפו כסקריפטים: `scripts/qa/` (Python + Playwright; הסבר ב-`scripts/qa/README.md`). `learn_lines.py` — "בחן אותי" על כל קו; `play.py` — מסך "שחק"; `screens.py` — שאר המסכים, טלפון, שפות ומצב לא מקוון. כל סקריפט מחזיר עבר/נכשל, והדוחות וצילומי המסך נשמרים ב-`scripts/qa/out` (לא נכנס ל-git). הקווים נקראים מ-`src/repertoire.ts` בכל הרצה, כך שקווים חדשים נבדקים אוטומטית. לא רצים ב-CI (כ-20 דקות ביחד) — להריץ לפני שינוי גדול. בהרצה האחרונה: 90 + 35 + 86 בדיקות, כולן עברו
+**Two "brains":**
+1. **In the line:** the book is the judge. If you leave the line, the game stops.
+2. **After the line:** two Stockfish instances. A weakened **opponent** (`Skill Level` 0–20) and a full-strength **coach**. The coach turns the evaluation into win chances (the Lichess formula) and stops you when they drop by more than the threshold you chose (10%, 20% or 30%). A drop is called an inaccuracy from 6%, a mistake from 12% and a blunder from 20%.
 
 ---
 
-## ממצאים מסקירת הקוד
+## Stage 1 — MVP ✅
+- [x] Board, opening picker (White / Black), board turned to your color
+- [x] 90 lines: London (8), Italian and 1.e4 (32: 6 Italian, 9 Bishop's Opening, 3 Scandinavian, 4 Alapin against the Sicilian, 2 Advance French, 2 Advance Caro-Kann, Modern, Pirc, Philidor, Owen, 2 Nimzowitsch), Caro-Kann (6), Sicilian with ...e6 (22), Queen's Gambit Accepted (7), Slav (15, including 7 against the London, the Colle, 2.e3 and 2.Nc3). All checked to be legal (`scripts/check-lines.ts`), and every user move checked with Stockfish (depth 20, loses no more than about 2%; the exceptions are noted in stage 4)
+- [x] The opponent plays from the book, at random between the branches, and after the line moves to a weakened engine
+- [x] Stops when you leave the line, with a green arrow for the right move
+- [x] Stops on a mistake in free play, by the drop in win chances
+- [x] Buttons: go back and play / continue anyway / hint / take back / new game
+- [x] A slider for the computer's level, and a choice of how sensitive the stop is
+- [x] Every mistake is saved in localStorage, with fields ready for spaced repetition
+- [x] A regular game at any level and color, regardless of the repertoire
 
-תוקנו (25.11.2026):
-- [x] קוד שנכשל בבדיקות לא נפרס: Vercel מריץ `npm run check` כפקודת ה-build (`buildCommand` ב-`vercel.json`). Node 24 בכל מקום
-- [x] סנכרון: מעל 1MB (מגבלת Firestore) לא כותבים ומוצגת הודעה; אין מקום לשמור חשבון בצד — הודעה שמסבירה; שינוי תמיד חדש יותר ממה שהוא מחליף, גם כששעון המכשיר מפגר
-- [x] `firestore.rules`: גם `updatedAt` נבדק (מספר); הכללים נבדקים ב-`scripts/qa/sync.py`. הכללים החדשים פורסמו ב-Firebase console (25.11.2026, 16:53)
-- [x] סקריפטים עוברים בדיקת טיפוסים (`tsconfig.scripts.json`); `npm audit` נקי (`overrides` ל-`@grpc/grpc-js`, שלא נמצא בקבצים שנבנים)
-- [x] מנוע: חיפושים שכבר לא צריך נעצרים (`Engine.cancel`); מנוע שלא נטען — הודעה עם "נסה שוב"
-- [x] "הסקירה שלי" מנתחת כמו סקירת משחק (לפי עומק, ומשתמשת בסקירה שמורה), ולכן הן מסכימות; ניתוחים ישנים נשארו כמו שהיו, כי ניתוח מחדש היה מאפס את החזרות ב"הטעויות שלי". עמדה בין שתי טעויות נבדקת פעם אחת; הסקירות השמורות נקראות פעם אחת
-- [x] Chess.com: תשובה לא תקינה מקבלת הודעה רגילה; ביטול או כישלון עוצר את כל הבקשות
-- [x] מקלדת בחלונות (`src/useDialog.ts`): פוקוס נכנס, נשאר וחוזר, Escape סוגר, והחצים לא מזיזים את מה שמאחור; שבבים עם `aria-pressed`; פתיחות חלשות מסומנות גם ב-▾; גרף כשכל הערכים שווים; התקדמות הניתוח לא מציירת מחדש את כל העמוד
-- [x] `PREFIX` ו-`writeStored` במקום אחד; `RECENT_GAMES`; `id` לקו, כדי ששינוי שם לא יאפס התקדמות (`lineId`); מדריך ההתחברות לפי הכתובת החדשה; `id`, ‏`lang` ו-`dir` ב-manifest
+**To check yourself (not done yet):** 3 games in every opening. Write down what annoys and what is missing — before adding large features.
 
-נשארו:
-- [ ] מכשיר שהתנתקו בו לפני 25.11.2026 לא יודע של מי הנתונים: אם חשבון אחר מתחבר בו ראשון, הם יתמזגו אליו פעם אחת. אין דרך לדעת בדיעבד; פתיחה אחת כשמחוברים לחשבון הנכון מונעת את זה
-- [ ] אין Dependabot (עדכוני ספריות אוטומטיים): פותח PR-ים במאגר, ולכן לפי החלטת הבעלים
+## Stage 2 — explanations ("why") ✅
+- [x] An `idea` for every line, and a one-sentence `note` for every user move (and important opponent moves), in Hebrew and in English. The keys are checked in `check-lines`
+- [x] The explanations show on the Learn page, move by move
+- [x] In training, inside the line: a card with the line's name ("+N more lines from here") and the explanation of the last two moves; on phones only the last one, so the buttons stay on screen (can be turned off under "More options")
+- [x] When you leave the line: "Why:" with the explanation of the right move. The line is recognized through transpositions too (`lineInfo`, `noteForNext` in `src/repertoire.ts`)
 
-## תקלות ידועות / החלטות פתוחות
-- [x] ספי הסיווג 6/12/20% (25.11.2026; קודם 10/20/30), לפי השוואה ל-Chess.com (`DROP` ב-`src/engine.ts`). לתרגול נכנסות בבת אחת רק טעויות מ-20% (`DRILL_DROP`), כמו קודם; מתי המאמן עוצר ב"שחק" לא השתנה. ניתוחים ישנים של "הסקירה שלי" נשארו בסיווג הישן. לבדוק על משחק נוסף שהבעלים יסקור ב-Chess.com, שלא השתתף בבחירת הספים
-  - השוואה מהלך-מהלך (25.11.2026): שני משחקים, 112 מהלכים אחרי הספר, 28 מהם מסומנים ב-Chess.com (אי-דיוק, טעות, החמצה או בלאנדר). עם 10/20/30 אנחנו מסמנים 21 מהם, בלי סימון מיותר, ונותנים אותו שם ב-9 מ-22 (בלי החמצות); עם 6/12/20 — 26, מיותר אחד או שניים, ו-18 מ-22; עם 5/10/20 — 26, ‏4–6 מיותרים, ו-18 מ-22. שני מהלכים שמסומנים שם הם אצלנו ירידה של פחות מ-2% (הבדל בין המנועים). המדגם קטן, והספים נבחרו על אותם משחקים
-  - יציבות: אותו משחק נותן תוצאה זהה לגמרי בסקירת משחק וב"הסקירה שלי" (3 משחקים, 4 ריצות). קודם "הסקירה שלי" לא איפסה את המנוע בין משחקים ונתנה תוצאות אחרות; עכשיו `analyzePositions` מאפס. סקירות שמורות מחושבות מחדש (`VERSION` 3). שינוי בסדר החיפושים מזיז מהלכים גבוליים ב-1 עד 5 נקודות
-  - דיוק: ב-8 משחקים (16 ציונים) ההפרש הממוצע מ-Chess.com הוא 10 נקודות, לשני הכיוונים (ממוצע -1), והמתאם 0.68. הציונים שלנו קיצוניים יותר
-- הקידום תמיד למלכה (מספיק לפתיחות; בפאזלים הכתרה חלשה נספרת לפי המשבצות)
-- בעמדה מוכרעת (+10) המאמן כמעט לא עוצר. זה מכוון, כי ירידה של 1% לא נחשבת טעות
-- רישיון: הפרויקט פתוח, GPL-3.0-or-later (כמו Stockfish שמגיע איתו). פירוט הספריות והנתונים ב-`THIRD_PARTY_NOTICES.md`
+## Stage 3 — reviewing mistakes (spaced repetition) ✅
+- [x] "My mistakes" (in the Practice tab): takes a position from `mistakes` and asks for the right move
+- [x] Leitner boxes: correct → box+1, and the next review in 1, 3, 7, 14 or 30 days. Wrong → back to box 0, and the position returns at the end of the round
+- [x] A "due today" count on the tab
+- [x] For mistakes found by the engine, an alternative move that loses less than 10% win chance is accepted too
+- [x] Sources: training, "Test me", the analysis of Chess.com games, and puzzles
+
+## Stage 3.5 — review of Chess.com games ✅
+- [x] Loading the games by username (public API, straight from the browser): from the latest month backwards, up to 5,000 games (a note "Based on your last N games" when there are more)
+- [x] The username is kept, and the games load again by themselves when the tab is opened after a reload; without internet the last copy of the current month is used
+- [x] "The 3 most important things to improve": tips from simple rules, each with an action button
+- [x] Score by color, time control and opening (the 3 weakest are marked), how you lose, a rating chart
+- [x] Engine analysis of the last 5/10/20 games; big mistakes go to practice
+- [x] A "Train" button next to an opening that has lines in the repertoire (including the Sicilian, the Slav, the Queen's Gambit Accepted, and Black's games against the London / Colle); every game belongs to the repertoire it followed furthest
+- [x] The engine's results are kept (`src/analysisCache.ts`, on the device only): shown at once, only new games are analyzed — and mistakes already in practice are not reset
+- [x] Past months are kept in the browser's cache (Cache Storage, not synced) — only the current month is fetched again
+- [x] Game review (22 Nov 2026): "Review my last game" or any of the last 50. Every move gets a label (book, best, good, inaccuracy, mistake, blunder — the same thresholds as everywhere in the app), with the better move as a green arrow and the engine's line; accuracy for both sides (the Lichess formula per move, the mean of the arithmetic and harmonic means); a graph of the win chances over the game (tap to jump); "my next mistake"; where the game left the repertoire, with a link to the line in Learn; "Practice this position" and "Add my big mistakes to practice". The engine runs on the device and searches by depth, not by time (depth 14 for every position, then depth 16 around every suspect move), so the same game always gets exactly the same review. The analysis is kept on the device only (`game-reviews`, 40 games) and a reviewed game opens at once (`src/GameReview.tsx`, `src/gameAnalysis.ts`, checked in `check-review` and `scripts/qa/screens.py`). A different engine and depth from Chess.com, so the numbers are not identical
+- [x] "Your accuracy over time" in My review: the monthly average from two sources — games reviewed on Chess.com (only months with at least 3 games) and games reviewed here (from the reviews kept on the device) — as two lines, with a trend line (the last month against the average of the 3 before it) and a point that shows both values of a month. The time-control filter applies to it too. The charts (the rating chart too) are drawn at their real width, so the text is readable on a phone (`accuracyByMonth` / `accuracyTrend` in `src/reviewStats.ts`, checked in `check-review`)
+- [x] The game review is laid out like a review on a chess site (in the app's own design, without their graphics): a round, colored mark for every kind of move (★ best, ✓ good, book, ?! ? ??) on the corner of the square the piece reached, in a "coach" card ("15...Rc8 is a blunder" with the evaluation, +4.9 / M3), in the summary (both players, White / Black accuracy boxes, and how many moves of each kind) and in the move list; a taller graph with the key moments of both sides; "Start review" at the starting position
+
+## Stage 3.6 — learning what comes after the book ✅
+- [x] A win-chance bar for both sides beside the board (can be turned off)
+- [x] After every move in free play: what the best move was, without stopping (it stops only above the threshold)
+- [x] Up to move 15 the computer plays at full strength, so the lines repeat
+- [x] The best move in every position up to move 15 is kept ("moves you learned"), and next time it is checked like the book: "You remembered!" / "You forgot the move"
+- [x] The "learning zone" (up to move 15): a move that loses 5% or more is stopped with a correction, go back / continue; a drop of 2–5% shows the better move without stopping, with "go back" (can be turned off)
+- [x] The correction also shows how the engine goes on (4 half-moves), to learn the idea and not only one move
+- [x] A move of yours that equals the engine's (less than 2% apart) is kept as the learned move — your own move is easier to remember
+- [x] A count "remembered N of M" in the game; a position corrected in the same game does not count
+- [x] A weaker move that does not stop the game (below the threshold): a "↩ Go back and play X" button — takes back the move (and the computer's answer) and shows an arrow for the better one
+
+## The Learn page ✅
+- [x] For every opening: all its lines, step by step on a board, with an arrow for the next move and arrow keys
+- [x] An idea for every line and an explanation for every user move, in all 90 lines
+- [x] "From here in other lines": jump to another line that passes through the same position (through transpositions too)
+- [x] "Test me": you play the line yourself; a mistake is saved for review
+- [x] Progress: a line passed in a test without mistakes is marked ✓, "Mastered N of M", and a suggestion for the next line to learn
+- [x] A "How to learn here" card for the first visit (4 steps), which opens on the Learn tab — later the app remembers the last tab
+- [x] A "Today" card: day streak 🔥, puzzles X/5, review (if any), the next line to learn / "Test me", or a training game — one tap
+
+## Puzzles ✅ (in the Practice tab)
+- [x] 3,900 puzzles from the Lichess database (CC0, `public/puzzles-v3.json`; the name changes when the content does, because the service worker caches by name; built by `scripts/build-puzzles.py`, checked in `check-puzzles`)
+- [x] A personal rating (Elo), modes: for my level / from my openings (900 puzzles: 150 from each of the six openings) / mates
+- [x] Hint (a puzzle solved with a hint counts half a point, like a draw), show solution, skip; the name of the tactic at the end ("fork", "pin"…); a puzzle you failed goes to "My mistakes"
+- [x] A daily goal: 5 puzzles, and a day streak 🔥
+
+## Sync and account ✅
+- [x] Sign in with Google (optional). Without signing in everything works as before
+- [x] All progress syncs between devices, merged item by item (`src/syncMerge.ts`, checked in `check-sync`) — nothing is lost even if you played on two devices
+- [x] An "Account" panel: sign in / out, sync status and language
+- [x] Firebase `chess-trainer-18bd8` (free), security rules: every user sees only their own document. Instructions in `docs/google-login-setup.md`
+
+## Languages ✅
+- [x] English, Hebrew and Spanish; the default follows the browser's language. Switched in the "Account" panel (or with the language button, when sync is not configured)
+- [x] The code is in English (25 Nov 2026): every text is written in place, `tr('English')`, and every other language is a dictionary keyed by the English text (`src/lang/<id>.ts`), loaded only by those who chose it and kept for offline use. A text with values is written ``msg`Step ${n}` ``, so a translation can put them in another order. If a dictionary cannot load, the app is in English. `check-i18n` (in `npm run check`) fails on a missing or unused translation, or one whose values do not match
+- [x] The opening lines, with their ideas and notes, are in English in `src/repertoire.ts` and in Hebrew in `src/lang/repertoire.he.ts` (by the line's `id`; checked in `check-lines`)
+- [x] Spanish: the interface only. The explanations of the openings and the line names are in English and the moves use the English letters, with a note in Learn and in the account panel. No Spanish-speaking chess player has gone over the translation yet
+- [ ] Later, only if there is demand: translated explanations (about 12,300 words per language, with a player going over them) and more languages. The app does not measure usage; adding that is a separate decision
+
+## Simplicity ✅
+- [x] "Play" settings: only mode, opening and level are visible; the rest is under "More options"
+
+## Design and experience ✅
+- [x] One dark color scheme (tokens in `src/index.css`), the Heebo font, a green and cream board
+- [x] Cards with a color stripe by the kind of message (blue book, amber "there is better", red mistake, green correct)
+- [x] Mobile: a bottom tab bar, settings in a bottom sheet, confirm buttons under the board without scrolling; tap-to-move in addition to dragging
+- [x] The board's height follows the room left on the screen (no scrolling, at least 320px)
+- [x] Sounds: move, capture, check, mistake, "well done" (Web Audio, can be muted)
+- [x] PWA: installs to the home screen, a knight icon, works offline (including the engine and the puzzles)
+- [x] Deployed on Vercel (a push to main publishes)
+
+## Stage 4 — a wider repertoire
+- [x] London: the 5 lines were deepened to 11 moves, and 3 new branches: against ...c5 and ...cxd4, against ...c5 and ...Qb6, and against the Dutch (...f5). Every White move checked with Stockfish (depth 20)
+- [x] Caro-Kann: the 6 lines were deepened to 11 Black moves (each checked with Stockfish). In the Two Knights: 7...Qxd4! — the d4 pawn is not defended, and Black trades queens a pawn up
+- [x] Italian and Slav: all lines deepened to 11 user moves (each checked with Stockfish). In the Slav against the London the line continues like the London line from the other side; "knight to c3 first" goes on like the Quiet system; against the Colle Black takes on c4 and stays a pawn up
+- [x] **All 47 lines in all four openings are 10–11 user moves long**
+- [x] Branches from your games (My review → "Where your games leave your lines"): opponent moves that have no line — "Add a branch" adds Stockfish's answer (5 half-moves) to the repertoire, to Learn and to training; and places where you left the line — "Practice" (`src/deviations.ts`, `src/customLines.ts`, `src/Branches.tsx`; the branches sync between devices)
+- [x] PGN import (Learn → "+ Import a line"): one game or several, or just moves; only the main line; every line is checked to be legal and not to contradict the repertoire, and is added as a ★ branch
+- [x] 1.e4: 12 lines against the Scandinavian, the Sicilian (Alapin), the French and the Caro-Kann (Advance) and the Modern — what the owner's opponents really play
+- [x] The Italian moved to 2.Bc4 (the Bishop's Opening — 695 of the owner's games): 1.e4 e5 2.Bc4 Nc6 3.Nf3 reaches exactly the same positions, and the explanations did not change
+- [x] 9 lines after 2.Bc4 (against 2...Nf6 the line plays 3.d3 — after 3.Nf3 Nxe4 Black is better): the 3...Nd4 trap (the owner played 4.Nxe5? in 10 of 12, and 4...Qg5 wins material), ...h6, ...Nf6 with ...c6 / ...d5 / ...Bc5, ...d6, ...Bc5 and ...d6, ...c6, ...Qf6. Every move checked at depth 20; 2.Bc4 itself loses about 2.5% — that is the choice of the opening
+- [x] 8 lines for the gaps left in My review: against 1...d6 (Pirc, Philidor), 1...b6 (Owen) and 1...Nc6 (Nimzowitsch, against ...d5 and against ...e5) the line plays 2.d4 and not 2.Bc4 — at depth 23, 2.Bc4 loses 30–40 centipawns there (against 1...e5 only 15). As Black: against 2.e3 (3.c4 goes into the Quiet system; 3.Bd3) and against 2.Nc3 Nf6 3.Bf4. Every move checked at depth 20
+- [x] New repertoire: the Sicilian with ...e6 (Black), 22 lines. In the last 12 months the owner played 1...c5 in 502 of 510 games against 1.e4 (the Caro-Kann once). Open: Taimanov (...cxd4, ...Nc6, ...Qc7, ...a6) against 6.Be3 / 6.Be2 / 5.Nb5 / 5.Nxc6 / 5.c4; against 2.d4 Black takes at once (2...cxd4, including the Smith-Morra); ...e6 and ...d5 against 2.Bc4, 2.c3, 2.Nf3 and 3.c3 (there 4...d4), 2.Qh5, 2.Qf3, 2.d3, 2.c4. Move orders (2.Nc3 / 2.d4 cxd4 3.Nf3) go into the Taimanov. Every move checked at depth 20 (5...Qc7 loses about 2% — the main move of the Taimanov). 150 Sicilian puzzles were added to "from my openings"
+- [x] 6 more lines against the London as Black (where the owner scored about 32% in 41 games last year): 3.Nf3 and 4.c3 go into the main line; 4.Bd3 ...Qb6 (b2 is not defended, Black takes a pawn); 4.dxc5 e6; 4.Nf3 Nc6 5.Bb5 Qa5+; 5.Bd3 Bg4. Every move checked at depth 20. Note: as White the owner played 1.e4 in all 739 games of the last year — the London repertoire is not in use now
+- [x] New repertoire: the Queen's Gambit Accepted (Black), 7 lines — against 2.c4 the owner plays 2...dxc4 (54 of 97 games), not 2...c6. The Slav stays; the review gives every game to the repertoire it followed furthest. Against 3.e4 (e5: 4.Nf3 / 4.d5 / 4.dxe5), 3.e3, 3.Nc3 (10...Bxb5! — ...a6 loses 7.5%), 3.Nf3, 3.Qa4+. 2...dxc4 itself loses less than 1%. Every move checked at depth 20
+- [x] 150 puzzles from the Queen's Gambit Accepted in "from my openings" (`public/puzzles-v3.json`, 3,900 puzzles)
+- [x] Hiding openings (Learn → ⚙): a hidden opening leaves the pickers in Learn and in training, without deleting progress; at least one always stays; synced between devices (`src/hiddenReps.ts`)
+
+## Stage 5 — polish
+- [x] Statistics for every line (tap "Mastered N of M" in Learn): the share of tests without mistakes, and the move you missed most (in training or in tests) — a tap opens the line right there (`src/lineStats.ts`; a `misses` counter for every position in `mistakes`)
+- [x] Strengths in My review: a "Your strengths" card with the best opening of each color, and a green ★ on the 3 strongest in the opening tables (beside the 3 weakest in red, ▾). A "strong" opening needs at least 10 games and 5 points above your average with that color; games with no recognized opening ("Undefined") do not count. The table also shows a marked opening that is not among the 8 most common (`strongestOpenings` / `weakestOpenings` in `src/reviewStats.ts`, checked in `check-review`)
+- [x] The side panel scrolls inside: on a wide screen (board and panel side by side) the panel beside the board in Learn, Play, the puzzles and My mistakes is as tall as the room left on the screen (the same measure as the board, `--fit-h` on `<main>`), no less than 320px, and scrolls inside — the page does not. `scrollbar-gutter: stable` in the panel and the page, so the width does not jump when a scrollbar appears. A feedback card that appears while the panel is scrolled down is brought into view (`src/useSidePanel.ts`). On phones and tablets (panel below the board) nothing changed
+- [x] Phone (25 Nov 2026, after a check in Chrome's mobile mode with the owner's account): a hidden opening also leaves My mistakes and every count (`practiceMistakes`, `src/mistakes.ts`; nothing is deleted, and the empty screen says how many positions wait in hidden openings); the count in the bottom bar is beside the icon and not on it; everything tapped is 44px tall on phones and touch screens; in a game review the header is one line and the board adapts, so the whole coach card shows without scrolling (667px and up, without browser bars). Checked in `screens.py --only touch`
+- [x] Fixes after free play in Chrome (25 Nov 2026): "Reset" beside "Learned" asks first, and sync does not bring the moves back (`RESET_MARK` in `src/syncMerge.ts`); the move list follows the game on desktop and in a game review too; in "Test me" the red marks where you played by mistake; moves inside right-to-left text are not reversed (`isolateMoves`); an impossible Chess.com username gets "no such user" and not "no connection"; the font of the "Starting position" heading
+- [x] A draw in Play says why (stalemate, repetition, 50 moves, insufficient material), and the win-chance bar shows the result at the end of a game (25 Nov 2026). Promotion and every way a game ends are checked in `nav.py --only ends,computer,drag`
+- [x] The Back button closes a panel, leaves a game review or returns to the tab before, instead of leaving the app (`src/nav.ts`, in the browser's history); a game in Play continues after a reload or after closing, for up to 24 hours (`src/savedGame.ts`, on the device only); the daily goal counts puzzles that were solved (also with a hint or after a mistake), not "Show solution"
+- [x] An engine that does not answer within 8 seconds is started again beside the first one (25 Nov 2026)
+- [x] Full code review (23 Nov 2026: logic and security, interface, infrastructure). Fixed:
+  - Sync: writing the same value is no longer a change (before, a device that was behind became "newer" just by opening the app and overwrote settings saved on another device); a removed ★ branch does not come back from the other device (a removal mark, `removed`); cancelling sign-in on a phone no longer leaves the button on "Signing in…"; a request to reload is not lost when a sync is already running; an error when signing out is handled
+  - Completing the sync fix (24 Nov 2026; the first one was partial): `useStored` no longer saves the default on load. Before, a new device marked 10 defaults as changes and, on the first sign-in, overwrote the settings in the cloud with them (also the Chess.com username, with an empty field). On a device's first sync the settings in the cloud win (`asNewDevice` in `src/syncMerge.ts`; progress is still merged item by item) — so a device opened before the fix does not overwrite either. If the Firebase file did not load, another tap on sign-in loads the page again (Chrome does not download a failed module twice); returning from Google's page to a page the browser kept as it was frees the button. Checked in `scripts/qa/sync.py` (several devices against the Firebase emulators); the checks of these bugs failed before the fix. The other browser checks run on a build without Firebase, so they do not run the sync code
+  - One account at a time (25 Nov 2026): when another Google account signs in on the same device, the previous one's data is kept aside on the device (`chess-trainer:aside:<uid>`, not synced) and comes back when it signs in again; before, it was merged into the new account and uploaded to its cloud. Language and sound stay (they belong to the device). No room to keep it aside — no switch and no sync. What was done before the first sign-in joins the account (`cloud-owner`, `switchOwner` in `src/cloud.ts`)
+  - Two devices that sync at the same moment no longer overwrite each other: read-merge-write in a transaction (`mergeDoc` in `src/firebase.ts`); a change on the device during a sync is kept
+  - Checks that fail on the old code: a Chess.com month saved midway (`check-review`), state that must not leak between positions and screens in Play (`play.py --only states`), one engine in a game review (`screens.py`)
+  - Chess.com: a month saved midway no longer stays incomplete — a copy is final only if it was saved after the month ended (`chesscom-archives-v2` cache)
+  - Offline: the service worker kept only what `index.html` links to and deleted the Firebase file, which loads later, at every visit; now it keeps all the files of the version by Vite's `asset-manifest.json`
+  - Play: a hint that arrives after you moved is not drawn on another position; "Take back" removes the hint arrow; hiding an opening in Learn does not reset a regular game; the "To review" count follows changes on other screens
+  - A game review stops the engine analysis of My review (two engines at once slowed both)
+  - The class thresholds are defined in one place, `DROP` in `src/engine.ts`, instead of four
+  - Accessibility: ⏮ ⏭ are mirrored in right-to-left languages like ‹ ›; a label for the ⚙ button in Learn
+  - Infrastructure: `npm test` and `npm run check` (in CI and in the docs instead of four commands); `engines` (Node 24, as in CI and on Vercel); `stockfish` moved to devDependencies at an exact version (the engine itself is a copy in `public/engine`); the libraries are in a file of their own (`vendor`, kept in the cache between versions; no more 500kB warning); security headers in `vercel.json`; `check-lines` also fails on a translation of a line that does not exist
+  - Left as it is on purpose: no CSP (Google, Firestore, Chess.com and the fonts would have to be listed and maintained); when signing out the data stays on the device (the app works without an account too), and whoever uses the device without signing in sees it; splitting the large components (`Trainer.tsx`, `Learn.tsx`, `Review.tsx`) and shared interface components (move list, stepper) — worth doing when touching them
+
+## Where things stand and what is next
+- New address (22 Nov 2026): https://opening-trainer-app.vercel.app — another domain of the same Vercel project; the old address (chess-trainer-seven-pink.vercel.app) still works. Sign-in runs on the address the page was opened from (`src/cloudConfig.ts`), so every address must be allowed in three places: Firebase Auth, the API key (website restrictions) and the OAuth client — see the end of `docs/google-login-setup.md`. Progress is kept per address: on a new one you sign in with Google once and it loads from the cloud
+- The repertoire matches what the owner really plays (by the last 12 months on Chess.com). The gaps left in My review are habits, not missing lines: 3.d3 against 2.Bc4 Nf6 (played 3.Nf3 in 19 games), 2.c3 against 1...c5 (played 2.Bc4 in 14), 2...cxd4 against 2.d4 in the Sicilian (played 2...e6 in 13) — practiced with "Practice"
+- After 3–4 weeks of games: load My review again and choose the next stage by what it shows
+- Checked on the live site (Playwright): training games in the Sicilian and the Queen's Gambit Accepted, "Test me", puzzles, the review, hiding openings, English on a phone. Syncing hidden openings was checked too (22 Nov 2026, in Chrome with a signed-in Google user): the change reached the cloud within seconds, and after it was deleted from the device it came back from the cloud and the page reloaded. The London and the Caro-Kann are now hidden in the owner's account
+- The browser checks are scripts in the repository: `scripts/qa/` (Python + Playwright; see `scripts/qa/README.md`). `learn_lines.py` — "Test me" on every line; `play.py` — the Play screen; `nav.py` — Back, reload, how games end, dragging, keyboard, the engine; `screens.py` — the other screens, phone, languages and offline; `sync.py` — sign-in, sync and the Firestore rules, against the emulators. Every script ends with passed / failed, and the reports and screenshots go to `scripts/qa/out` (not in git). The lines are read from `src/repertoire.ts` at every run, so new lines are checked by themselves. They do not run in CI (about 35 minutes together): once at the end of a day, or after a large change
+
+---
+
+## Findings of the code review
+
+Fixed (25 Nov 2026):
+- [x] Code that fails a check is not deployed: Vercel runs `npm run check` as its build command (`buildCommand` in `vercel.json`). Node 24 everywhere
+- [x] Sync: above 1MB (the Firestore limit) nothing is written and a message says so; no room to keep an account aside — a message that explains; a change is always newer than the one it replaces, also when the device's clock is behind
+- [x] `firestore.rules`: `updatedAt` is checked too (a number); the rules are checked in `scripts/qa/sync.py`. The new rules were published in the Firebase console (25 Nov 2026, 16:53)
+- [x] Scripts are type-checked (`tsconfig.scripts.json`); `npm audit` is clean (`overrides` for `@grpc/grpc-js`, which is not in the built files)
+- [x] Engine: searches that are no longer needed are stopped (`Engine.cancel`); an engine that did not load — a message with "Try again"
+- [x] My review analyzes like the game review (by depth, and it uses a kept review), so they agree; old analyses stayed as they were, because analyzing again would reset the reviews in My mistakes. A position between two mistakes is searched once; the kept reviews are read once
+- [x] Chess.com: an invalid answer gets an ordinary message; cancelling or a failure stops all the requests
+- [x] Keyboard in dialogs (`src/useDialog.ts`): the focus moves in, stays and returns, Escape closes, and the arrows do not move what is behind; chips with `aria-pressed`; weak openings are also marked with ▾; a chart whose values are all equal; the progress of the analysis does not redraw the whole page
+- [x] `PREFIX` and `writeStored` in one place; `RECENT_GAMES`; an `id` for every line, so a rename does not lose progress; the sign-in guide uses the new address; `id`, `lang` and `dir` in the manifest
+
+Left:
+- [ ] A device that was signed out before 25 Nov 2026 does not know whose data it has: if another account signs in there first, it is merged into it once. There is no way to know afterwards; opening the app once while signed in to the right account prevents it
+- [ ] No Dependabot (automatic dependency updates): it opens PRs in the repository, so it is the owner's decision
+
+## Known issues / open decisions
+- [x] Class thresholds 6/12/20% (25 Nov 2026; before 10/20/30), by a comparison with Chess.com (`DROP` in `src/engine.ts`). Only mistakes from 20% go to practice in bulk (`DRILL_DROP`), as before; when the coach stops in Play did not change. Old analyses of My review kept the old classes. To check on another game the owner reviews on Chess.com, one that took no part in choosing the thresholds
+  - Move-by-move comparison (25 Nov 2026): two games, 112 moves after the book, 28 of them marked on Chess.com (inaccuracy, mistake, miss or blunder). With 10/20/30 the app marks 21 of them, none superfluous, and gives the same name to 9 of 22 (without misses); with 6/12/20 — 26, one or two superfluous, and 18 of 22; with 5/10/20 — 26, 4–6 superfluous, and 18 of 22. Two moves marked there are a drop of less than 2% here (the engines differ). The sample is small, and the thresholds were chosen on the same games
+  - Stability: the same game gives exactly the same result in a game review and in My review (3 games, 4 runs). Before, My review did not clear the engine between games and gave other results; now `analyzePositions` clears it. Kept reviews are computed again (`VERSION` 3). A change in the order of the searches moves borderline moves by 1 to 5 points
+  - Accuracy: in 8 games (16 scores) the average difference from Chess.com is 10 points, in both directions (mean -1), and the correlation is 0.68. The app's scores are more extreme
+- Promotion is always to a queen (enough for openings; in puzzles an underpromotion counts by its squares)
+- In a decided position (+10) the coach hardly stops. That is on purpose: a 1% drop is not a mistake
+- License: the project is open, GPL-3.0-or-later (like Stockfish, which comes with it). The libraries and the data are listed in `THIRD_PARTY_NOTICES.md`

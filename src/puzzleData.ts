@@ -4,7 +4,7 @@
 
 import { Chess } from 'chess.js';
 import { readStored } from './storage';
-import { tr } from './i18n';
+import { tr, trKey } from './i18n';
 
 export type Puzzle = {
   id: string;
@@ -130,35 +130,35 @@ export function applyUci(fen: string, uci: string) {
 
 // ---- theme names ----
 
-const THEME_NAMES: Record<string, [string, string]> = {
-  fork: ['מזלג', 'Fork'],
-  pin: ['ריתוק', 'Pin'],
-  skewer: ['שיפוד', 'Skewer'],
-  discoveredAttack: ['התקפה נחשפת', 'Discovered attack'],
-  doubleCheck: ['שח כפול', 'Double check'],
-  hangingPiece: ['כלי לא מוגן', 'Hanging piece'],
-  sacrifice: ['הקרבה', 'Sacrifice'],
-  deflection: ['הסטה', 'Deflection'],
-  attraction: ['משיכה', 'Attraction'],
-  backRankMate: ['מט בשורה האחורית', 'Back-rank mate'],
-  smotheredMate: ['מט חנוק', 'Smothered mate'],
-  mateIn1: ['מט במסע אחד', 'Mate in 1'],
-  mateIn2: ['מט בשני מסעים', 'Mate in 2'],
-  mateIn3: ['מט בשלושה מסעים', 'Mate in 3'],
-  promotion: ['הכתרה', 'Promotion'],
-  advancedPawn: ['רגלי מתקדם', 'Advanced pawn'],
-  trappedPiece: ['כלי לכוד', 'Trapped piece'],
-  kingsideAttack: ['התקפה על המלך', 'Kingside attack'],
-  exposedKing: ['מלך חשוף', 'Exposed king'],
-  capturingDefender: ['לקיחת המגן', 'Capturing the defender'],
-  clearance: ['פינוי', 'Clearance'],
-  interference: ['חסימה', 'Interference'],
-  intermezzo: ['מהלך ביניים', 'Intermezzo'],
-  xRayAttack: ['התקפת רנטגן', 'X-ray attack'],
-  quietMove: ['מהלך שקט', 'Quiet move'],
-  defensiveMove: ['מהלך הגנה', 'Defensive move'],
-  zugzwang: ['כפאי', 'Zugzwang'],
-  endgame: ['סיום', 'Endgame'],
+const THEME_NAMES: Record<string, string> = {
+  fork: trKey('Fork'),
+  pin: trKey('Pin'),
+  skewer: trKey('Skewer'),
+  discoveredAttack: trKey('Discovered attack'),
+  doubleCheck: trKey('Double check'),
+  hangingPiece: trKey('Hanging piece'),
+  sacrifice: trKey('Sacrifice'),
+  deflection: trKey('Deflection'),
+  attraction: trKey('Attraction'),
+  backRankMate: trKey('Back-rank mate'),
+  smotheredMate: trKey('Smothered mate'),
+  mateIn1: trKey('Mate in 1'),
+  mateIn2: trKey('Mate in 2'),
+  mateIn3: trKey('Mate in 3'),
+  promotion: trKey('Promotion'),
+  advancedPawn: trKey('Advanced pawn'),
+  trappedPiece: trKey('Trapped piece'),
+  kingsideAttack: trKey('Kingside attack'),
+  exposedKing: trKey('Exposed king'),
+  capturingDefender: trKey('Capturing the defender'),
+  clearance: trKey('Clearance'),
+  interference: trKey('Interference'),
+  intermezzo: trKey('Intermezzo'),
+  xRayAttack: trKey('X-ray attack'),
+  quietMove: trKey('Quiet move'),
+  defensiveMove: trKey('Defensive move'),
+  zugzwang: trKey('Zugzwang'),
+  endgame: trKey('Endgame'),
 };
 
 /** Named themes of a puzzle, most specific first ("Mate in 2" rather than "Mate"). */
@@ -167,5 +167,5 @@ export function themeNames(p: Puzzle): string[] {
   return Object.keys(THEME_NAMES)
     .filter((t) => p.themes.includes(t))
     .slice(0, 3)
-    .map((t) => tr(...THEME_NAMES[t]));
+    .map((t) => tr(THEME_NAMES[t]));
 }

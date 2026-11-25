@@ -15,6 +15,6 @@ labels: bug
 **Where**
 - Screen: Learn / Play / Practice / My review / Account
 - Device and browser (e.g. Android Chrome, iPhone Safari, Windows Chrome):
-- Language: Hebrew / English
+- Language: English / Hebrew / Spanish
 
 A screenshot helps a lot.

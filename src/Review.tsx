@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ChessComError, fetchGames, type GameSummary, type TimeClass } from './chesscom';
+import { openingName, ChessComError, fetchGames, type GameSummary, type TimeClass } from './chesscom';
 import { DRILL_DROP, Engine } from './engine';
 import { getAnalysis, saveAnalysis } from './analysisCache';
 import { saveMistake } from './mistakes';
@@ -22,7 +22,7 @@ import { formatDate, locale, msg, tr, useLang } from './i18n';
 const pct = (n: number) => ltr(`${Math.round(n)}%`);
 const date = formatDate;
 const kindLabel = (k: 'blunder' | 'mistake' | 'inaccuracy') =>
-  ({ blunder: tr('בלאנדרים', 'Blunders'), mistake: tr('טעויות', 'Mistakes'), inaccuracy: tr('אי-דיוקים', 'Inaccuracies') })[k];
+  ({ blunder: tr('Blunders'), mistake: tr('Mistakes'), inaccuracy: tr('Inaccuracies') })[k];
 
 type Props = {
   active: boolean; // the tab is showing
@@ -78,7 +78,7 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
       const known = all.slice(-deepCount).reverse().map((g) => getAnalysis(g.url)).filter((a): a is GameAnalysis => !!a);
       if (known.length) setDeep(known);
     } catch (e) {
-      if (!token.signal.aborted) setError(e instanceof ChessComError ? e.message : tr('משהו השתבש בטעינת המשחקים.', 'Something went wrong while loading the games.'));
+      if (!token.signal.aborted) setError(e instanceof ChessComError ? e.message : tr('Something went wrong while loading the games.'));
     } finally {
       if (!token.signal.aborted) setLoading(null);
     }
@@ -199,32 +199,29 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
         }}
       >
         <label>
-          {tr('שם המשתמש שלך ב-Chess.com', 'Your Chess.com username')}
+          {tr('Your Chess.com username')}
           <input dir="ltr" value={input} onChange={(e) => setInput(e.target.value)} placeholder="username" autoComplete="off" />
         </label>
         <button className="primary" type="submit" disabled={!input.trim() || !!loading}>
-          {games && input.trim().toLowerCase() === username.toLowerCase() ? tr('רענן', 'Refresh') : tr('טען משחקים', 'Load games')}
+          {games && input.trim().toLowerCase() === username.toLowerCase() ? tr('Refresh') : tr('Load games')}
         </button>
       </form>
 
       {loading && (
         <div className="card">
           {loading.count
-            ? tr(`טוען משחקים… ${loading.count.toLocaleString(locale())}`, msg`Loading games… ${loading.count.toLocaleString(locale())}`)
-            : tr('מתחבר ל-Chess.com…', 'Connecting to Chess.com…')}
+            ? tr(msg`Loading games… ${loading.count.toLocaleString(locale())}`)
+            : tr('Connecting to Chess.com…')}
           <Progress value={loading.fraction} />
         </div>
       )}
       {games && partial && games.length > 0 && (
         <p className="muted small-print">
-          {tr(
-            `הסקירה מבוססת על ${games.length.toLocaleString(locale())} המשחקים האחרונים (מאז ${date(games[0].endTime)}).`,
-            msg`Based on your last ${games.length.toLocaleString(locale())} games (since ${date(games[0].endTime)}).`,
-          )}
+          {tr(msg`Based on your last ${games.length.toLocaleString(locale())} games (since ${date(games[0].endTime)}).`)}
         </p>
       )}
       {error && <div className="notice">{error}</div>}
-      {games && !games.length && <div className="notice">{tr('לא נמצאו משחקי שחמט רגיל למשתמש הזה.', 'No standard chess games found for this user.')}</div>}
+      {games && !games.length && <div className="notice">{tr('No standard chess games found for this user.')}</div>}
 
       {games && games.length > 0 && <RecentGames games={games} onReview={openReview} />}
 
@@ -235,13 +232,13 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
               .filter((tc) => tc === 'all' || games.some((g) => g.timeClass === tc))
               .map((tc) => (
                 <button key={tc} className={tc === timeClass ? 'chip active' : 'chip'} aria-pressed={tc === timeClass} onClick={() => setTimeClass(tc)}>
-                  {tc === 'all' ? tr('הכל', 'All') : timeClassLabel(tc)}
+                  {tc === 'all' ? tr('All') : timeClassLabel(tc)}
                 </button>
               ))}
           </div>
 
           <section className="card tips">
-            <h2>{tr('3 הדברים הכי חשובים לשפר', 'The 3 most important things to improve')}</h2>
+            <h2>{tr('The 3 most important things to improve')}</h2>
             <ol>
               {tips.map((t) => (
                 <li key={t.title}>
@@ -250,10 +247,10 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
                   {t.action && (
                     <button onClick={() => onTip(t)}>
                       {t.action.type === 'train'
-                        ? tr('תאמן את הפתיחה', 'Train this opening')
+                        ? tr('Train this opening')
                         : t.action.type === 'drill'
-                          ? tr('לתרגול הטעויות', 'Practice the mistakes')
-                          : tr('לניתוח המנוע', 'To the engine analysis')}
+                          ? tr('Practice the mistakes')
+                          : tr('To the engine analysis')}
                     </button>
                   )}
                 </li>
@@ -262,25 +259,22 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
           </section>
 
           <section className="tiles">
-            <Tile label={tr('משחקים', 'Games')} value={overview.total.games.toLocaleString(locale())} />
+            <Tile label={tr('Games')} value={overview.total.games.toLocaleString(locale())} />
             <Tile
-              label={tr('ניצחון / תיקו / הפסד', 'Win / draw / loss')}
+              label={tr('Win / draw / loss')}
               // no ltr(): the numbers must read right-to-left in the same order as the label
               value={[overview.total.wins, overview.total.draws, overview.total.losses].map((n) => n.toLocaleString(locale())).join(' / ')}
             />
-            <Tile label={tr('ניקוד', 'Score')} value={pct(overview.total.score)} />
+            <Tile label={tr('Score')} value={pct(overview.total.score)} />
             {overview.accuracy && (
-              <Tile label={tr(`דיוק ממוצע (${overview.accuracy.games} משחקים שנבדקו)`, msg`Average accuracy (${overview.accuracy.games} reviewed games)`)} value={pct(overview.accuracy.avg)} />
+              <Tile label={tr(msg`Average accuracy (${overview.accuracy.games} reviewed games)`)} value={pct(overview.accuracy.avg)} />
             )}
           </section>
 
           {overview.ratingSeries && (
             <section className="card">
               <h2>
-                {tr(
-                  `הדירוג שלך ב${timeClassLabel(overview.ratingSeries.timeClass)} לאורך זמן`,
-                  msg`Your ${timeClassLabel(overview.ratingSeries.timeClass).toLowerCase()} rating over time`,
-                )}
+                {tr(msg`Your ${timeClassLabel(overview.ratingSeries.timeClass).toLowerCase()} rating over time`)}
               </h2>
               <RatingChart points={overview.ratingSeries.points} />
             </section>
@@ -290,12 +284,12 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
 
           <div className="grid2">
             <section className="card">
-              <h2>{tr('לפי צבע', 'By color')}</h2>
-              <ScoreRow name={tr('לבן', 'White')} s={overview.byColor.w} />
-              <ScoreRow name={tr('שחור', 'Black')} s={overview.byColor.b} />
+              <h2>{tr('By color')}</h2>
+              <ScoreRow name={tr('White')} s={overview.byColor.w} />
+              <ScoreRow name={tr('Black')} s={overview.byColor.b} />
             </section>
             <section className="card">
-              <h2>{tr('לפי קצב', 'By time control')}</h2>
+              <h2>{tr('By time control')}</h2>
               {overview.byTimeClass.map((t) => (
                 <ScoreRow key={t.timeClass} name={`${timeClassLabel(t.timeClass)} · ${t.rating}`} s={t} />
               ))}
@@ -305,19 +299,19 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
           <Strengths overview={overview} />
 
           <div className="grid2">
-            <OpeningTable title={tr('הפתיחות שלך בלבן', 'Your openings as White')} rows={overview.openings.w} average={overview.byColor.w.score} onTrain={onTrain} />
-            <OpeningTable title={tr('הפתיחות שלך בשחור', 'Your openings as Black')} rows={overview.openings.b} average={overview.byColor.b.score} onTrain={onTrain} />
+            <OpeningTable title={tr('Your openings as White')} rows={overview.openings.w} average={overview.byColor.w.score} onTrain={onTrain} />
+            <OpeningTable title={tr('Your openings as Black')} rows={overview.openings.b} average={overview.byColor.b.score} onTrain={onTrain} />
           </div>
 
           {overview.total.losses > 0 && (
             <section className="card">
-              <h2>{tr('איך אתה מפסיד', 'How you lose')}</h2>
+              <h2>{tr('How you lose')}</h2>
               {overview.lossReasons.map((r) => (
                 <Bar key={r.reason} label={reasonLabel(r.reason)} value={r.count / overview.total.losses} text={`${r.count}`} />
               ))}
               <p className="muted">
                 {pct((overview.shortLosses / overview.total.losses) * 100)}{' '}
-                {tr(`מההפסדים נגמרו עד מהלך ${SHORT_GAME}.`, msg`of your losses ended by move ${SHORT_GAME}.`)}
+                {tr(msg`of your losses ended by move ${SHORT_GAME}.`)}
               </p>
             </section>
           )}
@@ -325,28 +319,25 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
           <Branches games={filtered} onLearn={onLearn} onDrill={onDrill} />
 
           <section className="card" id="deep">
-            <h2>{tr('ניתוח מנוע של המשחקים האחרונים', 'Engine analysis of your recent games')}</h2>
+            <h2>{tr('Engine analysis of your recent games')}</h2>
             <p className="muted">
-              {tr(
-                'Stockfish עובר על כל מהלך שלך ומוצא טעויות. כל טעות גדולה נכנסת ל"תרגול ← הטעויות שלי". לוקח 10 עד 30 שניות למשחק; משחק שכבר נותח לא מנותח שוב.',
-                'Stockfish goes over each of your moves and finds mistakes. Every big mistake goes to "Practice → My mistakes". It takes 10 to 30 seconds per game; a game already analyzed is not analyzed again.',
-              )}
+              {tr('Stockfish goes over each of your moves and finds mistakes. Every big mistake goes to "Practice → My mistakes". It takes 10 to 30 seconds per game; a game already analyzed is not analyzed again.')}
             </p>
             <div className="buttons">
               <select value={deepCount} onChange={(e) => setDeepCount(Number(e.target.value))} disabled={deepRunning}>
                 {[5, 10, 20].map((n) => (
-                  <option key={n} value={n}>{tr(`${n} משחקים אחרונים`, msg`Last ${n} games`)}</option>
+                  <option key={n} value={n}>{tr(msg`Last ${n} games`)}</option>
                 ))}
               </select>
               {deepRunning ? (
-                <button onClick={stopDeep}>{tr('עצור', 'Stop')}</button>
+                <button onClick={stopDeep}>{tr('Stop')}</button>
               ) : (
                 <button className="primary" onClick={runDeep} disabled={pending === 0 && !!deep?.length}>
                   {pending === 0
-                    ? tr('הכל כבר נותח ✓', 'All analyzed ✓')
+                    ? tr('All analyzed ✓')
                     : pending === Math.min(deepCount, filtered.length)
-                      ? tr('נתח', 'Analyze')
-                      : tr(`נתח ${pending} משחקים חדשים`, msg`Analyze ${pending} new games`)}
+                      ? tr('Analyze')
+                      : tr(msg`Analyze ${pending} new games`)}
                 </button>
               )}
             </div>
@@ -366,7 +357,7 @@ function DeepProgress({ store }: { store: Store<Deep | null> }) {
   if (!p) return null;
   return (
     <div>
-      {tr(`משחק ${p.game} מתוך ${p.total}`, msg`Game ${p.game} of ${p.total}`)}
+      {tr(msg`Game ${p.game} of ${p.total}`)}
       <Progress value={(p.game - 1 + (p.posTotal ? p.pos / p.posTotal : 0)) / p.total} />
     </div>
   );
@@ -386,18 +377,15 @@ function RecentGames({ games, onReview }: { games: GameSummary[]; onReview: (g: 
   const [shown, setShown] = useState(5);
   const recent = games.slice(-50).reverse();
   const res = (g: GameSummary) =>
-    g.result === 'win' ? tr('נ', 'W') : g.result === 'loss' ? tr('ה', 'L') : tr('ת', 'D');
+    g.result === 'win' ? tr('W') : g.result === 'loss' ? tr('L') : tr('D');
   return (
     <section className="card recent-games">
       <div className="recent-games-head">
-        <h2>{tr('סקירת משחק', 'Game review')}</h2>
-        <button className="primary" onClick={() => onReview(recent[0])}>{tr('סקור את המשחק האחרון', 'Review my last game')}</button>
+        <h2>{tr('Game review')}</h2>
+        <button className="primary" onClick={() => onReview(recent[0])}>{tr('Review my last game')}</button>
       </div>
       <p className="muted">
-        {tr(
-          'כל מהלך מקבל ציון מהמנוע (ספר, הטוב ביותר, אי-דיוק, טעות, בלאנדר), עם המהלך הטוב והדיוק של שני הצדדים. בלי הגבלה יומית — המנוע רץ אצלך.',
-          'Every move gets the engine’s verdict (book, best, inaccuracy, mistake, blunder), with the better move and both players’ accuracy. No daily limit — the engine runs on your device.',
-        )}
+        {tr('Every move gets the engine’s verdict (book, best, inaccuracy, mistake, blunder), with the better move and both players’ accuracy. No daily limit — the engine runs on your device.')}
       </p>
       <ul className="recent-list">
         {recent.slice(0, shown).map((g) => (
@@ -405,17 +393,17 @@ function RecentGames({ games, onReview }: { games: GameSummary[]; onReview: (g: 
             <button className="recent-game" onClick={() => onReview(g)}>
               <span className={`result-badge result-${g.result}`}>{res(g)}</span>
               <span className="recent-main">
-                <span className="recent-opp">{g.color === 'w' ? '♔' : '♚'} {tr('מול', 'vs')} {g.opponent} <span className="muted">({g.opponentRating})</span></span>
-                <span className="muted recent-meta">{date(g.endTime)} · {timeClassLabel(g.timeClass)} · {g.opening}</span>
+                <span className="recent-opp">{g.color === 'w' ? '♔' : '♚'} {tr('vs')} {g.opponent} <span className="muted">({g.opponentRating})</span></span>
+                <span className="muted recent-meta">{date(g.endTime)} · {timeClassLabel(g.timeClass)} · {openingName(g.opening)}</span>
               </span>
-              {isReviewed(g.url) && <span className="pill" title={tr('נסקר — ייפתח מיד', 'Reviewed — opens at once')}>✓</span>}
-              <span className="recent-go">{tr('סקור ›', 'Review ›')}</span>
+              {isReviewed(g.url) && <span className="pill" title={tr('Reviewed — opens at once')}>✓</span>}
+              <span className="recent-go">{tr('Review ›')}</span>
             </button>
           </li>
         ))}
       </ul>
       {shown < recent.length && (
-        <button className="link" onClick={() => setShown((n) => Math.min(n + 10, recent.length))}>{tr('עוד משחקים', 'More games')}</button>
+        <button className="link" onClick={() => setShown((n) => Math.min(n + 10, recent.length))}>{tr('More games')}</button>
       )}
     </section>
   );
@@ -443,7 +431,7 @@ function Bar({ label, value, text }: { label: string; value: number; text: strin
 
 function ScoreRow({ name, s }: { name: string; s: Score }) {
   return (
-    <div title={tr(`${s.wins} ניצחונות, ${s.draws} תיקו, ${s.losses} הפסדים`, msg`${s.wins} wins, ${s.draws} draws, ${s.losses} losses`)}>
+    <div title={tr(msg`${s.wins} wins, ${s.draws} draws, ${s.losses} losses`)}>
       <Bar label={name} value={s.score / 100} text={`${pct(s.score)} · ${s.games}`} />
     </div>
   );
@@ -453,27 +441,21 @@ function ScoreRow({ name, s }: { name: string; s: Score }) {
 function Strengths({ overview }: { overview: ReturnType<typeof buildOverview> }) {
   const sides = (['w', 'b'] as const).map((c) => ({
     c,
-    label: c === 'w' ? tr('בלבן', 'As White') : tr('בשחור', 'As Black'),
+    label: c === 'w' ? tr('As White') : tr('As Black'),
     avg: overview.byColor[c].score,
     best: strongestOpenings(overview.openings[c], overview.byColor[c].score)[0],
   }));
   if (!sides.some((s) => overview.byColor[s.c].games)) return null;
   return (
     <section className="card strengths">
-      <h2>{tr('החוזקות שלך', 'Your strengths')}</h2>
+      <h2>{tr('Your strengths')}</h2>
       <ul>
         {sides.map(({ c, label, avg, best }) => (
           <li key={c}>
             <strong>{label}:</strong>{' '}
             {best
-              ? tr(
-                  `${ltr(best.name)} — ${pct(best.score)} ב-${best.games} משחקים (הממוצע שלך ${label}: ${pct(avg)}).`,
-                  msg`${best.name} — ${pct(best.score)} in ${best.games} games (your average ${label.toLowerCase()}: ${pct(avg)}).`,
-                )
-              : tr(
-                  `עוד אין פתיחה שבולטת מעל הממוצע שלך (${pct(avg)}, צריך לפחות ${MIN_STRONG_GAMES} משחקים בפתיחה).`,
-                  msg`No opening stands out above your average yet (${pct(avg)}; it takes ${MIN_STRONG_GAMES}+ games in an opening).`,
-                )}
+              ? tr(msg`${best.name} — ${pct(best.score)} in ${best.games} games (your average ${label.toLowerCase()}: ${pct(avg)}).`)
+              : tr(msg`No opening stands out above your average yet (${pct(avg)}; it takes ${MIN_STRONG_GAMES + '+'} games in an opening).`)}
           </li>
         ))}
       </ul>
@@ -490,20 +472,17 @@ function OpeningTable({ title, rows, average, onTrain }: { title: string; rows: 
   return (
     <section className="card">
       <h2>{title}</h2>
-      {!shown.length && <p className="muted">{tr('אין משחקים.', 'No games.')}</p>}
+      {!shown.length && <p className="muted">{tr('No games.')}</p>}
       {shown.map((r) => (
         <div key={r.name} className={mark(r.name)}>
-          <Bar label={r.name} value={r.score / 100} text={`${pct(r.score)} · ${r.games}`} />
+          <Bar label={openingName(r.name)} value={r.score / 100} text={`${pct(r.score)} · ${r.games}`} />
           {r.repertoireId && (
-            <button className="small" onClick={() => onTrain(r.repertoireId!)}>{tr('תאמן', 'Train')}</button>
+            <button className="small" onClick={() => onTrain(r.repertoireId!)}>{tr('Train')}</button>
           )}
         </div>
       ))}
       <p className="muted">
-        {tr(
-          `ניקוד % · מספר משחקים. בירוק: 3 החזקות (מ-${MIN_STRONG_GAMES} משחקים, מעל הממוצע שלך: ${pct(average)}). באדום: 3 החלשות (מ-${MIN_OPENING_GAMES} משחקים).`,
-          msg`Score % · number of games. In green: the 3 strongest (${MIN_STRONG_GAMES}+ games, above your average of ${pct(average)}). In red: the 3 weakest (${MIN_OPENING_GAMES}+ games).`,
-        )}
+        {tr(msg`Score % · number of games. In green: the 3 strongest (${MIN_STRONG_GAMES + '+'} games, above your average of ${pct(average)}). In red: the 3 weakest (${MIN_OPENING_GAMES + '+'} games).`)}
       </p>
     </section>
   );
@@ -515,28 +494,25 @@ function DeepResults({ summary, onDrill }: { summary: ReturnType<typeof summariz
     <div className="deep">
       <div className="tiles">
         {(['blunder', 'mistake', 'inaccuracy'] as const).map((k) => (
-          <Tile key={k} label={`${kindLabel(k)} (${(summary.counts[k] / summary.games).toFixed(1)} ${tr('למשחק', 'per game')})`} value={`${summary.counts[k]}`} />
+          <Tile key={k} label={`${kindLabel(k)} (${(summary.counts[k] / summary.games).toFixed(1)} ${tr('per game')})`} value={`${summary.counts[k]}`} />
         ))}
       </div>
-      <h3>{tr('איפה הטעויות והבלאנדרים', 'Where the mistakes and blunders are')}</h3>
+      <h3>{tr('Where the mistakes and blunders are')}</h3>
       {(Object.keys(summary.byPhase) as GamePhase[]).map((p) => (
         <Bar key={p} label={phaseLabel(p)} value={summary.byPhase[p] / phaseTotal} text={`${summary.byPhase[p]}`} />
       ))}
       {summary.worst.length > 0 && (
         <>
-          <h3>{tr('הטעויות הגדולות', 'The biggest mistakes')}</h3>
+          <h3>{tr('The biggest mistakes')}</h3>
           <ul className="worst">
             {summary.worst.map((m) => (
               <li key={m.gameUrl + m.fen}>
-                {tr(
-                  `מהלך ${m.moveNumber}: שיחקת ${ltr(m.played)}, עדיף ${ltr(m.best)} — איבדת ${pct(m.drop)} מסיכויי הניצחון.`,
-                  msg`Move ${m.moveNumber}: you played ${m.played}, better was ${m.best} — you lost ${pct(m.drop)} win chance.`,
-                )}{' '}
-                <a href={m.gameUrl} target="_blank" rel="noreferrer">{tr('למשחק', 'Game')}</a>
+                {tr(msg`Move ${m.moveNumber}: you played ${m.played}, better was ${m.best} — you lost ${pct(m.drop)} win chance.`)}{' '}
+                <a href={m.gameUrl} target="_blank" rel="noreferrer">{tr('Game')}</a>
               </li>
             ))}
           </ul>
-          <button className="primary" onClick={onDrill}>{tr('תרגל את הטעויות האלה', 'Practice these mistakes')}</button>
+          <button className="primary" onClick={onDrill}>{tr('Practice these mistakes')}</button>
         </>
       )}
     </div>
@@ -565,36 +541,24 @@ function AccuracyCard({ chesscom, own, ownGames }: { chesscom: MonthPoint[]; own
   const monthName = (p: MonthPoint) => new Date(p.t).toLocaleDateString(locale(), { month: 'long', year: 'numeric' });
   return (
     <section className="card accuracy-card">
-      <h2>{tr('הדיוק שלך לאורך זמן', 'Your accuracy over time')}</h2>
+      <h2>{tr('Your accuracy over time')}</h2>
       {trend ? (
         <p className={trend.delta >= 2 ? 'trend up' : trend.delta <= -2 ? 'trend down' : 'trend'}>
           {trend.delta >= 2
-            ? tr(
-                `${monthName(trend.last)}: ${pct(trend.last.avg)} (${trend.last.n} משחקים) — עלייה של ${ltr(Math.round(trend.delta))} נקודות לעומת הממוצע של החודשים שלפני (${pct(trend.before)}).`,
-                msg`${monthName(trend.last)}: ${pct(trend.last.avg)} (${trend.last.n} games) — up ${Math.round(trend.delta)} points from the months before (${pct(trend.before)}).`,
-              )
+            ? tr(msg`${monthName(trend.last)}: ${pct(trend.last.avg)} (${trend.last.n} games) — up ${Math.round(trend.delta)} points from the months before (${pct(trend.before)}).`)
             : trend.delta <= -2
-              ? tr(
-                  `${monthName(trend.last)}: ${pct(trend.last.avg)} (${trend.last.n} משחקים) — ירידה של ${ltr(Math.round(-trend.delta))} נקודות לעומת הממוצע של החודשים שלפני (${pct(trend.before)}).`,
-                  msg`${monthName(trend.last)}: ${pct(trend.last.avg)} (${trend.last.n} games) — down ${Math.round(-trend.delta)} points from the months before (${pct(trend.before)}).`,
-                )
-              : tr(
-                  `${monthName(trend.last)}: ${pct(trend.last.avg)} (${trend.last.n} משחקים) — בערך כמו הממוצע של החודשים שלפני (${pct(trend.before)}).`,
-                  msg`${monthName(trend.last)}: ${pct(trend.last.avg)} (${trend.last.n} games) — about the same as the months before (${pct(trend.before)}).`,
-                )}
+              ? tr(msg`${monthName(trend.last)}: ${pct(trend.last.avg)} (${trend.last.n} games) — down ${Math.round(-trend.delta)} points from the months before (${pct(trend.before)}).`)
+              : tr(msg`${monthName(trend.last)}: ${pct(trend.last.avg)} (${trend.last.n} games) — about the same as the months before (${pct(trend.before)}).`)}
         </p>
       ) : (
-        <p className="muted">{tr('עוד אין מספיק חודשים כדי לראות מגמה.', 'Not enough months yet to see a trend.')}</p>
+        <p className="muted">{tr('Not enough months yet to see a trend.')}</p>
       )}
       <AccuracyChart series={[
-        { key: 'chesscom', label: tr('Chess.com (משחקים שסקרת שם)', 'Chess.com (games you reviewed there)'), points: chesscom },
-        { key: 'own', label: ownGames === 1 ? tr('הסקירה כאן (משחק אחד)', 'Reviewed here (1 game)') : tr(`הסקירה כאן (${ownGames} משחקים)`, msg`Reviewed here (${ownGames} games)`), points: own },
+        { key: 'chesscom', label: tr('Chess.com (games you reviewed there)'), points: chesscom },
+        { key: 'own', label: ownGames === 1 ? tr('Reviewed here (1 game)') : tr(msg`Reviewed here (${ownGames} games)`), points: own },
       ]} />
       <p className="muted">
-        {tr(
-          `ממוצע לפי חודש. מ-Chess.com נספרים רק חודשים עם ${MIN_MONTH_GAMES} משחקים לפחות. שני המנועים שונים, אז הקווים לא זהים — חשוב הכיוון של כל קו.`,
-          msg`Monthly average. Chess.com months count from ${MIN_MONTH_GAMES} games. The two engines differ, so the lines are not identical — what matters is where each one goes.`,
-        )}
+        {tr(msg`Monthly average. Chess.com months count from ${MIN_MONTH_GAMES} games. The two engines differ, so the lines are not identical — what matters is where each one goes.`)}
       </p>
     </section>
   );
@@ -624,7 +588,7 @@ function AccuracyChart({ series }: { series: { key: string; label: string; point
   return (
     <>
       <div className="chart" dir="ltr" ref={ref}>
-        <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={tr('הדיוק שלך לפי חודש', 'Your accuracy by month')} onMouseLeave={() => setHover(null)}>
+        <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={tr('Your accuracy by month')} onMouseLeave={() => setHover(null)}>
           {[lo, (lo + hi) / 2, hi].map((a) => (
             <g key={a}>
               <line x1={L} x2={W - R} y1={y(a)} y2={y(a)} className="grid" />
@@ -655,7 +619,7 @@ function AccuracyChart({ series }: { series: { key: string; label: string; point
             {month(hoverT)}
             {atHover.map(({ s, p }) => (
               <div key={s.key} className={`legend acc-${s.key}`}>
-                <i /><strong>{Math.round(p!.avg)}%</strong> · {p!.n === 1 ? tr('משחק אחד', '1 game') : tr(`${p!.n} משחקים`, msg`${p!.n} games`)}
+                <i /><strong>{Math.round(p!.avg)}%</strong> · {p!.n === 1 ? tr('1 game') : tr(msg`${p!.n} games`)}
               </div>
             ))}
           </div>
@@ -692,7 +656,7 @@ function RatingChart({ points: raw }: { points: { t: number; r: number }[] }) {
       <svg
         viewBox={`0 0 ${W} ${H}`}
         role="img"
-        aria-label={tr(`דירוג מ-${points[0].r} ל-${points[points.length - 1].r}`, msg`Rating from ${points[0].r} to ${points[points.length - 1].r}`)}
+        aria-label={tr(msg`Rating from ${points[0].r} to ${points[points.length - 1].r}`)}
         onMouseMove={(e) => {
           const box = e.currentTarget.getBoundingClientRect();
           const px = ((e.clientX - box.left) / box.width) * W;

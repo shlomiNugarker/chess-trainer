@@ -4,8 +4,8 @@ import { msg, tr } from './i18n';
 export default function EvalBar({ white, orientation }: { white: number | null; orientation: 'white' | 'black' }) {
   const w = Math.round(white ?? 50);
   const sides = [
-    { name: tr('שחור', 'Black'), pct: 100 - w },
-    { name: tr('לבן', 'White'), pct: w },
+    { name: tr('Black'), pct: 100 - w },
+    { name: tr('White'), pct: w },
   ];
   const [top, bottom] = orientation === 'white' ? sides : [...sides].reverse();
   const label = (s: (typeof sides)[number]) => (
@@ -15,7 +15,7 @@ export default function EvalBar({ white, orientation }: { white: number | null; 
     </div>
   );
   return (
-    <div className="evalbar" title={tr(`סיכויי ניצחון: לבן ${w}%, שחור ${100 - w}%`, msg`Win chances: White ${w}%, Black ${100 - w}%`)}>
+    <div className="evalbar" title={tr(msg`Win chances: White ${`${w}%`}, Black ${`${100 - w}%`}`)}>
       {label(top)}
       <div className={`evalbar-track ${orientation === 'white' ? 'white-bottom' : 'white-top'}`}>
         <div className="evalbar-white" style={{ height: `${w}%` }} />

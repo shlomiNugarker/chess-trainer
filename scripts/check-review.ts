@@ -12,7 +12,7 @@ assert.equal(openingFromEco(O + 'Sicilian-Defense-Najdorf-Variation-6.Be3').fami
 assert.equal(openingFromEco(O + 'Caro-Kann-Defense-Advance-Variation-3...Bf5').family, 'Caro Kann Defense');
 assert.equal(openingFromEco(O + 'Queens-Pawn-Opening-Accelerated-London-System').family, 'London System');
 assert.equal(openingFromEco(O + 'Kings-Indian-Defense-Fianchetto-8.d5-Nb8').family, 'Kings Indian Defense');
-assert.equal(openingFromEco(undefined).family, 'לא ידוע');
+assert.equal(openingFromEco(undefined).family, 'Unknown');
 assert.equal(openingFromEco(O + 'Magnus-Queens-Gambit...5.Bf4').family, 'Magnus Queens Gambit'); // "..." glued to a word
 assert.equal(openingFromEco(O + 'Scandinavian-Defense...3.Nc3').full, 'Scandinavian Defense');
 
@@ -241,27 +241,32 @@ assert.deepEqual([dv.mine[0].repId, dv.mine[0].played, dv.mine[0].expected, dv.m
   online = false;
   await assert.rejects(load());
   // a name that cannot exist is "no such user" without asking (the answer would look like a connection error)
-  for (const bad of ['a/b', 'שלומי', 'two words', '']) await assert.rejects(fetchGames(bad, () => {}), /לא נמצא משתמש/);
-  await assert.rejects(fetchGames(' Some_Name-1 ', () => {}), /אין חיבור/);
+  for (const bad of ['a/b', '\u05e9\u05dc\u05d5\u05dd', 'two words', '']) await assert.rejects(fetchGames(bad, () => {}), /No Chess.com user/);
+  await assert.rejects(fetchGames(' Some_Name-1 ', () => {}), /Cannot reach Chess.com/);
 
   Date.now = real.now;
   globalThis.fetch = real.fetch;
   (globalThis as { caches?: unknown }).caches = real.caches;
 }
 
-// moves inside Hebrew texts
+// moves inside a right-to-left text (A stands for a right-to-left word, between < and > is kept left-to-right)
 {
   const { isolateMoves } = await import('../src/repertoire.ts');
-  const show = (t: string) => isolateMoves(t).replace(/\u2066/g, '<').replace(/\u2069/g, '>');
-  assert.equal(show('ראשי מול ...d5 ו-...c5'), 'ראשי מול <...d5> ו-<...c5>');
-  assert.equal(show('פתיחה איטלקית ו-1.e4 (לבן)'), 'פתיחה איטלקית ו-<1.e4> (לבן)');
-  assert.equal(show('★ מול 2...a6'), '★ מול <2...a6>');
-  assert.equal(show('עם Qa4+ ואז O-O.'), 'עם <Qa4+> ואז O-O.');
-  assert.equal(show('אחרי 1.e4 c5 2.Nf3 הסיציליאנית'), 'אחרי <1.e4 c5 2.Nf3> הסיציליאנית');
-  assert.equal(show('רגלים ב-d4, c3 ו-e3'), 'רגלים ב-d4, c3 ו-e3'); // nothing to fix
-  for (const r of REPERTOIRES)
-    for (const l of r.lines)
-      for (const t of [l.name, l.idea ?? '', ...Object.values(l.notes ?? {})])
+  const he = (t: string) => t.replace(/A/g, '\u05d0\u05d1');
+  const show = (t: string) => isolateMoves(he(t)).replace(/\u2066/g, '<').replace(/\u2069/g, '>');
+  for (const [text, want] of [
+    ['A A ...d5 A-...c5', 'A A <...d5> A-<...c5>'],
+    ['A A-1.e4 (A)', 'A A-<1.e4> (A)'],
+    ['★ A 2...a6', '★ A <2...a6>'],
+    ['A Qa4+ A O-O.', 'A <Qa4+> A O-O.'],
+    ['A 1.e4 c5 2.Nf3 A', 'A <1.e4 c5 2.Nf3> A'],
+    ['A A-d4, c3 A-e3', 'A A-d4, c3 A-e3'], // nothing to fix
+  ])
+    assert.equal(show(text), he(want));
+  const lines = (await import('../src/lang/repertoire.he.ts')).default;
+  for (const r of Object.values(lines))
+    for (const l of Object.values(r.lines))
+      for (const t of [l.name, l.idea, ...Object.values(l.notes)])
         assert.ok(!/(^|[^\u2066\w.])(\.{3}|\d+\.{1,3})[KQRBNOa-h]/.test(isolateMoves(t).replace(/\u2066[^\u2069]*\u2069/g, '')), `not isolated: ${t}`);
 }
 

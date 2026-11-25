@@ -11,7 +11,7 @@ import { msg, tr, useLang } from './i18n';
 
 const SHOW = 5;
 const ANSWER_PLIES = 5; // the answer, then two more moves for each side
-const gamesLabel = (n: number) => (n === 1 ? tr('משחק אחד', '1 game') : tr(`${n} משחקים`, msg`${n} games`));
+const gamesLabel = (n: number) => (n === 1 ? tr('1 game') : tr(msg`${n} games`));
 
 /**
  * "Where your games leave your lines": opponent moves the repertoire doesn't answer (add Stockfish's answer as a
@@ -76,12 +76,9 @@ export default function Branches({
 
   return (
     <section className="card branches-card">
-      <h2>{tr('איפה המשחקים שלך יוצאים מהקווים', 'Where your games leave your lines')}</h2>
+      <h2>{tr('Where your games leave your lines')}</h2>
       <p className="muted">
-        {tr(
-          'מתוך המשחקים בפתיחות שברפרטואר שלך: מהלכים של יריבים שאין להם מענה בקווים, ומקומות שבהם אתה יצאת מהקו.',
-          'From your games in the repertoire openings: opponent moves your lines don’t answer, and places where you left the line yourself.',
-        )}
+        {tr('From your games in the repertoire openings: opponent moves your lines don’t answer, and places where you left the line yourself.')}
       </p>
 
       {added.length > 0 && (
@@ -89,9 +86,9 @@ export default function Branches({
           {added.map((x) => (
             <li key={x.moves} className="branch-added">
               <span>
-                ✓ {tr('נוסף ענף', 'Branch added')} · {repName(rep(x.repId))}: <span dir="ltr">{ltr(x.answer)}</span>
+                ✓ {tr('Branch added')} · {repName(rep(x.repId))}: <span dir="ltr">{ltr(x.answer)}</span>
               </span>
-              <button className="small" onClick={() => onLearn(x.repId, x.moves)}>{tr('ללמוד אותו ›', 'Learn it ›')}</button>
+              <button className="small" onClick={() => onLearn(x.repId, x.moves)}>{tr('Learn it ›')}</button>
             </li>
           ))}
         </ul>
@@ -99,7 +96,7 @@ export default function Branches({
 
       {dv.opp.length > 0 && (
         <>
-          <h3>{tr('יריבים שיחקו מהלך שאין לך עליו קו', 'Opponents played a move you have no line for')}</h3>
+          <h3>{tr('Opponents played a move you have no line for')}</h3>
           <ul className="branch-list">
             {dv.opp.slice(0, SHOW).map((d) => {
               const key = d.prefix.join(' ');
@@ -110,25 +107,22 @@ export default function Branches({
                     <span className="muted">· {gamesLabel(d.count)}</span>
                   </span>
                   <button className="small primary" onClick={() => addBranch(d)} disabled={busy !== null}>
-                    {busy === key ? tr('Stockfish חושב…', 'Stockfish is thinking…') : tr('הוסף ענף', 'Add a branch')}
+                    {busy === key ? tr('Stockfish is thinking…') : tr('Add a branch')}
                   </button>
                 </li>
               );
             })}
           </ul>
           <p className="muted small-print">
-            {tr(
-              '"הוסף ענף" מוסיף לרפרטואר את התשובה של Stockfish ועוד שני מהלכים לכל צד. הענף יופיע בעמוד "למד" ובאימון.',
-              '"Add a branch" adds Stockfish’s answer and two more moves for each side to your repertoire. It shows up in Learn and in training.',
-            )}
+            {tr('"Add a branch" adds Stockfish’s answer and two more moves for each side to your repertoire. It shows up in Learn and in training.')}
           </p>
-          {failed && <p className="sync-status warn">{tr('המנוע לא הצליח לנתח את העמדה. נסה שוב.', 'The engine could not analyze the position. Try again.')}</p>}
+          {failed && <p className="sync-status warn">{tr('The engine could not analyze the position. Try again.')}</p>}
         </>
       )}
 
       {dv.mine.length > 0 && (
         <>
-          <h3>{tr('כאן אתה יצאת מהקו', 'Here you left the line')}</h3>
+          <h3>{tr('Here you left the line')}</h3>
           <ul className="branch-list">
             {dv.mine.slice(0, SHOW).map((d) => {
               const key = `${d.repId}|${d.fen}|${d.played}`;
@@ -137,13 +131,13 @@ export default function Branches({
                 <li key={key}>
                   <span>
                     <b>{repName(rep(d.repId))}</b> · <span dir="ltr">{ltr(movesText(d.prefix))}</span> —{' '}
-                    {tr(`שיחקת ${ltr(d.played)} במקום ${ltr(d.label)}`, msg`you played ${d.played} instead of ${d.label}`)}{' '}
+                    {tr(msg`you played ${d.played} instead of ${d.label}`)}{' '}
                     <span className="muted">· {gamesLabel(d.count)}</span>
                   </span>
                   {done ? (
-                    <button className="small" onClick={onDrill}>{tr('נוסף לחזרה ›', 'Added — practice ›')}</button>
+                    <button className="small" onClick={onDrill}>{tr('Added — practice ›')}</button>
                   ) : (
-                    <button className="small primary" onClick={() => practice(d)}>{tr('תרגל', 'Practice')}</button>
+                    <button className="small primary" onClick={() => practice(d)}>{tr('Practice', 'verb')}</button>
                   )}
                 </li>
               );

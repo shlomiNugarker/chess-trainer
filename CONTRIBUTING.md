@@ -16,7 +16,7 @@ Open an issue first for anything larger than a small fix, so we can agree on the
 All of these must pass (CI runs them too):
 
 ```bash
-npm run check   # = npm run lint && npm run build && npm test (the four scripts/check-*.ts)
+npm run check   # = npm run lint && npm run build && npm test (all the scripts/check-*.ts)
 ```
 
 The engine in `public/engine/` is a copy of the `stockfish` package (pinned in `package.json`); when updating
@@ -28,15 +28,15 @@ Vercel runs the same command as its build (`buildCommand` in `vercel.json`), so 
 
 Please also try your change in the browser, on a narrow phone-sized window as well as on desktop.
 
-For larger changes, also run the browser QA scripts in [`scripts/qa/`](scripts/qa/README.md): they play every repertoire line through the real UI and go through every screen on desktop and phone, in both languages and offline.
+For larger changes, also run the browser QA scripts in [`scripts/qa/`](scripts/qa/README.md): they play every repertoire line through the real UI and go through every screen on desktop and phone, in every language and offline.
 
 ## Conventions
 
-- **Languages.** Every user-facing string is written in place as `tr('עברית', 'English')` (`src/i18n.ts`); with values, ``tr(`שלב ${n}`, msg`Step ${n}`)``. If you don't speak Hebrew, write the English and say so in the PR. Other languages are dictionaries keyed by the English text (`src/lang/es.ts`; `{0}`, `{1}` are the values and may change places): a new or changed English text needs its translation there, and `npm run check` lists what is missing. To add a language: a line in `LANGS` and in `DICTS` (`src/i18n.ts`) and a file in `src/lang/` (`node --experimental-strip-types scripts/check-i18n.ts --missing` prints every text). Languages with more than two plural forms need more than this.
-- **Repertoire lines** live in `src/repertoire.ts` (Hebrew names, ideas and notes) and `src/repertoire.en.ts` (English, keyed by the Hebrew line name). Notes are keyed by move label (`"5.c3"`, `"4...Qb6"`). The user must have exactly one move in every position across a repertoire's lines. Check every user move with Stockfish — it should not lose more than ~2% win chance — and run `check-lines`.
-- **A new repertoire** goes in `REPERTOIRES` (`src/repertoire.ts`) and in `EN` (`src/repertoire.en.ts`, by its id). For the review’s per-opening table, add its Chess.com opening name to `matchRepertoire` in `src/reviewStats.ts` (with a case in `scripts/check-review.ts`). Two repertoires may answer the same position differently (say the Caro-Kann and the Sicilian against 1.e4): the review gives each game to the one it followed longest.
+- **Languages.** The project is in English; every user-facing string is written in place as `tr('English')` (`src/i18n.ts`), or ``tr(msg`Step ${n}`)`` with values. Every other language is a dictionary keyed by the English text (`src/lang/he.ts`, `src/lang/es.ts`; `{0}`, `{1}` are the values and may change places): a new or changed text needs its translation there, and `npm run check` lists what is missing — if you don't speak a language, say so in the PR. When another language needs two texts for the same English one, give it a context: `tr('Practice', 'verb')` and `'Practice|verb'` in the dictionary. To add a language: a line in `LANGS` and in `LOADERS` (`src/i18n.ts`) and a file in `src/lang/` (`node --experimental-strip-types scripts/check-i18n.ts --missing` prints every text). Languages with more than two plural forms need more than this.
+- **Repertoire lines** live in `src/repertoire.ts`, and their Hebrew in `src/lang/repertoire.he.ts` (by the `id` of the line). Notes are keyed by move label (`"5.c3"`, `"4...Qb6"`). The user must have exactly one move in every position across a repertoire's lines. Check every user move with Stockfish — it should not lose more than ~2% win chance — and run `check-lines`.
+- **A new repertoire** goes in `REPERTOIRES` (`src/repertoire.ts`) and, by its id, in `src/lang/repertoire.he.ts`. For the review’s per-opening table, add its Chess.com opening name to `matchRepertoire` in `src/reviewStats.ts` (with a case in `scripts/check-review.ts`). Two repertoires may answer the same position differently (say the Caro-Kann and the Sicilian against 1.e4): the review gives each game to the one it followed longest.
 - **Puzzles** are rebuilt with `scripts/build-puzzles.py`. Give the new set a new file name (`puzzles-vN.json`, and update `src/puzzleData.ts` and `scripts/check-puzzles.ts`) — the service worker caches files by name, so the same name would never reach existing users.
-- **Changing a line name**: give the line `id: '<the old Hebrew name>'`, or everyone's "mastered" mark (and its English text) is lost; the name is its id until then.
+- **The `id` of a line** never changes: progress is saved by it. The name can change freely — except the Hebrew one, by which the first versions saved progress (`src/legacyMastery.ts`).
 - **Storage.** Saved state goes in `localStorage` under `chess-trainer:`; it is synced between devices unless listed as local in `src/syncMerge.ts`. Keep large data (archives, caches) out of it.
 - Match the existing code style; no new runtime dependencies without discussing them first.
 

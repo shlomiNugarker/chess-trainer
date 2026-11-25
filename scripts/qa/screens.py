@@ -59,7 +59,7 @@ def section(name):
 def tour(pg, tag):
     for t in range(4):
         tab(pg, t); time.sleep(1.5)
-        got = pg.locator('button:has-text("Got it"), button:has-text("הבנתי")')
+        got = pg.locator('button:has-text("Got it"), button:has-text("\u05d4\u05d1\u05e0\u05ea\u05d9")')
         if got.count(): got.first.click()
         r.shot(pg, f'{tag}-tab{t}')
         r.check(hscroll(pg) <= 0, f'{tag}: tab {t} ({text(pg, ".tab.active")}) has no horizontal scroll')
@@ -325,9 +325,9 @@ def account(b):
     txt = pg.locator('.account-panel').inner_text()
     r.check('Sign in with Google' in txt or 'Sign out' in txt, 'account panel: Google sign-in')
     r.check('Licenses' in txt, 'account panel: licenses link')
-    pg.locator('.account-panel .chips button').nth(0).click(); time.sleep(0.5)
-    r.check(pg.evaluate('document.documentElement.dir') == 'rtl' and 'מאמן שחמט' in pg.locator('body').inner_text(), 'language: Hebrew, right to left')
-    pg.locator('.account-panel .chips button').nth(1).click(); time.sleep(0.5)
+    pg.click('.account-panel .chips button[lang=he]'); time.sleep(0.5)
+    r.check(pg.evaluate('document.documentElement.dir') == 'rtl' and '\u05de\u05d0\u05de\u05df \u05e9\u05d7\u05de\u05d8' in pg.locator('body').inner_text(), 'language: Hebrew, right to left')
+    pg.click('.account-panel .chips button[lang=en]'); time.sleep(0.5)
     r.check(pg.evaluate('document.documentElement.dir') == 'ltr', 'language: English, left to right')
     pg.click('.account-panel button[aria-label="Close"]'); time.sleep(0.3)
     r.check(pg.locator('.account-panel').count() == 0, 'account panel closes')
@@ -406,7 +406,7 @@ def touch(b):
         tab(pg, 0); time.sleep(0.5)
         r.check(re.search(r'220', pg.locator('.trainer aside').inner_text()) is not None, f'{tag}: and in Play')
         tab(pg, 3); pg.locator('.segmented button').nth(1).click(); time.sleep(0.8)
-        r.check('220' in pg.locator('.status').last.inner_text() and 'London' not in pg.locator('main').last.inner_text() and 'לונדון' not in pg.locator('main').last.inner_text(),
+        r.check('220' in pg.locator('.status').last.inner_text() and 'London' not in pg.locator('main').last.inner_text() and '\u05dc\u05d5\u05e0\u05d3\u05d5\u05df' not in pg.locator('main').last.inner_text(),
                 f'{tag}: the practice starts with an opening that is shown', pg.locator('main').last.inner_text()[-120:].replace('\n', ' '))
         stored = pg.evaluate("JSON.parse(localStorage.getItem('chess-trainer:mistakes')).length")
         r.check(stored == 235, f'{tag}: nothing was deleted', str(stored))

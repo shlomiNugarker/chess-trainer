@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard, type Arrow } from 'react-chessboard';
-import { explanationsNote, lineId, movesOf, REPERTOIRES, lineMoves, lineText, moveLabel, posKey, repName } from './repertoire';
+import { explanationsNote, movesOf, REPERTOIRES, lineMoves, lineText, moveLabel, posKey, repName } from './repertoire';
 import { importPgn, removeCustomLine, useRepertoire, type ImportResult } from './customLines';
 import { hasExplanations, msg, tr, useLang } from './i18n';
 import { dueMistakes, loadMistakes, saveMistake, useMistakeCount } from './mistakes';
@@ -48,7 +48,7 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
   const [masteryVersion, setMasteryVersion] = useState(0); // bump to re-read the store
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const mastery = useMemo(() => loadMastery(rep.id), [rep.id, masteryVersion]);
-  const masteredCount = rep.lines.filter((l) => isMastered(mastery[lineId(l)])).length;
+  const masteredCount = rep.lines.filter((l) => isMastered(mastery[l.id])).length;
   const [statsOpen, setStatsOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [pgnText, setPgnText] = useState('');
@@ -61,10 +61,10 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
   // "today": the one or two things worth doing now, one tap each
   const due = useMistakeCount(dueCount);
   const [puzzlesToday, streakDays] = useMemo(() => [todayCount(), dayStreak()], []); // they change on another screen
-  const firstToLearn = rep.lines.findIndex((l) => !isMastered(mastery[lineId(l)]));
+  const firstToLearn = rep.lines.findIndex((l) => !isMastered(mastery[l.id]));
   const nextToLearn = [...rep.lines.keys()]
     .map((k) => (lineIdx + 1 + k) % rep.lines.length)
-    .find((i) => i !== lineIdx && !isMastered(mastery[lineId(rep.lines[i])]));
+    .find((i) => i !== lineIdx && !isMastered(mastery[rep.lines[i].id]));
 
   const fen = ply === 0 ? START : moves[ply - 1].after;
   const userTurn = fen.split(' ')[1] === rep.userColor;
@@ -98,7 +98,7 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
     const np = ply + 1;
     setPly(np);
     if (np === moves.length) {
-      recordRun(rep.id, lineId(line), mistakes);
+      recordRun(rep.id, line.id, mistakes);
       if (!mistakes) playSound('success', 0.15);
       setMasteryVersion((v) => v + 1);
     }
@@ -180,43 +180,43 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
     <div className="learn">
       {showGuide && (
         <div className="card guide">
-          <strong>{tr('איך לומדים כאן', 'How to learn here')}</strong>
+          <strong>{tr('How to learn here')}</strong>
           <ol>
-            <li><b>{tr('למד', 'Learn')}</b> — {tr('עבור על קו מהלך אחר מהלך וקרא למה משחקים כל מהלך.', 'step through a line move by move and read why each move is played.')}</li>
-            <li><b>{tr('בחן אותי', 'Test me')}</b> — {tr('שחק את הקו בעצמך עד שאין טעויות (✓).', 'play the line yourself until there are no mistakes (✓).')}</li>
-            <li><b>{tr('שחק', 'Play')}</b> — {tr('באימון מול המחשב; כל סטייה מהקו נעצרת ומתוקנת.', 'train against the computer; every step off the line is stopped and corrected.')}</li>
-            <li><b>{tr('חזרה', 'Review')}</b> — {tr('כל יום כמה דקות על העמדות שטעית בהן.', 'a few minutes a day on the positions you got wrong.')}</li>
+            <li><b>{tr('Learn')}</b> — {tr('step through a line move by move and read why each move is played.')}</li>
+            <li><b>{tr('Test me')}</b> — {tr('play the line yourself until there are no mistakes (✓).')}</li>
+            <li><b>{tr('Play')}</b> — {tr('train against the computer; every step off the line is stopped and corrected.')}</li>
+            <li><b>{tr('Review')}</b> — {tr('a few minutes a day on the positions you got wrong.')}</li>
           </ol>
-          <button className="ghost small" onClick={() => setGuideDismissed(true)}>{tr('הבנתי', 'Got it')}</button>
+          <button className="ghost small" onClick={() => setGuideDismissed(true)}>{tr('Got it')}</button>
         </div>
       )}
 
       {!showGuide && !quiz && (
         <div className="today">
-          <span className="today-title">{tr('היום', 'Today')}</span>
+          <span className="today-title">{tr('Today')}</span>
           {streakDays > 0 && <span className="pill">🔥 {daysLabel(streakDays)}</span>}
           {due > 0 && (
-            <button onClick={onDrill}>↻ {due === 1 ? tr('חזרה על עמדה אחת', 'Review 1 position') : tr(`חזרה על ${due} עמדות`, msg`Review ${due} positions`)}</button>
+            <button onClick={onDrill}>↻ {due === 1 ? tr('Review 1 position') : tr(msg`Review ${due} positions`)}</button>
           )}
           <button onClick={onPuzzles} className={puzzlesToday >= DAILY_GOAL ? 'daily-btn done' : 'daily-btn'}>
             🧩 {puzzlesToday >= DAILY_GOAL
-              ? tr(`${DAILY_GOAL} פאזלים ✓`, msg`${DAILY_GOAL} puzzles ✓`)
-              : tr(`פאזלים ${puzzlesToday}/${DAILY_GOAL}`, msg`Puzzles ${puzzlesToday}/${DAILY_GOAL}`)}
+              ? tr(msg`${DAILY_GOAL} puzzles ✓`)
+              : tr(msg`Puzzles ${`${puzzlesToday}/${DAILY_GOAL}`}`)}
           </button>
           {firstToLearn === lineIdx ? (
-            <button className="primary" onClick={startQuiz}>🎯 {tr('בחן אותי על הקו הזה', 'Test me on this line')}</button>
+            <button className="primary" onClick={startQuiz}>🎯 {tr('Test me on this line')}</button>
           ) : firstToLearn >= 0 ? (
             <button className="primary" onClick={() => pickLine(rep.id, firstToLearn)}>
-              📖 {tr('ללמוד:', 'Learn:')} {lineText(rep, rep.lines[firstToLearn]).name}
+              📖 {tr('Learn:')} {lineText(rep, rep.lines[firstToLearn]).name}
             </button>
           ) : (
-            <button className="primary" onClick={() => onTrain(rep.id)}>♟ {tr('שולט בכל הקווים — משחק אימון', 'All lines mastered — training game')}</button>
+            <button className="primary" onClick={() => onTrain(rep.id)}>♟ {tr('All lines mastered — training game')}</button>
           )}
         </div>
       )}
 
       <header className="learn-header">
-        <div className="chips" role="group" aria-label={tr('פתיחה', 'Opening')}>
+        <div className="chips" role="group" aria-label={tr('Opening')}>
           {visible.map((r) => (
             <button
               key={r.id}
@@ -231,25 +231,25 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
             className="chip manage-chip"
             aria-expanded={manageOpen}
             onClick={() => setManageOpen((o) => !o)}
-            title={tr('בחר אילו פתיחות להציג', 'Choose which openings to show')}
-            aria-label={tr('בחר אילו פתיחות להציג', 'Choose which openings to show') + (hidden.length ? ` (${tr(`${hidden.length} מוסתרות`, msg`${hidden.length} hidden`)})` : '')}
+            title={tr('Choose which openings to show')}
+            aria-label={tr('Choose which openings to show') + (hidden.length ? ` (${tr(msg`${hidden.length} hidden`)})` : '')}
           >
-            <span aria-hidden="true">⚙</span>{hidden.length ? ` ${tr(`${hidden.length} מוסתרות`, msg`${hidden.length} hidden`)}` : ''}
+            <span aria-hidden="true">⚙</span>{hidden.length ? ` ${tr(msg`${hidden.length} hidden`)}` : ''}
           </button>
         </div>
         <button
           className="pill progress-pill"
           aria-expanded={statsOpen}
           onClick={() => setStatsOpen((o) => !o)}
-          title={tr('קווים שעברת בבחינה בלי טעויות — לחץ לפירוט לפי קו', 'Lines you passed in a test with no mistakes — tap for each line')}
+          title={tr('Lines you passed in a test with no mistakes — tap for each line')}
         >
-          {tr(`שולט ב-${masteredCount} מתוך ${rep.lines.length}`, msg`Mastered ${masteredCount} of ${rep.lines.length}`)} {statsOpen ? '▴' : '▾'}
+          {tr(msg`Mastered ${masteredCount} of ${rep.lines.length}`)} {statsOpen ? '▴' : '▾'}
         </button>
-        <select value={lineIdx} onChange={(e) => pickLine(rep.id, Number(e.target.value))} aria-label={tr('קו', 'Line')}>
+        <select value={lineIdx} onChange={(e) => pickLine(rep.id, Number(e.target.value))} aria-label={tr('Line')}>
           {rep.lines.map((l, i) => (
             <option key={i} value={i}>
-              {isMastered(mastery[lineId(l)]) ? '✓ ' : ''}
-              {lineText(rep, l).name} ({Math.ceil(l.moves.split(/\s+/).length / 2)} {tr('מהלכים', 'moves')})
+              {isMastered(mastery[l.id]) ? '✓ ' : ''}
+              {lineText(rep, l).name} ({Math.ceil(l.moves.split(/\s+/).length / 2)} {tr('moves')})
             </option>
           ))}
         </select>
@@ -261,22 +261,19 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
               pickLine(rep.id, 0);
             }}
           >
-            {tr('הסר את הענף', 'Remove this branch')}
+            {tr('Remove this branch')}
           </button>
         )}
         <button className="link import-link" aria-expanded={importOpen} onClick={() => setImportOpen((o) => !o)}>
-          ＋ {tr('ייבא קו (PGN)', 'Import a line (PGN)')}
+          ＋ {tr('Import a line (PGN)')}
         </button>
       </header>
 
       {manageOpen && (
         <section className="card manage-card">
-          <h3>{tr('אילו פתיחות להציג', 'Which openings to show')}</h3>
+          <h3>{tr('Which openings to show')}</h3>
           <p className="muted">
-            {tr(
-              'פתיחה מוסתרת לא מופיעה כאן, בבחירת הפתיחה באימון וב"הטעויות שלי". שום דבר לא נמחק — אפשר להחזיר אותה בכל רגע.',
-              'A hidden opening doesn’t appear here, in the training opening picker or in My mistakes. Nothing is deleted — you can show it again any time.',
-            )}
+            {tr('A hidden opening doesn’t appear here, in the training opening picker or in My mistakes. Nothing is deleted — you can show it again any time.')}
           </p>
           {REPERTOIRES.map((r) => {
             const shown = !hidden.includes(r.id);
@@ -297,12 +294,9 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
 
       {importOpen && (
         <section className="card import-card">
-          <h3>{tr(`ייבוא קו ל${repName(rep)}`, msg`Import a line into ${repName(rep)}`)}</h3>
+          <h3>{tr(msg`Import a line into ${repName(rep)}`)}</h3>
           <p className="muted">
-            {tr(
-              'הדבק PGN (אפשר כמה משחקים) או מהלכים כמו 1.e4 c6 2.d4 d5. נכנס רק הקו הראשי; כל קו נבדק שהוא לא סותר את הרפרטואר, ונוסף כענף ★.',
-              'Paste a PGN (several games are fine) or moves like 1.e4 c6 2.d4 d5. Only the main line is used; each line is checked against your repertoire and added as a ★ branch.',
-            )}
+            {tr('Paste a PGN (several games are fine) or moves like 1.e4 c6 2.d4 d5. Only the main line is used; each line is checked against your repertoire and added as a ★ branch.')}
           </p>
           <textarea dir="ltr" rows={4} value={pgnText} onChange={(e) => setPgnText(e.target.value)} placeholder="1.e4 c6 2.d4 d5 3.Nc3 dxe4 ..." />
           <div className="buttons">
@@ -315,7 +309,7 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
                 if (r.some((x) => x.ok)) setPgnText('');
               }}
             >
-              {tr('ייבא', 'Import')}
+              {tr('Import')}
             </button>
           </div>
           {imported.length > 0 && (
@@ -330,26 +324,26 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
 
       {statsOpen && (
         <section className="card line-stats">
-          <h3>{tr('איך הולך לך בכל קו', 'How each line is going')}</h3>
+          <h3>{tr('How each line is going')}</h3>
           <ul>
             {rep.lines.map((l, i) => {
               const st = stats[i];
               if (!st) return null;
               return (
-                <li key={lineId(l)}>
+                <li key={l.id}>
                   <button className="line-stats-name" onClick={() => pickLine(rep.id, i)}>
-                    {isMastered(mastery[lineId(l)]) ? '✓ ' : ''}
+                    {isMastered(mastery[l.id]) ? '✓ ' : ''}
                     {lineText(rep, l).name}
                   </button>
                   <span className={st.rate === null ? 'muted' : st.rate >= 70 ? 'rate good' : st.rate >= 40 ? 'rate mid' : 'rate low'}>
                     {st.rate === null
-                      ? tr('עוד לא נבחנת', 'Not tested yet')
-                      : tr(`${st.rate}% · ${st.clean} מתוך ${st.tries} בלי טעויות`, msg`${st.rate}% · ${st.clean} of ${st.tries} clean`)}
+                      ? tr('Not tested yet')
+                      : tr(msg`${`${st.rate}%`} · ${st.clean} of ${st.tries} clean`)}
                   </span>
                   {st.hardest && (
                     <button className="link hardest" onClick={() => pickLine(rep.id, i, st.hardest!.ply)}>
-                      {tr('הכי קשה:', 'Hardest:')} <span dir="ltr">{st.hardest.label}</span>{' '}
-                      {tr(`(טעית ${st.hardest.misses === 1 ? 'פעם אחת' : `${st.hardest.misses} פעמים`})`, msg`(missed ${st.hardest.misses}×)`)}
+                      {tr('Hardest:')} <span dir="ltr">{st.hardest.label}</span>{' '}
+                      {st.hardest.misses === 1 ? tr('(missed once)') : tr(msg`(missed ${st.hardest.misses} times)`)}
                     </button>
                   )}
                 </li>
@@ -357,10 +351,7 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
             })}
           </ul>
           <p className="muted">
-            {tr(
-              'האחוז הוא מתוך הבחינות ("בחן אותי"). "הכי קשה" הוא המהלך שטעית בו הכי הרבה — באימון או בבחינה; לחיצה עליו פותחת את הקו בדיוק שם.',
-              'The rate is from your tests ("Test me"). "Hardest" is the move you missed most — in training or in tests; tap it to open the line right there.',
-            )}
+            {tr('The rate is from your tests ("Test me"). "Hardest" is the move you missed most — in training or in tests; tap it to open the line right there.')}
           </p>
         </section>
       )}
@@ -393,43 +384,40 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
               <span className="status-text">
                 {done
                   ? quiz.mistakes
-                    ? tr(`סיימת את הקו! ${quiz.mistakes} טעויות`, msg`Line finished! ${quiz.mistakes} mistakes`)
-                    : tr('סיימת את הקו! בלי טעויות ✓', 'Line finished! No mistakes ✓')
+                    ? tr(msg`Line finished! ${quiz.mistakes} mistakes`)
+                    : tr('Line finished! No mistakes ✓')
                   : quiz.wrong
-                    ? tr('לא המהלך של הקו', 'Not the move of the line')
+                    ? tr('Not the move of the line')
                     : userTurn
-                      ? tr('שחק את המהלך הבא בקו', 'Play the next move of the line')
-                      : tr('היריב משחק…', 'Opponent is moving…')}
+                      ? tr('Play the next move of the line')
+                      : tr('Opponent is moving…')}
               </span>
-              <span className="pill">{tr('בחינה', 'Test')} · {Math.min(ply, moves.length)}/{moves.length}</span>
+              <span className="pill">{tr('Test')} · {Math.min(ply, moves.length)}/{moves.length}</span>
             </div>
           ) : (
             <div className="card learn-move">
               <div className="learn-move-head">
-                {current ? <strong className="move-label">{moveLabel(ply - 1, current.san)}</strong> : <strong>{tr('עמדת הפתיחה', 'Starting position')}</strong>}
-                {current && <span className="pill">{whose(ply - 1) ? tr('המהלך שלך', 'Your move') : tr('היריב', 'Opponent')}</span>}
+                {current ? <strong className="move-label">{moveLabel(ply - 1, current.san)}</strong> : <strong>{tr('Starting position')}</strong>}
+                {current && <span className="pill">{whose(ply - 1) ? tr('Your move') : tr('Opponent')}</span>}
               </div>
               <p>{note ?? (current ? '' : text.idea)}</p>
               {next && (
                 <p className="muted">
-                  {tr('הבא:', 'Next:')} {ltr(moveLabel(ply, next.san))} — {tr('החץ הכחול מראה אותו.', 'the blue arrow shows it.')}
+                  {tr('Next:')} {ltr(moveLabel(ply, next.san))} — {tr('the blue arrow shows it.')}
                 </p>
               )}
-              {!next && <p className="muted">{tr('סוף הקו.', 'End of the line.')}</p>}
+              {!next && <p className="muted">{tr('End of the line.')}</p>}
             </div>
           )}
 
           {quiz?.wrong && (
             <div className="card feedback tone-error">
-              <strong>{tr('שיחקת', 'You played')} {ltr(quiz.wrong.san)}</strong>
+              <strong>{tr('You played')} {ltr(quiz.wrong.san)}</strong>
               <p>
-                {tr(
-                  `בקו משחקים כאן ${ltr(next ? next.san : '')}. החץ הירוק מראה אותו. העמדה נשמרה לחזרה.`,
-                  msg`The line plays ${next ? next.san : ''} here. The green arrow shows it. The position was saved for review.`,
-                )}
+                {tr(msg`The line plays ${next ? next.san : ''} here. The green arrow shows it. The position was saved for review.`)}
               </p>
               <div className="buttons">
-                <button className="primary" onClick={() => setQuiz({ ...quiz, wrong: undefined })}>↩ {tr('נסה שוב', 'Try again')}</button>
+                <button className="primary" onClick={() => setQuiz({ ...quiz, wrong: undefined })}>↩ {tr('Try again')}</button>
               </div>
             </div>
           )}
@@ -438,24 +426,21 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
             <div className={quiz.mistakes ? 'card notice tone-warn' : 'card notice tone-ok'}>
               <strong>
                 {quiz.mistakes
-                  ? tr('כמעט! עבור על הקו פעם נוספת בלי טעויות כדי לסמן אותו ✓', 'Almost! Go through the line once more without mistakes to mark it ✓')
+                  ? tr('Almost! Go through the line once more without mistakes to mark it ✓')
                   : nextToLearn === undefined
-                    ? tr(
-                      `שולט בכל הקווים של ${repName(rep)} 🎉 — עכשיו תרגל אותם במשחק.`,
-                      msg`You master all lines of ${repName(rep)} 🎉 — now practice them in a game.`,
-                    )
-                    : tr('שולט בקו ✓', 'Line mastered ✓')}
+                    ? tr(msg`You master all lines of ${repName(rep)} 🎉 — now practice them in a game.`)
+                    : tr('Line mastered ✓')}
               </strong>
               <p>{text.idea}</p>
               <div className="buttons">
-                <button className={quiz.mistakes ? 'primary' : 'ghost'} onClick={startQuiz}>↻ {tr('שוב', 'Again')}</button>
+                <button className={quiz.mistakes ? 'primary' : 'ghost'} onClick={startQuiz}>↻ {tr('Again')}</button>
                 {nextToLearn !== undefined && (
                   <button className={quiz.mistakes ? 'ghost' : 'primary'} onClick={() => pickLine(rep.id, nextToLearn)}>
-                    {tr('הקו הבא ללמוד ›', 'Next line to learn ›')}
+                    {tr('Next line to learn ›')}
                   </button>
                 )}
                 {nextToLearn === undefined && !quiz.mistakes && (
-                  <button className="primary" onClick={() => onTrain(rep.id)}>♟ {tr('תרגל במשחק', 'Practice in a game')}</button>
+                  <button className="primary" onClick={() => onTrain(rep.id)}>♟ {tr('Practice in a game')}</button>
                 )}
               </div>
             </div>
@@ -464,32 +449,32 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
           {quiz ? (
             <div className="actions actions-2">
               <button onClick={() => setQuiz(null)}>
-                <span className="icon" aria-hidden>📖</span>{tr('חזרה ללימוד', 'Back to study')}
+                <span className="icon" aria-hidden>📖</span>{tr('Back to study')}
               </button>
               <button onClick={() => onTrain(rep.id)}>
-                <span className="icon" aria-hidden>♟</span>{tr('תרגל במשחק', 'Practice in a game')}
+                <span className="icon" aria-hidden>♟</span>{tr('Practice in a game')}
               </button>
             </div>
           ) : (
             <>
               <div className="stepper">
-                <button onClick={() => go(0)} disabled={ply === 0} aria-label={tr('להתחלה', 'To the start')}><span className="rtl-flip" aria-hidden="true">⏮</span></button>
-                <button onClick={() => go(ply - 1)} disabled={ply === 0}>‹ {tr('הקודם', 'Previous')}</button>
-                <button className="primary" onClick={() => go(ply + 1)} disabled={!next}>{tr('הבא', 'Next')} ›</button>
-                <button onClick={() => go(moves.length)} disabled={!next} aria-label={tr('לסוף', 'To the end')}><span className="rtl-flip" aria-hidden="true">⏭</span></button>
+                <button onClick={() => go(0)} disabled={ply === 0} aria-label={tr('To the start')}><span className="rtl-flip" aria-hidden="true">⏮</span></button>
+                <button onClick={() => go(ply - 1)} disabled={ply === 0}>‹ {tr('Previous')}</button>
+                <button className="primary" onClick={() => go(ply + 1)} disabled={!next}>{tr('Next')} ›</button>
+                <button onClick={() => go(moves.length)} disabled={!next} aria-label={tr('To the end')}><span className="rtl-flip" aria-hidden="true">⏭</span></button>
               </div>
               <div className="actions actions-2">
                 <button onClick={startQuiz}>
-                  <span className="icon" aria-hidden>🎯</span>{tr('בחן אותי על הקו', 'Test me on this line')}
+                  <span className="icon" aria-hidden>🎯</span>{tr('Test me on this line')}
                 </button>
                 <button onClick={() => onTrain(rep.id)}>
-                  <span className="icon" aria-hidden>♟</span>{tr('תרגל במשחק', 'Practice in a game')}
+                  <span className="icon" aria-hidden>♟</span>{tr('Practice in a game')}
                 </button>
               </div>
             </>
           )}
 
-          {!hasExplanations(lang) && <p className="muted lang-note">{explanationsNote()}</p>}
+          {!hasExplanations() && <p className="muted lang-note">{explanationsNote()}</p>}
 
           <ol className="moves" dir="ltr" ref={movesRef}>
             {moves.map((_, i) =>
@@ -517,7 +502,7 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
 
           {!quiz && branches.length > 0 && (
             <div className="card branches">
-              <h3>{tr('מכאן בקווים אחרים', 'From here in other lines')}</h3>
+              <h3>{tr('From here in other lines')}</h3>
               <div className="chips">
                 {branches.map((b) => (
                   <button key={b.lineIdx} className="chip" onClick={() => pickLine(rep.id, b.lineIdx, b.atPly)}>
@@ -530,7 +515,7 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
 
           {!quiz && text.idea && current && (
             <div className="card idea">
-              <h3>{tr('הרעיון של הקו', 'The idea of the line')}</h3>
+              <h3>{tr('The idea of the line')}</h3>
               <p>{text.idea}</p>
             </div>
           )}

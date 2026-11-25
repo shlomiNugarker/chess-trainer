@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Chessboard } from 'react-chessboard';
-import type { GameSummary } from './chesscom';
+import { openingName, type GameSummary } from './chesscom';
 import { DRILL_DROP, Engine } from './engine';
 import EvalBar from './EvalBar';
 import { REPERTOIRES, repName } from './repertoire';
@@ -15,24 +15,24 @@ import { useFitBoard } from './useFitBoard';
 import { useSidePanel } from './useSidePanel';
 import { useScrollToMove } from './useScrollToMove';
 import { dialogOpen } from './useDialog';
-import { formatDate, msg, tr, useLang } from './i18n';
+import { formatDate, msg, tr, trKey, useLang } from './i18n';
 
-const CLASS_LABEL: Record<MoveClass, [string, string]> = {
-  book: ['ספר', 'Book'],
-  best: ['הטוב ביותר', 'Best'],
-  good: ['טוב', 'Good'],
-  inaccuracy: ['אי-דיוק', 'Inaccuracy'],
-  mistake: ['טעות', 'Mistake'],
-  blunder: ['בלאנדר', 'Blunder'],
+const CLASS_LABEL: Record<MoveClass, string> = {
+  book: trKey('Book'),
+  best: trKey('Best'),
+  good: trKey('Good'),
+  inaccuracy: trKey('Inaccuracy'),
+  mistake: trKey('Mistake'),
+  blunder: trKey('Blunder'),
 };
 /** "15...Rc8 is a blunder" */
-const CLASS_SENTENCE: Record<MoveClass, [string, string]> = {
-  book: ['הוא מהלך מהרפרטואר שלך', 'is a book move (your repertoire)'],
-  best: ['הוא המהלך הטוב ביותר', 'is the best move'],
-  good: ['הוא מהלך טוב', 'is a good move'],
-  inaccuracy: ['הוא אי-דיוק', 'is an inaccuracy'],
-  mistake: ['הוא טעות', 'is a mistake'],
-  blunder: ['הוא בלאנדר', 'is a blunder'],
+const CLASS_SENTENCE: Record<MoveClass, string> = {
+  book: trKey('is a book move (your repertoire)'),
+  best: trKey('is the best move'),
+  good: trKey('is a good move'),
+  inaccuracy: trKey('is an inaccuracy'),
+  mistake: trKey('is a mistake'),
+  blunder: trKey('is a blunder'),
 };
 const SUMMARY_ORDER: MoveClass[] = ['best', 'good', 'book', 'inaccuracy', 'mistake', 'blunder'];
 const SQUARE: Record<MoveClass, string> = {
@@ -43,7 +43,7 @@ const SQUARE: Record<MoveClass, string> = {
   mistake: 'rgba(230, 138, 76, 0.65)',
   blunder: 'rgba(224, 108, 95, 0.7)',
 };
-const classLabel = (c: MoveClass) => tr(...CLASS_LABEL[c]);
+const classLabel = (c: MoveClass) => tr(CLASS_LABEL[c]);
 const moveName = (ply: number, san: string) => (ply % 2 === 0 ? `${ply / 2 + 1}.${san}` : `${(ply + 1) / 2}...${san}`);
 const pct = (n: number | null) => (n === null ? '—' : ltr(`${Math.round(n)}%`));
 
@@ -154,8 +154,8 @@ export default function GameReview({ game, username, active, onClose, onLearn, o
   if (!parsed || !review) {
     return (
       <div className="game-review">
-        <button className="ghost" onClick={onClose}>‹ {tr('חזרה למשחקים', 'Back to games')}</button>
-        <div className="notice">{tr('אי אפשר לסקור את המשחק הזה (עמדת פתיחה מיוחדת או משחק בלי מהלכים).', 'This game can’t be reviewed (a special start position, or no moves).')}</div>
+        <button className="ghost" onClick={onClose}>‹ {tr('Back to games')}</button>
+        <div className="notice">{tr('This game can’t be reviewed (a special start position, or no moves).')}</div>
       </div>
     );
   }
@@ -184,7 +184,7 @@ export default function GameReview({ game, username, active, onClose, onLearn, o
   const me = game.color;
   const names = { w: me === 'w' ? username : game.opponent, b: me === 'b' ? username : game.opponent };
   const ratings = { w: me === 'w' ? game.myRating : game.opponentRating, b: me === 'b' ? game.myRating : game.opponentRating };
-  const resultText = game.result === 'win' ? tr('ניצחון', 'Win') : game.result === 'loss' ? tr('הפסד', 'Loss') : tr('תיקו', 'Draw');
+  const resultText = game.result === 'win' ? tr('Win') : game.result === 'loss' ? tr('Loss') : tr('Draw');
   const keyMoments = review.moves.filter((m) => MISTAKE_CLASSES.includes(m.cls));
   const save = (ms: ReviewedMove[]) => {
     const next = new Set(saved);
@@ -201,11 +201,11 @@ export default function GameReview({ game, username, active, onClose, onLearn, o
   return (
     <div className="game-review">
       <header className="game-review-head">
-        <button className="ghost" onClick={onClose} aria-label={tr('חזרה למשחקים', 'Back to games')}>‹ <span className="wide-only">{tr('חזרה למשחקים', 'Back to games')}</span></button>
+        <button className="ghost" onClick={onClose} aria-label={tr('Back to games')}>‹ <span className="wide-only">{tr('Back to games')}</span></button>
         <div className="game-review-title">
-          <strong className="wide-only">{tr('סקירת משחק', 'Game review')}</strong>
+          <strong className="wide-only">{tr('Game review')}</strong>
           <span className={`pill result-${game.result}`}>{resultText}</span>
-          <span className="muted game-review-info">{tr('מול', 'vs')} <bdi>{game.opponent}</bdi><span className="wide-only"> · {formatDate(game.endTime)} · {game.opening}</span></span>
+          <span className="muted game-review-info">{tr('vs')} <bdi>{game.opponent}</bdi><span className="wide-only"> · {formatDate(game.endTime)} · {openingName(game.opening)}</span></span>
           <a href={game.url} target="_blank" rel="noreferrer" className="small-link">Chess.com ↗</a>
         </div>
       </header>
@@ -249,37 +249,37 @@ export default function GameReview({ game, username, active, onClose, onLearn, o
                 <div className="coach-head">
                   <ClassIcon cls={current.cls} size="lg" />
                   <p className="coach-line">
-                    <b dir="ltr">{moveName(current.ply, current.san)}</b> {tr(...CLASS_SENTENCE[current.cls])}
+                    <b dir="ltr">{moveName(current.ply, current.san)}</b> {tr(CLASS_SENTENCE[current.cls])}
                   </p>
-                  <span className="coach-score" dir="ltr" title={tr('הערכת העמדה (לבן)', 'Evaluation (White)')}>{scoreText(evals[ply], fen)}</span>
+                  <span className="coach-score" dir="ltr" title={tr('Evaluation (White)')}>{scoreText(evals[ply], fen)}</span>
                 </div>
                 {current.cls !== 'best' && current.cls !== 'book' && (
                   <div className="coach-body">
                     <p>
-                      {tr('הטוב ביותר היה', 'The best move was')} <b>{ltr(current.best)}</b>
-                      {current.drop >= 2 && <span className="muted"> · {tr('אבדו', 'lost')} {ltr(`${Math.round(current.drop)}%`)} {tr('מסיכויי הניצחון', 'of the win chances')}</span>}
+                      {tr('The best move was')} <b>{ltr(current.best)}</b>
+                      {current.drop >= 2 && <span className="muted"> · {tr('lost')} {ltr(`${Math.round(current.drop)}%`)} {tr('of the win chances')}</span>}
                     </p>
                     {current.pv.length > 1 && (
-                      <p className="muted">{tr('המשך:', 'Line:')} <span dir="ltr">{pvToSan(parsed.fens[current.ply], current.pv, 6)}</span></p>
+                      <p className="muted">{tr('Line:')} <span dir="ltr">{pvToSan(parsed.fens[current.ply], current.pv, 6)}</span></p>
                     )}
                     {current.color === me && current.cls !== 'good' && (
                       saved.has(current.ply) ? (
-                        <p className="branch-added">✓ {tr('נוסף לתרגול', 'Added to practice')} · <button className="link" onClick={onDrill}>{tr('לתרגול ›', 'Practice ›')}</button></p>
+                        <p className="branch-added">✓ {tr('Added to practice')} · <button className="link" onClick={onDrill}>{tr('Practice ›')}</button></p>
                       ) : (
-                        <button className="small" onClick={() => save([current])}>{tr('תרגל את העמדה הזו', 'Practice this position')}</button>
+                        <button className="small" onClick={() => save([current])}>{tr('Practice this position')}</button>
                       )
                     )}
                   </div>
                 )}
               </>
             ) : ply > 0 ? (
-              <p className="muted">{tr('עוד מנתח את המהלך הזה…', 'Still analyzing this move…')}</p>
+              <p className="muted">{tr('Still analyzing this move…')}</p>
             ) : (
               <div className="coach-start">
-                <p className="coach-line">{tr('בוא נעבור על המשחק: כל מהלך מקבל ציון מהמנוע, והחץ הירוק מראה את המהלך הטוב.', 'Let’s go through the game: every move gets the engine’s verdict, and the green arrow shows the better move.')}</p>
+                <p className="coach-line">{tr('Let’s go through the game: every move gets the engine’s verdict, and the green arrow shows the better move.')}</p>
                 <div className="buttons">
-                  <button className="primary" onClick={() => go(1)}>{tr('התחל סקירה', 'Start review')}</button>
-                  {myMistakes.length > 0 && <button onClick={nextMistake}>{tr('לטעות הראשונה שלי', 'To my first mistake')}</button>}
+                  <button className="primary" onClick={() => go(1)}>{tr('Start review')}</button>
+                  {myMistakes.length > 0 && <button onClick={nextMistake}>{tr('To my first mistake')}</button>}
                 </div>
               </div>
             )}
@@ -287,19 +287,19 @@ export default function GameReview({ game, username, active, onClose, onLearn, o
           </div>
 
           <div className="stepper">
-            <button onClick={() => go(0)} disabled={ply === 0} aria-label={tr('להתחלה', 'To the start')}><span className="rtl-flip" aria-hidden="true">⏮</span></button>
-            <button onClick={() => go(ply - 1)} disabled={ply === 0}>‹ {tr('הקודם', 'Previous')}</button>
-            <button className="primary" onClick={() => go(ply + 1)} disabled={ply === total}>{tr('הבא', 'Next')} ›</button>
-            <button onClick={() => go(total)} disabled={ply === total} aria-label={tr('לסוף', 'To the end')}><span className="rtl-flip" aria-hidden="true">⏭</span></button>
+            <button onClick={() => go(0)} disabled={ply === 0} aria-label={tr('To the start')}><span className="rtl-flip" aria-hidden="true">⏮</span></button>
+            <button onClick={() => go(ply - 1)} disabled={ply === 0}>‹ {tr('Previous')}</button>
+            <button className="primary" onClick={() => go(ply + 1)} disabled={ply === total}>{tr('Next')} ›</button>
+            <button onClick={() => go(total)} disabled={ply === total} aria-label={tr('To the end')}><span className="rtl-flip" aria-hidden="true">⏭</span></button>
           </div>
           <button className="next-mistake" onClick={nextMistake} disabled={!myMistakes.length}>
             {progress
               ? myMistakes.length
-                ? tr(`לטעות הבאה שלי (${myMistakes.length}) · מנתח ${progress.done}/${progress.total}`, msg`My next mistake (${myMistakes.length}) · analyzing ${progress.done}/${progress.total}`)
-                : tr(`מנתח את המשחק… ${progress.done}/${progress.total}`, msg`Analyzing the game… ${progress.done}/${progress.total}`)
+                ? tr(msg`My next mistake (${myMistakes.length}) · analyzing ${`${progress.done}/${progress.total}`}`)
+                : tr(msg`Analyzing the game… ${`${progress.done}/${progress.total}`}`)
               : myMistakes.length
-                ? tr(`לטעות הבאה שלי (${myMistakes.length})`, msg`My next mistake (${myMistakes.length})`)
-                : tr('אין לך טעויות במשחק הזה 🎉', 'No mistakes of yours in this game 🎉')}
+                ? tr(msg`My next mistake (${myMistakes.length})`)
+                : tr('No mistakes of yours in this game 🎉')}
           </button>
 
           <EvalGraph white={review.white} ply={ply} marks={keyMoments} onPick={go} />
@@ -310,11 +310,11 @@ export default function GameReview({ game, username, active, onClose, onLearn, o
               {(['w', 'b'] as const).map((c) => (
                 <span key={c} className={`rv-player${c === me ? ' me' : ''}`}>
                   <span className={`rv-piece rv-piece-${c}`} aria-hidden>{c === 'w' ? '♔' : '♚'}</span>
-                  <span className="rv-name" dir={c === me ? undefined : 'ltr'} title={names[c]}>{c === me ? tr('אתה', 'You') : names[c]}</span>
+                  <span className="rv-name" dir={c === me ? undefined : 'ltr'} title={names[c]}>{c === me ? tr('You') : names[c]}</span>
                   <span className="muted">{ratings[c]}</span>
                 </span>
               ))}
-              <span className="rv-label">{tr('דיוק', 'Accuracy')}</span>
+              <span className="rv-label">{tr('Accuracy')}</span>
               {(['w', 'b'] as const).map((c) => (
                 <span key={c} className={`rv-acc rv-acc-${c}`}>{review.sides[c].accuracy === null ? '—' : Math.round(review.sides[c].accuracy!)}</span>
               ))}
@@ -328,7 +328,7 @@ export default function GameReview({ game, username, active, onClose, onLearn, o
               ))}
             </div>
             {game.accuracy !== undefined && (
-              <p className="muted">{tr(`הדיוק שלך לפי Chess.com: ${pct(game.accuracy)} (מנוע אחר ועומק אחר, אז המספרים לא זהים).`, msg`Your accuracy on Chess.com: ${pct(game.accuracy)} (a different engine and depth, so the numbers differ).`)}</p>
+              <p className="muted">{tr(msg`Your accuracy on Chess.com: ${pct(game.accuracy)} (a different engine and depth, so the numbers differ).`)}</p>
             )}
           </section>
 
@@ -355,24 +355,21 @@ export default function GameReview({ game, username, active, onClose, onLearn, o
                 <p>
                   {book.left
                     ? book.left.mine
-                      ? tr(
-                          `יצאת מהרפרטואר (${repLabel}) ב-${ltr(leftName)} — בקו: ${ltr(book.left.expected.join(' / '))}.`,
-                          msg`You left your repertoire (${repLabel}) with ${leftName} — the line plays ${book.left.expected.join(' / ')}.`,
-                        )
-                      : tr(`היריב יצא מהרפרטואר שלך ב-${ltr(leftName)}.`, msg`Your opponent left your repertoire with ${leftName}.`)
-                    : tr(`המשחק הלך לפי הרפרטואר ${book.plies} חצאי מהלכים, עד סוף הקו.`, msg`The game followed your repertoire for ${book.plies} half-moves, to the end of the line.`)}{' '}
-                  {book.left && <button className="link" onClick={() => go(book.left!.ply + 1)}>{tr('הראה', 'Show')}</button>}{' '}
-                  <button className="link" onClick={() => onLearn(book.repId, book.lineMoves)}>{tr('פתח את הקו ב"למד" ›', 'Open the line in Learn ›')}</button>
+                      ? tr(msg`You left your repertoire (${repLabel}) with ${leftName} — the line plays ${book.left.expected.join(' / ')}.`)
+                      : tr(msg`Your opponent left your repertoire with ${leftName}.`)
+                    : tr(msg`The game followed your repertoire for ${book.plies} half-moves, to the end of the line.`)}{' '}
+                  {book.left && <button className="link" onClick={() => go(book.left!.ply + 1)}>{tr('Show')}</button>}{' '}
+                  <button className="link" onClick={() => onLearn(book.repId, book.lineMoves)}>{tr('Open the line in Learn ›')}</button>
                 </p>
               )}
               {realMistakes.length > 0 && !progress && (
                 realMistakes.every((m) => saved.has(m.ply)) ? (
-                  <p className="branch-added">✓ {tr('הטעויות נוספו לתרגול', 'Your mistakes were added to practice')} · <button className="link" onClick={onDrill}>{tr('לתרגול ›', 'Practice ›')}</button></p>
+                  <p className="branch-added">✓ {tr('Your mistakes were added to practice')} · <button className="link" onClick={onDrill}>{tr('Practice ›')}</button></p>
                 ) : (
                   <button onClick={() => save(realMistakes)}>
                     {realMistakes.length === 1
-                      ? tr('הוסף את הטעות הגדולה שלי לתרגול', 'Add my big mistake to practice')
-                      : tr(`הוסף את ${realMistakes.length} הטעויות הגדולות שלי לתרגול`, msg`Add my ${realMistakes.length} big mistakes to practice`)}
+                      ? tr('Add my big mistake to practice')
+                      : tr(msg`Add my ${realMistakes.length} big mistakes to practice`)}
                   </button>
                 )
               )}
@@ -394,7 +391,7 @@ function EvalGraph({ white, ply, marks, onPick }: { white: number[]; ply: number
   const lastKnown = white.findLastIndex((w) => !Number.isNaN(w));
   const area = pts ? `0,100 ${pts} ${x(lastKnown)},100` : '';
   return (
-    <div className="eval-graph" dir="ltr" title={tr('סיכויי הניצחון של לבן לאורך המשחק — לחץ כדי לקפוץ', 'White’s win chances over the game — tap to jump')}>
+    <div className="eval-graph" dir="ltr" title={tr('White’s win chances over the game — tap to jump')}>
       <svg
         viewBox="0 0 100 100"
         preserveAspectRatio="none"

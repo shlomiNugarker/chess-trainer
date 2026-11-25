@@ -1,6 +1,6 @@
 # Chess Trainer
 
-Learn a chess opening repertoire step by step, train it against Stockfish until you know it by heart, solve puzzles at your level, and review your own Chess.com games — in the browser, on your phone, even offline. Hebrew, English and Spanish.
+Learn a chess opening repertoire step by step, train it against Stockfish until you know it by heart, solve puzzles at your level, and review your own Chess.com games — in the browser, on your phone, even offline. English, Hebrew and Spanish.
 
 **Live:** https://opening-trainer-app.vercel.app (also at https://chess-trainer-seven-pink.vercel.app)
 
@@ -16,7 +16,7 @@ Learn a chess opening repertoire step by step, train it against Stockfish until 
 - **Play** — train the repertoire against the computer. Leave the line and the game stops, shows the right move and why, and lets you **try again** or **continue**. After the book, a full-strength coach keeps correcting you up to move 15 and remembers the best moves, so the line grows from your own games. Or play a regular game at any level.
 - **Repertoire** — London System and 1.e4 as White (the Italian Game reached through the Bishop’s Opening, 2.Bc4, plus lines against the Scandinavian, Sicilian (Alapin), French and Caro-Kann (Advance), the Modern, the Pirc, the Philidor, the Owen and the Nimzowitsch), Caro-Kann and the Sicilian with ...e6 (vs 1.e4) and the Slav or the Queen’s Gambit Accepted (vs 1.d4) as Black: 90 lines, every user move checked with Stockfish.
 - **Practice** — 3,900 puzzles from the Lichess puzzle database with a personal rating, modes *for my level* / *from my openings* (150 from each repertoire) / *mates*, a hint counts as half a point, and a daily goal with a streak. **My mistakes** brings back every position you got wrong with spaced repetition (Leitner).
-- **My review** — enter a Chess.com username (up to your latest 5,000 games, reloaded automatically next time): the three most useful things to improve, results by color / time control / opening, how you lose, a rating chart, your accuracy month by month (from games reviewed on Chess.com and here), and an optional Stockfish pass over recent games (its mistakes become drills). It also shows **where your games leave your lines**: add Stockfish's answer to an opponent's unexpected move as a new branch of your repertoire, or practice the spots where you left the line yourself.
+- **My review** — enter a Chess.com username (up to your latest 5,000 games, reloaded automatically next time): the three most useful things to improve, results by color / time control / opening, how you lose, a rating chart, your accuracy month by month (from games reviewed on Chess.com and here), and an optional Stockfish pass over recent games (its big mistakes become drills). It also shows **where your games leave your lines**: add Stockfish's answer to an opponent's unexpected move as a new branch of your repertoire, or practice the spots where you left the line yourself.
 - **Game review** — pick any recent game (or "Review my last game") and go through it move by move: every move labeled (book, best, good, inaccuracy, mistake, blunder) with the better move as a green arrow and the engine's line, both players' accuracy, a win-chance graph you can tap, "my next mistake", where the game left your repertoire, and one tap to practice a position. Stockfish runs on your device, so there is no daily limit; a reviewed game opens at once the next time.
 - **Installable, offline** — a PWA; learning, training, puzzles and the engine work without internet.
 - **Optional Google sign-in** — syncs all progress between devices (Firebase Auth + Firestore).
@@ -38,7 +38,7 @@ Production build: `npm run build`, then `npm run preview`.
 npm run check   # lint + build + all the checks below
 npm test        # just the checks:
                 #   scripts/check-i18n.ts     every text of the interface is translated
-                #   scripts/check-lines.ts    every repertoire line is legal, notes exist in both languages
+                #   scripts/check-lines.ts    every repertoire line is legal and fully translated
                 #   scripts/check-review.ts   Chess.com review logic and the move-by-move game review
                 #   scripts/check-puzzles.ts  every puzzle in public/puzzles-v3.json is legal
                 #   scripts/check-sync.ts     merge rules for syncing between devices
@@ -61,21 +61,21 @@ Without configuration the app works fully, with progress kept in the browser. To
 | `src/App.tsx` | Tab shell |
 | `src/Trainer.tsx` | Training / regular game: book phase, coach, corrections |
 | `src/Learn.tsx`, `src/lineStats.ts`, `src/hiddenReps.ts` | Learn page, "test me", per-line stats, hidden openings |
-| `src/repertoire.ts`, `src/repertoire.en.ts` | The opening lines (SAN), ideas and notes — Hebrew and English |
+| `src/repertoire.ts` | The opening lines (SAN), ideas and notes |
 | `src/nav.ts`, `src/savedGame.ts` | The Back button, and a game that survives a reload |
 | `src/Practice.tsx`, `src/Puzzles.tsx`, `src/puzzleData.ts`, `src/daily.ts` | Puzzles, rating, daily goal |
 | `src/Drill.tsx`, `src/mistakes.ts` | "My mistakes" spaced repetition |
 | `src/Review.tsx`, `src/reviewStats.ts`, `src/chesscom.ts`, `src/analysisCache.ts` | Chess.com review |
 | `src/GameReview.tsx`, `src/gameAnalysis.ts` | Reviewing one game move by move |
 | `src/Branches.tsx`, `src/deviations.ts`, `src/customLines.ts` | Where games leave the repertoire; branches added from your games |
-| `src/engine.ts` | Stockfish Web Worker wrapper and the Lichess win% formula |
+| `src/engine.ts` | Stockfish Web Worker wrapper, the Lichess win% formula, and what counts as an inaccuracy / mistake / blunder |
 | `src/cloud.ts`, `src/firebase.ts`, `src/syncMerge.ts`, `src/Account.tsx` | Optional sign-in and sync |
-| `src/i18n.ts`, `src/lang/` | The languages, without a library: `tr('עברית', 'English')` in place, and a dictionary per extra language (Spanish: the interface; the opening explanations show in English) |
+| `src/i18n.ts`, `src/lang/` | The languages, without a library: `tr('English')` in place, and a dictionary per language. Hebrew: the interface and the opening explanations; Spanish: the interface (the explanations show in English) |
 | `public/engine/` | Stockfish 19 lite (WASM) |
 | `public/puzzles-v3.json` | Puzzle set, built by `scripts/build-puzzles.py` (a new set gets a new file name — the service worker caches by name) |
 | `public/sw.js` | Offline cache |
 
-The roadmap is in [`PLAN.md`](PLAN.md) (Hebrew).
+The roadmap is in [`PLAN.md`](PLAN.md).
 
 ## Contributing
 

@@ -10,10 +10,10 @@ export default function Practice({ view, onView, due }: { view: PracticeView; on
     <>
       <div className="segmented" role="tablist">
         <button role="tab" aria-selected={view === 'puzzles'} className={view === 'puzzles' ? 'active' : ''} onClick={() => onView('puzzles')}>
-          🧩 {tr('פאזלים', 'Puzzles')}
+          🧩 {tr('Puzzles')}
         </button>
         <button role="tab" aria-selected={view === 'mistakes'} className={view === 'mistakes' ? 'active' : ''} onClick={() => onView('mistakes')}>
-          ↻ {tr('הטעויות שלי', 'My mistakes')}
+          ↻ {tr('My mistakes')}
           {due > 0 && <span className="badge">{due}</span>}
         </button>
       </div>

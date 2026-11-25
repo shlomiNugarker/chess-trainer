@@ -5,7 +5,7 @@ import Practice, { type PracticeView } from './Practice';
 import Learn from './Learn';
 import { dueMistakes, useMistakeCount } from './mistakes';
 import { useStored, writeStored } from './storage';
-import { LANGS, dir, setLang, tr, useLang } from './i18n';
+import { LANGS, langName, dir, setLang, tr, useLang } from './i18n';
 import Account from './Account';
 import { useCloud } from './cloud';
 import { REPERTOIRES } from './repertoire';
@@ -41,10 +41,10 @@ export default function App() {
   }, []);
 
   const tabs: { id: Screen; label: string; icon: string; badge?: number }[] = [
-    { id: 'play', label: tr('שחק', 'Play'), icon: '♟' },
-    { id: 'learn', label: tr('למד', 'Learn'), icon: '📖' },
-    { id: 'review', label: tr('הסקירה שלי', 'My review'), icon: '▦' },
-    { id: 'drill', label: tr('תרגול', 'Practice'), icon: '🧩', badge: due },
+    { id: 'play', label: tr('Play'), icon: '♟' },
+    { id: 'learn', label: tr('Learn'), icon: '📖' },
+    { id: 'review', label: tr('My review'), icon: '▦' },
+    { id: 'drill', label: tr('Practice'), icon: '🧩', badge: due },
   ];
 
   return (
@@ -53,7 +53,7 @@ export default function App() {
       <nav className="topbar">
         <h1 className="brand">
           <span className="brand-mark" aria-hidden>♞</span>
-          {tr('מאמן שחמט', 'Chess Trainer')}
+          {tr('Chess Trainer')}
         </h1>
         <div className="tabs">
           {/* the account / language button beside them is not a tab */}
@@ -78,13 +78,13 @@ export default function App() {
               <span className="tab-icon" aria-hidden>
                 {cloud.user?.photo ? <img className="avatar avatar-sm" src={cloud.user.photo} alt="" referrerPolicy="no-referrer" /> : '👤'}
               </span>
-              <span className="tab-label">{tr('חשבון', 'Account')}</span>
+              <span className="tab-label">{tr('Account')}</span>
             </button>
           ) : (
             // no cloud configured: the next language, always one tap away
             <button className="tab lang-switch" onClick={() => setLang(nextLang.id)} lang={nextLang.id}>
               <span className="tab-icon" aria-hidden>🌐</span>
-              <span className="tab-label">{nextLang.name}</span>
+              <span className="tab-label">{langName(nextLang.id)}</span>
             </button>
           )}
         </div>
@@ -92,8 +92,8 @@ export default function App() {
 
       {engineFailed && (
         <div className="card engine-failed" role="alert">
-          <span>{tr('מנוע השחמט לא נטען. בדוק את החיבור לאינטרנט ונסה שוב.', 'The chess engine did not load. Check your internet connection and try again.')}</span>
-          <button className="primary" onClick={() => location.reload()}>{tr('נסה שוב', 'Try again')}</button>
+          <span>{tr('The chess engine did not load. Check your internet connection and try again.')}</span>
+          <button className="primary" onClick={() => location.reload()}>{tr('Try again')}</button>
         </div>
       )}
 

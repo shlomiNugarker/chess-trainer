@@ -210,8 +210,9 @@ with sync_playwright() as p:
                             json.dumps({'mode': 'play', 'repertoire': 'italian', 'color': c['color'], 'phase': 'free', 'moves': c['moves'].split(), 'at': pg.evaluate('Date.now()')}))
                 reload(); turn()
                 n, (p1, p2), pawn = len(moves()), c['play'], c['color'] + 'P'
-                # a page that can scroll both ways, or "it does not scroll" would say nothing
-                pg.evaluate("() => { document.body.style.minHeight = '2400px'; scrollTo(0, 24); }"); wait(200)
+                # a page that can scroll both ways, or "it does not scroll" would say nothing; the fonts are here, and the
+                # browser does not move the page by itself when something above changes its height (scroll anchoring)
+                pg.evaluate("async () => { document.documentElement.style.overflowAnchor = 'none'; await document.fonts.ready; document.body.style.minHeight = '2400px'; scrollTo(0, 24); }"); wait(200)
                 top = pg.evaluate('scrollY')
                 drag(p1, 'e4' if c['color'] == 'b' else 'e5')
                 r.check(len(moves()) == n and piece(p1) == pawn, f'{how}, {name}: dropped on a square it cannot reach, the pawn goes back', f'{moves()[n:]} {piece(p1)}')

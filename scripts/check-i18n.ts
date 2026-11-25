@@ -1,19 +1,20 @@
 // Every text of the interface has a translation in every dictionary: node --experimental-strip-types scripts/check-i18n.ts
-// Reads the code itself: the English text of each tr('עברית', 'English') is the dictionary's key ('Step {0}' for
-// msg`Step ${n}`). Fails on a missing or unused translation, on values that do not match, and on an English word
-// hidden inside a value (it would stay English in every language). `--missing` prints what to translate.
+// Reads the code itself: the English text of each tr('Close') is the dictionary's key ('Step {0}' for msg`Step ${n}`,
+// 'Practice|verb' for tr('Practice', 'verb')). Fails on a missing or unused translation, on values that do not match,
+// on an English word hidden inside a value (it would stay English in every language), and on Hebrew anywhere but in
+// src/lang/. `--missing` prints what to translate.
 
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { parseSync } from 'vite';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Node = any;
 const problems: string[] = [];
-const keys = new Map<string, string>(); // English text -> where
-const hebrew = /[֐-׿]/;
+const keys = new Map<string, string>(); // English text (and context) -> where
+const hebrew = /[\u0590-\u05ff]/;
 const isText = (n: Node) => n?.type === 'Literal' && typeof n.value === 'string';
 
-for (const file of readdirSync('src').filter((f) => /\.tsx?$/.test(f) && f !== 'i18n.ts' && f !== 'repertoire.en.ts')) {
+for (const file of readdirSync('src').filter((f) => /\.tsx?$/.test(f) && f !== 'i18n.ts')) {
   const code = readFileSync(`src/${file}`, 'utf8');
   const { program, errors } = parseSync(file, code) as { program: Node; errors: unknown[] };
   if (errors.length) problems.push(`${file}: cannot be parsed`);
@@ -33,34 +34,50 @@ for (const file of readdirSync('src').filter((f) => /\.tsx?$/.test(f) && f !== '
   const walk = (n: Node) => {
     if (!n || typeof n !== 'object') return;
     if (Array.isArray(n)) return n.forEach(walk);
-    if (n.type === 'CallExpression' && n.callee?.name === 'tr') {
-      const en = n.arguments[1];
-      if (isText(en)) keys.set(en.value, where(n));
+    if (n.type === 'CallExpression' && (n.callee?.name === 'tr' || n.callee?.name === 'trKey')) {
+      const [en, context] = n.arguments;
+      const add = (key: string) => keys.set(isText(context) ? `${key}|${context.value}` : key, where(n));
+      if (isText(en)) add(en.value);
       else if (en?.type === 'TaggedTemplateExpression' && en.tag?.name === 'msg') {
         const { quasis, expressions } = en.quasi;
-        keys.set(quasis.map((q: Node, i: number) => (i ? `{${i - 1}}` : '') + q.value.cooked).join(''), where(n));
+        add(quasis.map((q: Node, i: number) => (i ? `{${i - 1}}` : '') + q.value.cooked).join(''));
         if (expressions.some(englishIn)) problems.push(`${where(n)}: an English word inside a value — use tr() for it`);
-      } else if (n.arguments[0]?.type !== 'SpreadElement') problems.push(`${where(n)}: the English text must be a plain string or msg\`...\``);
+        // "{0}%" would be turned around in a right-to-left language
+        quasis.forEach((q: Node, i: number) => {
+          if ((i && /^[%/×+]/.test(q.value.cooked)) || (i < quasis.length - 1 && /[+/×]$/.test(q.value.cooked))) problems.push(`${where(n)}: a sign beside a value — make it part of the value`);
+        });
+      } else if (en?.type === 'TemplateLiteral') problems.push(`${where(n)}: a text with values must be msg\`...\``);
+      // anything else is a text of a table, marked there with trKey()
     }
-    // tables of [Hebrew, English], used as tr(...TABLE[x])
-    if (n.type === 'ArrayExpression' && n.elements.length === 2 && n.elements.every(isText) && hebrew.test(n.elements[0].value)) keys.set(n.elements[1].value, where(n));
     for (const k in n) if (k !== 'start' && k !== 'end') walk(n[k]);
   };
   walk(program);
 }
+keys.set('Chess Trainer', 'i18n.ts (the page title)');
 
 const slots = (s: string) => [...s.matchAll(/\{\d+\}/g)].map((m) => m[0]).sort().join();
-for (const f of readdirSync('src/lang')) {
+for (const f of readdirSync('src/lang').filter((x) => !x.startsWith('repertoire.'))) {
   const dict = (await import(`../src/lang/${f}`)).default as Record<string, string>;
-  const missing = [...keys].filter(([k]) => !(k in dict));
+  // a context is for languages that need it: without one, the text itself is enough
+  const missing = [...keys].filter(([k]) => !(k in dict) && !(k.split('|')[0] in dict));
   if (process.argv.includes('--missing')) console.log(`// ${f}\n${missing.map(([k]) => JSON.stringify(k)).join('\n')}`);
   for (const [k, at] of missing) problems.push(`${f}: no translation of ${JSON.stringify(k)} (${at})`);
   for (const [k, v] of Object.entries(dict)) {
-    if (!keys.has(k)) problems.push(`${f}: translates a text that is not in the app: ${JSON.stringify(k)}`);
+    const used = keys.has(k) || [...keys.keys()].some((x) => x.split('|')[0] === k);
+    if (!used) problems.push(`${f}: translates a text that is not in the app: ${JSON.stringify(k)}`);
     else if (slots(k) !== slots(v)) problems.push(`${f}: the values do not match: ${JSON.stringify(k)} -> ${JSON.stringify(v)}`);
-    else if (!v.trim() || hebrew.test(v)) problems.push(`${f}: not a translation: ${JSON.stringify(k)} -> ${JSON.stringify(v)}`);
+    else if (!v.trim() || (hebrew.test(v) && f !== 'he.ts')) problems.push(`${f}: not a translation: ${JSON.stringify(k)} -> ${JSON.stringify(v)}`);
   }
 }
+
+// the project is in English; Hebrew is one of its translations
+const scan = (path: string) => {
+  if (!existsSync(path) || /(^|\/)(node_modules|dist|out|lang|__pycache__)$/.test(path)) return;
+  if (statSync(path).isDirectory()) return readdirSync(path).forEach((x) => scan(`${path}/${x}`));
+  if (!/\.(tsx?|css|html|md|py|json|yml|webmanifest|js)$/.test(path) || /package-lock|puzzles-v/.test(path)) return;
+  readFileSync(path, 'utf8').split('\n').forEach((l, i) => hebrew.test(l) && problems.push(`${path}:${i + 1}: Hebrew outside src/lang/`));
+};
+for (const p of ['src', 'scripts', 'docs', '.github', 'index.html', 'public/manifest.webmanifest', 'public/sw.js', ...readdirSync('.').filter((x) => /\.(md|json)$/.test(x))]) scan(p);
 
 if (problems.length) {
   console.error(problems.join('\n'));

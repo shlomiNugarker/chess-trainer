@@ -6,10 +6,12 @@ import './index.css'
 import App from './App.tsx'
 import { startCloud } from './cloud'
 import { langReady } from './i18n'
+import { migrateMastery } from './legacyMastery'
 
 startCloud() // Google sign-in + sync (only when configured, see docs/google-login-setup.md)
 
-void langReady.then(() =>
+const migrated = Promise.race([migrateMastery().catch(() => {}), new Promise((r) => setTimeout(r, 3000))])
+void Promise.all([langReady, migrated]).then(() =>
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <App />

@@ -3,12 +3,12 @@ import type { Arrow } from 'react-chessboard';
 import { DROP } from './engine.ts';
 import { tr } from './i18n.ts';
 
-// keep SAN / percentages left-to-right inside Hebrew text
+// keep SAN / percentages left-to-right inside right-to-left text
 export const ltr = (t: string | number) => `⁦${t}⁩`;
 
 /** The name of a move that lost `drop` win% (at least DROP.inaccuracy). */
 export const judge = (drop: number) =>
-  drop >= DROP.blunder ? tr('בלאנדר', 'Blunder') : drop >= DROP.mistake ? tr('טעות', 'Mistake') : tr('אי-דיוק', 'Inaccuracy');
+  drop >= DROP.blunder ? tr('Blunder') : drop >= DROP.mistake ? tr('Mistake') : tr('Inaccuracy');
 
 export const uciToArrow = (uci: string, color: string): Arrow => ({
   startSquare: uci.slice(0, 2),

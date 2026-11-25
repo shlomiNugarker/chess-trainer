@@ -5,7 +5,7 @@ import { Engine, winPercent } from './engine';
 import { MAX_BOX, dueMistakes, loadMistakes, practiceMistakes, recordReview, type Mistake } from './mistakes';
 import { REPERTOIRES, repName } from './repertoire';
 import { formatDate, msg, tr } from './i18n';
-import { BOARD_THEME, GREEN_ARROW, ltr, sanToUci, uciToArrow } from './chessUtils';
+import { BOARD_THEME, GREEN_ARROW, sanToUci, uciToArrow } from './chessUtils';
 import { useClickToMove } from './useClickToMove';
 import { playSound, useMoveSound } from './sound';
 import { useFitBoard } from './useFitBoard';
@@ -31,14 +31,14 @@ export default function Drill() {
 
   /** Is `san` as good as the stored answer? Only engine-found mistakes accept alternatives. */
   const acceptable = async (m: Mistake, san: string, after: string) => {
-    if (san === m.correct) return { ok: true, text: tr('נכון!', 'Correct!') };
+    if (san === m.correct) return { ok: true, text: tr('Correct!') };
     if (m.source !== 'engine') return { ok: false, text: '' };
     engine.current ??= new Engine();
     const pre = await engine.current.analyze(m.fen, 'movetime 300');
     const post = await engine.current.analyze(after, 'movetime 300');
     const drop = winPercent(pre) - (100 - winPercent(post));
     return drop < ALT_TOLERANCE
-      ? { ok: true, text: tr(`גם ${ltr(san)} טוב! המהלך של המנוע היה ${ltr(m.correct)}.`, msg`${san} is good too! The engine's move was ${m.correct}.`) }
+      ? { ok: true, text: tr(msg`${san} is good too! The engine's move was ${m.correct}.`) }
       : { ok: false, text: '' };
   };
 
@@ -66,7 +66,7 @@ export default function Drill() {
         setQueue((q) => [...q, current]); // failed cards come back later in this session
         setAnswer({
           ok: false,
-          text: tr(`לא. שיחקת ${ltr(san)}, המהלך הנכון הוא ${ltr(current.correct)}.`, msg`No. You played ${san}; the right move is ${current.correct}.`),
+          text: tr(msg`No. You played ${san}; the right move is ${current.correct}.`),
         });
       }
     });
@@ -86,7 +86,7 @@ export default function Drill() {
     if (!current || answer) return;
     recordReview(current, false);
     setQueue((q) => [...q, current]);
-    setAnswer({ ok: false, text: tr(`המהלך הנכון: ${ltr(current.correct)}.`, msg`The right move: ${current.correct}.`) });
+    setAnswer({ ok: false, text: tr(msg`The right move: ${current.correct}.`) });
   };
 
   const next = () => {
@@ -105,26 +105,17 @@ export default function Drill() {
         <div className="empty-mark" aria-hidden>♞</div>
         <h2>
           {solved
-            ? tr(`כל הכבוד! פתרת ${solved} תרגילים.`, msg`Well done! You solved ${solved} exercises.`)
-            : tr('אין מה לחזור היום 🎉', 'Nothing to review today 🎉')}
+            ? tr(msg`Well done! You solved ${solved} exercises.`)
+            : tr('Nothing to review today 🎉')}
         </h2>
         {(all.length > 0 || !inHidden) && <p className="muted">
           {all.length
-            ? tr(
-                `יש לך ${all.length} עמדות במאגר. החזרה הבאה: ${formatDate(nextDue!)}.`,
-                msg`You have ${all.length} positions saved. Next review: ${formatDate(nextDue!)}.`,
-              )
-            : tr(
-                'עוד אין טעויות שמורות. שחק באימון הפתיחות או הרץ ניתוח מנוע בסקירה — כל טעות תגיע לכאן.',
-                'No saved mistakes yet. Train an opening or run an engine analysis in My review — every mistake ends up here.',
-              )}
+            ? tr(msg`You have ${all.length} positions saved. Next review: ${formatDate(nextDue!)}.`)
+            : tr('No saved mistakes yet. Train an opening or run an engine analysis in My review — every mistake ends up here.')}
         </p>}
         {inHidden > 0 && (
           <p className="muted">
-            {tr(
-              `${inHidden} עמדות שמורות בפתיחות שהסתרת. הן יחזרו כשתציג את הפתיחה ב"למד".`,
-              msg`${inHidden} positions are saved in openings you have hidden. They come back when you show the opening in Learn.`,
-            )}
+            {tr(msg`${inHidden} positions are saved in openings you have hidden. They come back when you show the opening in Learn.`)}
           </p>
         )}
       </div>
@@ -132,7 +123,7 @@ export default function Drill() {
   }
 
   const toMove = current.fen.split(' ')[1] as 'w' | 'b';
-  const side = toMove === 'w' ? tr('לבן', 'White') : tr('שחור', 'Black');
+  const side = toMove === 'w' ? tr('White') : tr('Black');
   const arrows: Arrow[] = answer && !answer.ok ? [uciToArrow(sanToUci(current.fen, current.correct), GREEN_ARROW)] : [];
   const rep = REPERTOIRES.find((r) => r.id === current.repertoire);
 
@@ -161,18 +152,18 @@ export default function Drill() {
           <span className="status-dot" aria-hidden />
           <span className="status-text">
             {checking
-              ? tr('בודק…', 'Checking…')
-              : tr(`מצא את המהלך הטוב ביותר ל${side}`, msg`Find the best move for ${side}`)}
+              ? tr('Checking…')
+              : tr(msg`Find the best move for ${side}`)}
           </span>
-          <span className="pill">{tr(`נשארו ${queue.length - index}`, msg`${queue.length - index} left`)}</span>
+          <span className="pill">{tr(msg`${queue.length - index} left`)}</span>
         </div>
 
         <div className="muted drill-meta">
           {current.source === 'puzzle'
-            ? tr('מתוך פאזל', 'From a puzzle')
+            ? tr('From a puzzle')
             : rep
-              ? tr(`מתוך האימון: ${repName(rep)}`, msg`From training: ${repName(rep)}`)
-              : tr('מתוך משחק שלך ב-Chess.com', 'From one of your Chess.com games')}
+              ? tr(msg`From training: ${repName(rep)}`)
+              : tr('From one of your Chess.com games')}
           {current.puzzleId && (
             <>
               {' · '}
@@ -182,29 +173,29 @@ export default function Drill() {
           {current.gameUrl && (
             <>
               {' · '}
-              <a href={current.gameUrl} target="_blank" rel="noreferrer">{tr('למשחק', 'Game')}</a>
+              <a href={current.gameUrl} target="_blank" rel="noreferrer">{tr('Game')}</a>
             </>
           )}
-          {' · '}{current.box === 0 ? tr('עמדה חדשה', 'New position') : tr(`שלב ${current.box} מתוך ${MAX_BOX}`, msg`Step ${current.box} of ${MAX_BOX}`)}
+          {' · '}{current.box === 0 ? tr('New position') : tr(msg`Step ${current.box} of ${MAX_BOX}`)}
         </div>
         <div className="muted">
           {current.source === 'puzzle'
-            ? tr(`בפאזל ניסית ${ltr(current.played)}.`, msg`In the puzzle you tried ${current.played}.`)
-            : tr(`באותה עמדה שיחקת בעבר ${ltr(current.played)}.`, msg`Last time here you played ${current.played}.`)}
+            ? tr(msg`In the puzzle you tried ${current.played}.`)
+            : tr(msg`Last time here you played ${current.played}.`)}
         </div>
 
         {answer && (
           <div className={answer.ok ? 'card notice tone-ok' : 'card feedback tone-error'}>
             <strong>{answer.text}</strong>
-            {!answer.ok && <p className="muted">{tr('החץ הירוק מראה את המהלך. העמדה תחזור בסוף הסבב.', 'The green arrow shows the move. This position comes back at the end of the round.')}</p>}
+            {!answer.ok && <p className="muted">{tr('The green arrow shows the move. This position comes back at the end of the round.')}</p>}
           </div>
         )}
 
         <div className="buttons">
           {answer ? (
-            <button className="primary" onClick={next}>{tr('הבא', 'Next')}</button>
+            <button className="primary" onClick={next}>{tr('Next')}</button>
           ) : (
-            <button className="ghost" onClick={reveal} disabled={checking}>{tr('הראה תשובה', 'Show answer')}</button>
+            <button className="ghost" onClick={reveal} disabled={checking}>{tr('Show answer')}</button>
           )}
         </div>
       </aside>
