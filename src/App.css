@@ -708,6 +708,7 @@ aside {
 .opening { display: flex; align-items: center; gap: 8px; }
 .opening .bar-row { flex: 1; }
 .opening.weak .bar-label { color: var(--error); font-weight: 700; }
+.opening.weak .bar-label::before { content: '▾ '; }
 .opening.weak .bar-fill { background: var(--error); }
 .opening.strong .bar-label { color: var(--accent); font-weight: 700; }
 .opening.strong .bar-label::before { content: '★ '; }
@@ -1332,3 +1333,7 @@ button.progress-pill { border: none; cursor: pointer; font: inherit; }
 .lang-note { font-size: 12px; line-height: 1.5; }
 
 button.link.danger { color: var(--error); }
+
+.engine-failed { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; border-color: var(--error); }
+
+.tabs-only { display: contents; }

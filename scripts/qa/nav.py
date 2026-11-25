@@ -1,6 +1,7 @@
-"""QA: the Back button, a game that survives a reload, and what counts for the daily goal (English, phone, ~2 min).
+"""QA: the Back button, a game that survives a reload, the daily goal, the keyboard in dialogs, and the engine
+when it is slow or cannot load (English, ~3 min).
 
-    python scripts/qa/nav.py [--url URL] [--only back,reload,goal]
+    python scripts/qa/nav.py [--url URL] [--only back,reload,goal,keys,engine]
 """
 import json, time
 from playwright.sync_api import sync_playwright
@@ -83,6 +84,10 @@ with sync_playwright() as p:
             pg.click('.trainer button:has-text("Take back")'); wait(800)
             r.check(len(moves()) == len(before) - 2, 'take back works in it', str(moves()))
             mine(u2); wait(80); reload(); turn()
+            for _ in range(20):
+                if len(moves()) == len(before): break
+                wait(250)
+            turn()
             r.check(len(moves()) == len(before), "reload during the computer's turn: it answers", str(moves()))
         settings((0, 'train')); settings((1, 'italian')); turn(); mine('e2e4'); turn()
         before, pill = moves(), pg.inner_text('.trainer .status .pill')
@@ -104,5 +109,63 @@ with sync_playwright() as p:
         before = goal()
         pg.click('button:has-text("Show solution")'); pg.wait_for_selector('button:has-text("Next puzzle")'); wait(2500)
         r.check(goal() == before, 'a shown solution does not count for the daily goal', f'{before} -> {goal()}')
+    if not a.only or 'keys' in a.only:
+        # keyboard in the settings sheet and the account panel
+        inside = lambda sel: pg.evaluate('s => document.querySelector(s).contains(document.activeElement)', sel)
+        dialogs = [('settings sheet', 0, '.settings-toggle', '.controls')]
+        if pg.locator('.account-tab').count(): dialogs.append(('account panel', 1, '.account-tab', '.account-panel'))
+        for name, i, opener, sel in dialogs:
+            tab(i); wait(500); pg.focus(opener); pg.keyboard.press('Enter'); wait(400)
+            r.check(inside(sel) and pg.locator(f'{sel}[role=dialog][aria-modal=true]').count() == 1, f'{name}: the focus moves into it')
+            stays = True
+            for k in ['Tab'] * 14 + ['Shift+Tab'] * 16:
+                pg.keyboard.press(k); stays = stays and inside(sel)
+            r.check(stays, f'{name}: Tab stays inside')
+            if i == 1:
+                at = pg.inner_text('.learn-move-head'); pg.keyboard.press('ArrowRight'); wait(200)
+                r.check(pg.inner_text('.learn-move-head') == at, f'{name}: arrow keys do not step the line behind it')
+            pg.keyboard.press('Escape'); wait(500)
+            r.check(not pg.locator('[aria-modal=true]').count() and pg.evaluate('s => document.activeElement === document.querySelector(s)', opener), f'{name}: Escape closes it and the focus is back')
+        tab(1); pg.keyboard.press('ArrowRight'); wait(300)
+        r.check('1.' in pg.inner_text('.learn-move-head'), 'arrow keys step the line when nothing is open', pg.inner_text('.learn-move-head')[:20])
+        roles = pg.evaluate("[...document.querySelectorAll('[role=tablist]')].map(l => [...l.children].every(c => c.getAttribute('role') === 'tab'))")
+        r.check(all(roles) and pg.locator('.learn-header .chip[aria-pressed=true]').count() == 1, 'every tab list holds only tabs; the chosen chip says so', str(roles))
+
+    if not a.only or 'engine' in a.only:
+        # searches that are not needed any more do not hold up the next one (a coach that takes 4 seconds)
+        c2 = b.new_context(locale='en-US', viewport={'width': 1280, 'height': 900}); pg = c2.new_page(); r.watch(pg, 'engine')
+        pg.add_init_script("{ const post = Worker.prototype.postMessage; Worker.prototype.postMessage = function (m, ...x) { return post.call(this, m === 'go movetime 700' ? 'go movetime 4000' : m, ...x); }; }")
+        pg.goto(a.url); pg.wait_for_selector('.tabs'); tab(0); wait(1500)
+        pg.locator('.trainer .controls select').first.select_option('play'); wait(800); turn()
+        for u in ('e2e4', 'd2d3', 'g1f3'): mine(u); turn()
+        for _ in range(3): pg.click('.trainer button:has-text("Take back")'); wait(150)
+        t = time.time(); pg.click('.trainer button:has-text("Hint")')
+        pg.wait_for_function("[...document.querySelectorAll('.trainer svg')].some(s => s.outerHTML.includes('106, 167, 232'))", timeout=40000)
+        took = time.time() - t
+        r.check(took < 6, 'the hint after three quick take backs waits for one search, not four', f'{took:.1f}s')
+        mine('e2e4'); turn()
+        r.check(len(moves()) == 2, 'and the game goes on', str(moves()))
+        c2.close()
+        # choosing things while the engine is still loading
+        c4 = b.new_context(locale='en-US', viewport={'width': 1280, 'height': 900}, service_workers='block'); pg = c4.new_page(); r.watch(pg, 'early')
+        pg.add_init_script("{ const post = Worker.prototype.postMessage; Worker.prototype.postMessage = function (m, ...x) { if (m !== 'uci') return post.call(this, m, ...x); setTimeout(() => post.call(this, m, ...x), 4000); }; }")
+        pg.goto(a.url); pg.wait_for_selector('.tabs'); tab(0)
+        loading = pg.inner_text('.trainer .status-text')
+        sel = pg.locator('.trainer .controls select')
+        sel.nth(1).select_option('caro'); sel.nth(1).select_option('italian'); sel.first.select_option('play'); sel.nth(1).select_option('b')
+        try:
+            turn(); ok = len(moves()) == 1 and sel.first.input_value() == 'play' and pg.evaluate("document.querySelector('.trainer [data-square]').dataset.square") == 'h1'
+        except Exception:
+            ok = False
+        r.check('Loading' in loading and ok, 'settings chosen before the engine has loaded are kept, and the game starts', f"{loading} -> {pg.inner_text('.trainer .status-text')} {moves()}")
+        c4.close()
+        # the engine cannot load
+        c3 = b.new_context(locale='en-US', viewport={'width': 1280, 'height': 900}, service_workers='block'); pg = c3.new_page()
+        c3.route('**/engine/*.js', lambda route: route.abort())
+        pg.goto(a.url); pg.wait_for_selector('.tabs'); wait(2500)
+        r.check(pg.locator('.engine-failed').count() == 1, 'the engine cannot load: the app says so')
+        c3.unroute('**/engine/*.js'); pg.click('.engine-failed button'); pg.wait_for_selector('.tabs'); tab(0); turn()
+        r.check(pg.locator('.engine-failed').count() == 0, 'and trying again works')
+        c3.close()
     b.close()
 r.done()

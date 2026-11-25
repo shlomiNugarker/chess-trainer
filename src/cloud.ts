@@ -8,7 +8,7 @@ import { cloudEnabled } from './cloudConfig';
 import { ASIDE, PREFIX, asNewDevice, isSynced, mergeSides, type Side } from './syncMerge';
 import type { CloudUser } from './firebase';
 
-export type CloudStatus = 'idle' | 'signing-in' | 'syncing' | 'synced' | 'offline' | 'error';
+export type CloudStatus = 'idle' | 'signing-in' | 'syncing' | 'synced' | 'offline' | 'error' | 'too-big' | 'no-room';
 export type CloudState = { enabled: boolean; user: CloudUser | null; status: CloudStatus; lastSync: number | null };
 
 const SIGNED_IN = PREFIX + 'cloud-signed-in';
@@ -17,6 +17,9 @@ const STAMPS = PREFIX + 'sync-stamps';
 const LAST_SYNC = PREFIX + 'cloud-last-sync';
 const OWNER = PREFIX + 'cloud-owner'; // the account (uid) this device's data belongs to
 const PUSH_DELAY = 3000;
+/** Firestore refuses a document over 1 MiB; a little less, for its own overhead. */
+const MAX_DOC_BYTES = 1_000_000;
+const TOO_BIG = new Error('too much to sync');
 
 const nativeSet = Storage.prototype.setItem;
 const get = (k: string) => {
@@ -82,7 +85,8 @@ function installHook() {
     // overwrites the other device's change
     if (!watched || unchanged) return;
     const stamps = readStamps();
-    stamps[key] = Date.now();
+    // a change is newer than the one it replaces, also when this device's clock is behind the other device's
+    stamps[key] = Math.max(Date.now(), (stamps[key] ?? 0) + 1);
     set(STAMPS, JSON.stringify(stamps));
     if (state.user) {
       clearTimeout(pushTimer);
@@ -227,7 +231,7 @@ function ownData(uid: string): boolean {
   const owner = pageOwner ?? get(OWNER);
   if (owner && owner !== uid) {
     if (get(OWNER) !== uid && !switchOwner(owner, uid)) {
-      update({ status: 'error' });
+      update({ status: 'no-room' });
       return false;
     }
     // every screen still shows the other account's data
@@ -287,7 +291,9 @@ export function sync(reloadOnChange: boolean): Promise<void> {
         merged = mergeSides(local, remote);
         const remoteChanged = !remoteDoc || Object.entries(merged.data).some(([k, v]) => remote.data[k] !== v);
         if (!remoteChanged) return null;
-        return { data: strip(merged.data) as Record<string, string>, stamps: strip(merged.stamps) as Record<string, number>, updatedAt: Date.now() };
+        const next = { data: strip(merged.data) as Record<string, string>, stamps: strip(merged.stamps) as Record<string, number>, updatedAt: Date.now() };
+        if (new TextEncoder().encode(JSON.stringify(next)).length > MAX_DOC_BYTES) throw TOO_BIG;
+        return next;
       });
       if (!stillHere()) return; // signed out (or another account) meanwhile: this device's data is not touched
 
@@ -307,8 +313,8 @@ export function sync(reloadOnChange: boolean): Promise<void> {
       set(LAST_SYNC, String(now));
       update({ status: 'synced', lastSync: now });
       if (localChanged && reloadOnChange) location.reload();
-    } catch {
-      if (stillHere()) update({ status: navigator.onLine ? 'error' : 'offline' });
+    } catch (e) {
+      if (stillHere()) update({ status: e === TOO_BIG ? 'too-big' : navigator.onLine ? 'error' : 'offline' });
     }
   })().finally(() => {
     running = null;

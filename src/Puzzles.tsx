@@ -222,9 +222,9 @@ export default function Puzzles() {
   const streakDays = dayStreak();
   const header = (
     <header className="learn-header puzzle-header">
-      <div className="chips" role="tablist">
+      <div className="chips" role="group" aria-label={tr('פאזלים', 'Puzzles')}>
         {modes.map((m) => (
-          <button key={m.id} className={m.id === mode ? 'chip active' : 'chip'} onClick={() => changeMode(m.id)}>
+          <button key={m.id} className={m.id === mode ? 'chip active' : 'chip'} aria-pressed={m.id === mode} onClick={() => changeMode(m.id)}>
             {m.label}
           </button>
         ))}

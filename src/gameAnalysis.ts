@@ -162,26 +162,23 @@ export function buildReview(game: ParsedGame, evals: (Eval | undefined)[], bookP
 export async function analyzePositions(
   engine: { analyze: (fen: string, go: string) => Promise<Analysis> },
   game: ParsedGame,
-  opts: { depth?: number; refineDepth?: number; start?: (Eval | undefined)[]; onUpdate?: (evals: (Eval | undefined)[], done: number, total: number) => void; cancelled?: () => boolean } = {},
+  opts: { depth?: number; refineDepth?: number; onUpdate?: (evals: (Eval | undefined)[], done: number, total: number) => void; cancelled?: () => boolean } = {},
 ): Promise<(Eval | undefined)[] | null> {
   const depth = opts.depth ?? 14;
   const refineDepth = opts.refineDepth ?? 16;
-  const evals: (Eval | undefined)[] = opts.start ? [...opts.start] : new Array(game.fens.length).fill(undefined);
+  const evals: (Eval | undefined)[] = new Array(game.fens.length).fill(undefined);
   const trim = (a: Analysis): Eval => ({ cp: a.cp, mate: a.mate, bestMove: a.bestMove, pv: a.pv.slice(0, 8) });
   const total = game.fens.length;
-  let done = evals.filter(Boolean).length;
   for (let i = 0; i < total; i++) {
-    if (evals[i]) continue;
     if (opts.cancelled?.()) return null;
     evals[i] = trim(await engine.analyze(game.fens[i], `depth ${depth}`));
-    opts.onUpdate?.([...evals], ++done, total);
+    opts.onUpdate?.([...evals], i + 1, total);
   }
   const suspects = game.moves.map((_, i) => i).filter((i) => dropOf(evals[i]!, evals[i + 1]!) >= DROP.inaccuracy);
-  for (const i of suspects) {
-    for (const k of [i, i + 1]) {
-      if (opts.cancelled?.()) return null;
-      evals[k] = trim(await engine.analyze(game.fens[k], `depth ${refineDepth}`));
-    }
+  // a position between two suspects in a row is searched once
+  for (const k of new Set(suspects.flatMap((i) => [i, i + 1]))) {
+    if (opts.cancelled?.()) return null;
+    evals[k] = trim(await engine.analyze(game.fens[k], `depth ${refineDepth}`));
     opts.onUpdate?.([...evals], total, total);
   }
   return evals;
@@ -221,12 +218,11 @@ export function saveReview(url: string, evals: Eval[]) {
 
 export const isReviewed = (url: string) => !!readStore().games[url];
 
-/** Games with a stored review (for the accuracy-over-time chart). */
-export const reviewedUrls = () => Object.keys(readStore().games);
+/** Every stored review, read once (for the accuracy-over-time chart). */
+export const storedReviews = (): Record<string, Eval[]> => Object.fromEntries(Object.entries(readStore().games).map(([url, g]) => [url, g.evals]));
 
 /** The user's accuracy in a stored review, or null if there is none (or it does not fit the game). */
-export function storedAccuracy(game: { url: string; pgn: string; color: 'w' | 'b' }, reps: Repertoire[]): number | null {
-  const evals = loadReview(game.url);
+export function storedAccuracy(game: { pgn: string; color: 'w' | 'b' }, evals: Eval[] | undefined, reps: Repertoire[]): number | null {
   const g = evals && parseGame(game.pgn);
   if (!evals || !g || evals.length !== g.fens.length) return null;
   const book = bookInfo(g.moves.map((m) => m.san), game.color, reps);

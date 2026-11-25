@@ -15,6 +15,7 @@ import { playSound, setSoundOn, useMoveSound, useSoundOn } from './sound';
 import { useScrollToMove } from './useScrollToMove';
 import { useFitBoard } from './useFitBoard';
 import { useSidePanel } from './useSidePanel';
+import { useDialog } from './useDialog';
 import { msg, tr, useLang } from './i18n';
 import { go, useNav } from './nav';
 import { loadGame, saveGame } from './savedGame';
@@ -91,6 +92,8 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
   const learnedThisGame = useRef(new Set<string>()); // just taught — answering them right is not "remembering"
   const { sheet: settingsOpen } = useNav(); // phones: settings fold away to keep the board on screen
   const setSettingsOpen = (sheet: boolean) => go({ sheet });
+  const sheet = useRef<HTMLDivElement>(null);
+  useDialog(sheet, settingsOpen, () => setSettingsOpen(false));
   const showEvalRef = useRef(showEval);
   showEvalRef.current = showEval;
   const [evalWhite, setEvalWhite] = useState<number | null>(null); // White's win%, null = unknown
@@ -111,6 +114,13 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
   const opponent = useRef<Engine | null>(null);
   const coach = useRef<Engine | null>(null);
   const gameId = useRef(0); // bump to invalidate in-flight async work
+  /** The game moved on (new game, take back…): drop the engine work of the position before. */
+  const moveOn = () => {
+    gameId.current++;
+    preAnalysis.current = null;
+    coach.current?.cancel();
+    opponent.current?.cancel();
+  };
   // Pre-computed coach analysis of the position where it's the user's turn
   const preAnalysis = useRef<{ key: string; promise: ReturnType<Engine['analyze']> } | null>(null);
 
@@ -119,7 +129,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
   useEffect(() => {
     opponent.current = new Engine();
     coach.current = new Engine();
-    coach.current.analyze(new Chess().fen(), 'depth 1').then(() => setEngineReady(true));
+    coach.current.ready.then(() => setEngineReady(true));
     return () => {
       opponent.current?.terminate();
       coach.current?.terminate();
@@ -207,7 +217,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
 
   const newGame = useCallback(
     ({ repertoireId = repId, mode: m = mode, color: cc = colorChoice }: { repertoireId?: string; mode?: Mode; color?: ColorChoice } = {}) => {
-      gameId.current++;
+      moveOn();
       modeRef.current = m;
       gameRef.current = new Chess();
       setPhase(m === 'play' ? 'free' : 'book');
@@ -263,9 +273,10 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
 
   /** Continues the game from before the reload; false if there is none, or it was of another opening. */
   const continueGame = () => {
-    if (!saved || trainRequest || (saved.mode === 'train' && saved.repertoire !== repId)) return false;
+    // (gameId: the user already chose something else while the engine was loading)
+    if (!saved || trainRequest || gameId.current !== 0 || (saved.mode === 'train' && saved.repertoire !== repId)) return false;
     const g = saved.board;
-    gameId.current++;
+    moveOn();
     gameRef.current = g;
     const myTurn = g.turn() === userColor;
     const p: Phase = saved.phase === 'book' && (!myTurn || book.get(posKey(g.fen()))?.length) ? 'book' : 'free';
@@ -282,10 +293,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
 
   // Start a game once the engines are up
   useEffect(() => {
-    if (engineReady && !continueGame()) {
-      if (saved) setMode('train');
-      newGame({ mode: 'train' });
-    }
+    if (engineReady && !continueGame()) newGame();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [engineReady]);
 
@@ -477,7 +485,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
   const goBack = () => {
     if (!undoable) return;
     const g = gameRef.current;
-    gameId.current++; // drop an opponent reply that may still be on its way
+    moveOn(); // also drops an opponent reply that may still be on its way
     while (g.history().length > undoable.ply) g.undo();
     sync();
     setHint(uciToArrow(undoable.bestUci, GREEN_ARROW));
@@ -500,7 +508,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
     // undo the last full move pair (opponent + user)
     if (status !== 'user' && status !== 'over') return;
     const g = gameRef.current;
-    gameId.current++;
+    moveOn();
     if (g.turn() === userColor && g.history().length >= 2) { g.undo(); g.undo(); }
     else if (g.turn() !== userColor && g.history().length >= 1) g.undo();
     sync();
@@ -573,7 +581,11 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
           <span aria-hidden>⚙</span> {mode === 'play' ? tr('משחק רגיל', 'Regular game') : repName(rep)} · {tr('רמה', 'Level')} {skill}
         </button>
         {settingsOpen && <div className="settings-backdrop" onClick={() => setSettingsOpen(false)} />}
-        <div className={settingsOpen ? 'controls open' : 'controls'}>
+        <div
+          ref={sheet}
+          className={settingsOpen ? 'controls open' : 'controls'}
+          {...(settingsOpen && { role: 'dialog', 'aria-modal': true, 'aria-label': tr('הגדרות המשחק', 'Game settings') })}
+        >
           <div className="sheet-handle" aria-hidden />
           <label>
             {tr('מצב', 'Mode')}

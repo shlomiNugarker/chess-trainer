@@ -14,6 +14,7 @@ import { BOARD_THEME, GREEN_ARROW, ltr, pvToSan, uciToArrow } from './chessUtils
 import { useFitBoard } from './useFitBoard';
 import { useSidePanel } from './useSidePanel';
 import { useScrollToMove } from './useScrollToMove';
+import { dialogOpen } from './useDialog';
 import { formatDate, msg, tr, useLang } from './i18n';
 
 const CLASS_LABEL: Record<MoveClass, [string, string]> = {
@@ -138,7 +139,7 @@ export default function GameReview({ game, username, active, onClose, onLearn, o
   useEffect(() => {
     if (!active) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement || e.target instanceof HTMLTextAreaElement) return;
+      if (dialogOpen() || e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement || e.target instanceof HTMLTextAreaElement) return;
       if (e.key === 'ArrowRight') setPly((p) => Math.min(total, p + 1));
       else if (e.key === 'ArrowLeft') setPly((p) => Math.max(0, p - 1));
       else if (e.key === 'Home') setPly(0);

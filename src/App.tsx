@@ -4,12 +4,13 @@ import Review from './Review';
 import Practice, { type PracticeView } from './Practice';
 import Learn from './Learn';
 import { dueMistakes, useMistakeCount } from './mistakes';
-import { useStored } from './storage';
+import { useStored, writeStored } from './storage';
 import { LANGS, dir, setLang, tr, useLang } from './i18n';
 import Account from './Account';
 import { useCloud } from './cloud';
 import { REPERTOIRES } from './repertoire';
 import { withCustom } from './customLines';
+import { ENGINE_STATUS } from './engine';
 import { go, goTo, useNav, type Screen } from './nav';
 import './App.css';
 
@@ -32,6 +33,13 @@ export default function App() {
   const nextLang = LANGS[(LANGS.findIndex((l) => l.id === lang) + 1) % LANGS.length];
   const cloud = useCloud();
 
+  const [engineFailed, setEngineFailed] = useState(false);
+  useEffect(() => {
+    const onStatus = (e: Event) => setEngineFailed(!(e as CustomEvent<boolean>).detail);
+    window.addEventListener(ENGINE_STATUS, onStatus);
+    return () => window.removeEventListener(ENGINE_STATUS, onStatus);
+  }, []);
+
   const tabs: { id: Screen; label: string; icon: string; badge?: number }[] = [
     { id: 'play', label: tr('שחק', 'Play'), icon: '♟' },
     { id: 'learn', label: tr('למד', 'Learn'), icon: '📖' },
@@ -47,7 +55,9 @@ export default function App() {
           <span className="brand-mark" aria-hidden>♞</span>
           {tr('מאמן שחמט', 'Chess Trainer')}
         </h1>
-        <div className="tabs" role="tablist">
+        <div className="tabs">
+          {/* the account / language button beside them is not a tab */}
+          <div role="tablist" className="tabs-only">
           {tabs.map((t) => (
             <button
               key={t.id}
@@ -61,6 +71,7 @@ export default function App() {
               {!!t.badge && <span className="badge">{t.badge}</span>}
             </button>
           ))}
+          </div>
           {cloud.enabled ? (
             // account (Google sign-in, sync) and language, in one panel (a fifth item in the phone tab bar)
             <button className="tab lang-switch account-tab" onClick={() => go({ account: true })} aria-haspopup="dialog">
@@ -79,6 +90,13 @@ export default function App() {
         </div>
       </nav>
 
+      {engineFailed && (
+        <div className="card engine-failed" role="alert">
+          <span>{tr('מנוע השחמט לא נטען. בדוק את החיבור לאינטרנט ונסה שוב.', 'The chess engine did not load. Check your internet connection and try again.')}</span>
+          <button className="primary" onClick={() => location.reload()}>{tr('נסה שוב', 'Try again')}</button>
+        </div>
+      )}
+
       {/* Trainer and Review stay mounted so a game in progress / loaded games survive tab switches */}
       <div hidden={screen !== 'play'}>
         <Trainer trainRequest={trainRequest} active={screen === 'play'} />
@@ -94,8 +112,8 @@ export default function App() {
           onLearn={(repertoireId, moves) => {
             // open Learn on that repertoire and line (Learn reads both when it mounts)
             const rep = withCustom(REPERTOIRES.find((r) => r.id === repertoireId)!);
-            localStorage.setItem('chess-trainer:learn-repertoire', JSON.stringify(repertoireId));
-            localStorage.setItem('chess-trainer:learn-line', JSON.stringify(Math.max(0, rep.lines.findIndex((l) => l.moves === moves))));
+            writeStored('learn-repertoire', repertoireId);
+            writeStored('learn-line', Math.max(0, rep.lines.findIndex((l) => l.moves === moves)));
             goTo('learn');
           }}
         />

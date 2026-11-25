@@ -2,9 +2,9 @@
 // On this device only: not synced.
 
 import { Chess } from 'chess.js';
-import { readStored } from './storage';
+import { readStored, writeStored } from './storage';
 
-const KEY = 'chess-trainer:game';
+const KEY = 'game';
 /** An older game is not continued: a new one starts. */
 const MAX_AGE = 24 * 60 * 60 * 1000;
 
@@ -19,7 +19,7 @@ export type SavedGame = {
 
 /** The saved game with its board, or null when there is none to continue. */
 export function loadGame(now = Date.now()): (SavedGame & { board: Chess }) | null {
-  const s = readStored<SavedGame | null>('game', null);
+  const s = readStored<SavedGame | null>(KEY, null);
   if (!s || !Array.isArray(s.moves) || !s.moves.length || !(now - s.at < MAX_AGE)) return null;
   const board = new Chess();
   try {
@@ -31,10 +31,5 @@ export function loadGame(now = Date.now()): (SavedGame & { board: Chess }) | nul
 }
 
 export function saveGame(s: Omit<SavedGame, 'at'> | null) {
-  try {
-    if (s) localStorage.setItem(KEY, JSON.stringify({ ...s, at: Date.now() }));
-    else localStorage.removeItem(KEY);
-  } catch {
-    /* storage unavailable — ignore */
-  }
+  writeStored(KEY, s && { ...s, at: Date.now() });
 }

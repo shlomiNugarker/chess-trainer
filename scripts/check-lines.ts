@@ -1,8 +1,10 @@
 import { Chess } from 'chess.js';
-import { REPERTOIRES, buildBook, moveLabel } from '../src/repertoire.ts';
+import { REPERTOIRES, buildBook, lineId, moveLabel } from '../src/repertoire.ts';
 import { EN } from '../src/repertoire.en.ts';
 let ok = true;
 for (const r of REPERTOIRES) {
+  const ids = r.lines.map(lineId);
+  for (const id of ids) if (ids.filter((x) => x === id).length > 1) { console.error(`TWO LINES with the id ${r.id}/${id}`); ok = false; }
   for (const l of r.lines) {
     const c = new Chess();
     const labels = new Set<string>();
@@ -14,7 +16,7 @@ for (const r of REPERTOIRES) {
       if (!labels.has(key)) { console.error(`NOTE KEY not in ${r.id}/${l.name}: ${key}`); ok = false; }
     }
     // the English text must exist for every line, with the same moves explained
-    const en = EN[r.id]?.lines[l.name];
+    const en = EN[r.id]?.lines[lineId(l)];
     if (!en) { console.error(`NO ENGLISH for ${r.id}/${l.name}`); ok = false; continue; }
     for (const key of Object.keys(en.notes)) {
       if (!labels.has(key)) { console.error(`EN NOTE KEY not in ${r.id}/${l.name}: ${key}`); ok = false; }
@@ -34,7 +36,7 @@ for (const [id, rep] of Object.entries(EN)) {
   const r = REPERTOIRES.find((x) => x.id === id);
   if (!r) { console.error(`EN repertoire with no Hebrew one: ${id}`); ok = false; continue; }
   for (const name of Object.keys(rep.lines)) {
-    if (!r.lines.some((l) => l.name === name)) { console.error(`EN line with no Hebrew one: ${id}/${name}`); ok = false; }
+    if (!r.lines.some((l) => lineId(l) === name)) { console.error(`EN line with no Hebrew one: ${id}/${name}`); ok = false; }
   }
 }
 process.exit(ok ? 0 : 1);

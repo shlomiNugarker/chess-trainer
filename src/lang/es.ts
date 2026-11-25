@@ -16,6 +16,8 @@ const es: Record<string, string> = {
   'Syncing…': 'Sincronizando…',
   'Synced ✓{0}': 'Sincronizado ✓{0}',
   'Offline — will sync when you are back online': 'Sin conexión: se sincronizará cuando vuelvas a estar en línea',
+  'There is too much data to sync, so it is kept on this device only': 'Hay demasiados datos para sincronizar, así que se guardan solo en este dispositivo',
+  'No room on this device to keep the previous account’s data, so this account is not syncing': 'No hay espacio en este dispositivo para guardar los datos de la cuenta anterior, por eso esta cuenta no se sincroniza',
   'Sync failed — will try again soon': 'Error al sincronizar: lo intentaremos de nuevo pronto',
   'Your progress (lines, puzzles, rating, mistakes and streak) syncs between phone and computer, and is kept even if the browser is cleared.':
     'Tu progreso (líneas, problemas, puntuación, errores y racha) se sincroniza entre el teléfono y el ordenador, y se conserva aunque borres los datos del navegador.',
@@ -311,8 +313,8 @@ const es: Record<string, string> = {
   'How you lose': 'Cómo pierdes',
   'of your losses ended by move {0}.': 'de tus derrotas terminaron antes de la jugada {0} o en ella.',
   'Engine analysis of your recent games': 'Análisis del motor de tus partidas recientes',
-  'Stockfish goes over each of your moves and finds mistakes. Every mistake and blunder goes to "Practice → My mistakes". About 10 seconds per game; a game already analyzed is not analyzed again.':
-    'Stockfish revisa cada una de tus jugadas y encuentra los errores. Cada error y error grave va a «Practicar → Mis errores». Unos 10 segundos por partida; una partida ya analizada no se vuelve a analizar.',
+  'Stockfish goes over each of your moves and finds mistakes. Every mistake and blunder goes to "Practice → My mistakes". It takes 10 to 30 seconds per game; a game already analyzed is not analyzed again.':
+    'Stockfish revisa cada una de tus jugadas y encuentra los errores. Cada error y error grave va a «Practicar → Mis errores». Tarda de 10 a 30 segundos por partida; una partida ya analizada no se vuelve a analizar.',
   'Last {0} games': 'Últimas {0} partidas',
   'Stop': 'Detener',
   'All analyzed ✓': 'Todo analizado ✓',
@@ -420,10 +422,12 @@ const es: Record<string, string> = {
   '✓ {0} — a good move (best: {1}).': '✓ {0}: buena jugada (la mejor: {1}).',
   'You continued off the line — from here the coach checks you with the engine.': 'Seguiste fuera de la línea: a partir de aquí el entrenador te revisa con el motor.',
   'You went back. Play {0} — the green arrow shows it.': 'Volviste atrás. Juega {0}: la flecha verde la muestra.',
+  'The chess engine did not load. Check your internet connection and try again.': 'El motor de ajedrez no se cargó. Comprueba tu conexión a internet e inténtalo de nuevo.',
   'Computer is thinking…': 'El ordenador está pensando…',
   'Coach is checking your move…': 'El entrenador revisa tu jugada…',
   'Stopped to correct': 'Pausa para corregir',
   'Game over': 'Fin de la partida',
+  'Game settings': 'Ajustes de la partida',
   'Regular game': 'Partida normal',
   'Level': 'Nivel',
   'Mode': 'Modo',

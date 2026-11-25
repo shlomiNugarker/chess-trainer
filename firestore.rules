@@ -9,7 +9,8 @@ service cloud.firestore {
       allow create, update: if request.auth != null && request.auth.uid == uid
         && request.resource.data.keys().hasOnly(['data', 'stamps', 'updatedAt'])
         && request.resource.data.data is map
-        && request.resource.data.stamps is map;
+        && request.resource.data.stamps is map
+        && request.resource.data.updatedAt is number;
     }
     // everything else is closed
     match /{document=**} {

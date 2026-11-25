@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { useDialog } from './useDialog';
 import { preloadCloud, signIn, signOut, useCloud } from './cloud';
 import { explanationsNote } from './repertoire';
 import { LANGS, hasExplanations, locale, setLang, msg, tr, useLang } from './i18n';
@@ -10,11 +11,8 @@ export default function Account({ onClose }: { onClose: () => void }) {
 
   useEffect(preloadCloud, []);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  const panel = useRef<HTMLDivElement>(null);
+  useDialog(panel, true, onClose);
 
   const time = cloud.lastSync ? new Date(cloud.lastSync).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' }) : '';
   const statusText = {
@@ -24,12 +22,14 @@ export default function Account({ onClose }: { onClose: () => void }) {
     synced: tr(`מסונכרן ✓${time ? ` · ${time}` : ''}`, msg`Synced ✓${time ? ` · ${time}` : ''}`),
     offline: tr('אין חיבור — יסונכרן כשיחזור האינטרנט', 'Offline — will sync when you are back online'),
     error: tr('הסנכרון נכשל — ננסה שוב בקרוב', 'Sync failed — will try again soon'),
+    'too-big': tr('יש יותר מדי נתונים לסנכרון, ולכן הם נשמרים רק במכשיר הזה', 'There is too much data to sync, so it is kept on this device only'),
+    'no-room': tr('אין מקום במכשיר לשמור את הנתונים של החשבון הקודם, ולכן החשבון הזה לא מסתנכרן', 'No room on this device to keep the previous account’s data, so this account is not syncing'),
   }[cloud.status];
 
   return (
     <>
       <div className="account-backdrop" onClick={onClose} />
-      <div className="account-panel card" role="dialog" aria-modal="true" aria-label={tr('חשבון', 'Account')}>
+      <div ref={panel} className="account-panel card" role="dialog" aria-modal="true" aria-label={tr('חשבון', 'Account')}>
         <div className="sheet-handle" aria-hidden />
         <div className="account-head">
           <h2>{tr('חשבון', 'Account')}</h2>
@@ -47,7 +47,7 @@ export default function Account({ onClose }: { onClose: () => void }) {
               <div className="account-who">
                 <strong>{cloud.user.name || cloud.user.email}</strong>
                 {cloud.user.name && <span className="muted">{cloud.user.email}</span>}
-                <span className={cloud.status === 'error' || cloud.status === 'offline' ? 'sync-status warn' : 'sync-status'}>{statusText}</span>
+                <span className={['error', 'offline', 'too-big', 'no-room'].includes(cloud.status) ? 'sync-status warn' : 'sync-status'}>{statusText}</span>
               </div>
               <button className="ghost" onClick={() => void signOut()}>{tr('התנתק', 'Sign out')}</button>
             </div>

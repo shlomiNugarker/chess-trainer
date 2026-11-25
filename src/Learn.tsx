@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard, type Arrow } from 'react-chessboard';
-import { explanationsNote, REPERTOIRES, lineMoves, lineText, moveLabel, posKey, repName } from './repertoire';
+import { explanationsNote, lineId, movesOf, REPERTOIRES, lineMoves, lineText, moveLabel, posKey, repName } from './repertoire';
 import { importPgn, removeCustomLine, useRepertoire, type ImportResult } from './customLines';
 import { hasExplanations, msg, tr, useLang } from './i18n';
-import { dueMistakes, loadMistakes, saveMistake } from './mistakes';
+import { dueMistakes, loadMistakes, saveMistake, useMistakeCount } from './mistakes';
+import { dialogOpen } from './useDialog';
 import { lineStats } from './lineStats';
 import { BLUE_ARROW, BOARD_THEME, GREEN_ARROW, LAST_MOVE, WRONG_MOVE, ltr, uciToArrow } from './chessUtils';
 import { useClickToMove } from './useClickToMove';
@@ -28,6 +29,8 @@ type QuizState = { wrong?: { san: string; to: string; correctUci: string }; mist
  */
 type Props = { onTrain: (repertoireId: string) => void; onDrill: () => void; onPuzzles: () => void };
 
+const dueCount = () => dueMistakes().length;
+
 export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
   const [storedRepId, setRepId] = useStored('learn-repertoire', REPERTOIRES[0].id);
   const { hidden, visible, toggle: toggleHidden } = useHiddenRepertoires();
@@ -45,7 +48,7 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
   const [masteryVersion, setMasteryVersion] = useState(0); // bump to re-read the store
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const mastery = useMemo(() => loadMastery(rep.id), [rep.id, masteryVersion]);
-  const masteredCount = rep.lines.filter((l) => isMastered(mastery[l.name])).length;
+  const masteredCount = rep.lines.filter((l) => isMastered(mastery[lineId(l)])).length;
   const [statsOpen, setStatsOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [pgnText, setPgnText] = useState('');
@@ -53,15 +56,15 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
   // re-read after every test try too (each wrong move is saved as a mistake)
   const stats = useMemo(() => (statsOpen ? lineStats(rep, mastery, loadMistakes()) : []), [statsOpen, rep, mastery, quiz]); // eslint-disable-line react-hooks/exhaustive-deps
   const [guideDismissed, setGuideDismissed] = useStored('guide-dismissed', false);
-  const showGuide = !guideDismissed && !hasAnyMastery();
+  const anyMastery = useMemo(hasAnyMastery, [masteryVersion]); // eslint-disable-line react-hooks/exhaustive-deps
+  const showGuide = !guideDismissed && !anyMastery;
   // "today": the one or two things worth doing now, one tap each
-  const due = dueMistakes().length;
-  const puzzlesToday = todayCount();
-  const streakDays = dayStreak();
-  const firstToLearn = rep.lines.findIndex((l) => !isMastered(mastery[l.name]));
+  const due = useMistakeCount(dueCount);
+  const [puzzlesToday, streakDays] = useMemo(() => [todayCount(), dayStreak()], []); // they change on another screen
+  const firstToLearn = rep.lines.findIndex((l) => !isMastered(mastery[lineId(l)]));
   const nextToLearn = [...rep.lines.keys()]
     .map((k) => (lineIdx + 1 + k) % rep.lines.length)
-    .find((i) => i !== lineIdx && !isMastered(mastery[rep.lines[i].name]));
+    .find((i) => i !== lineIdx && !isMastered(mastery[lineId(rep.lines[i])]));
 
   const fen = ply === 0 ? START : moves[ply - 1].after;
   const userTurn = fen.split(' ')[1] === rep.userColor;
@@ -82,7 +85,7 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
   // arrow keys step through the line (not while testing)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (quiz || (e.target as HTMLElement).closest('input, select, textarea')) return;
+      if (quiz || dialogOpen() || (e.target as HTMLElement).closest('input, select, textarea')) return;
       if (e.key === 'ArrowRight') setPly((p) => Math.min(moves.length, p + 1));
       if (e.key === 'ArrowLeft') setPly((p) => Math.max(0, p - 1));
     };
@@ -95,7 +98,7 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
     const np = ply + 1;
     setPly(np);
     if (np === moves.length) {
-      recordRun(rep.id, line.name, mistakes);
+      recordRun(rep.id, lineId(line), mistakes);
       if (!mistakes) playSound('success', 0.15);
       setMasteryVersion((v) => v + 1);
     }
@@ -115,7 +118,7 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
     const out: { lineIdx: number; atPly: number; san: string; name: string }[] = [];
     rep.lines.forEach((l, i) => {
       if (i === lineIdx) return;
-      const ms = lineMoves(l.moves);
+      const ms = movesOf(l);
       for (let k = 0; k < ms.length; k++) {
         if (posKey(ms[k].before) !== here) continue;
         if (ms[k].san !== next?.san) out.push({ lineIdx: i, atPly: k, san: ms[k].san, name: lineText(rep, l).name });
@@ -213,11 +216,12 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
       )}
 
       <header className="learn-header">
-        <div className="chips" role="tablist">
+        <div className="chips" role="group" aria-label={tr('פתיחה', 'Opening')}>
           {visible.map((r) => (
             <button
               key={r.id}
               className={r.id === rep.id ? 'chip active' : 'chip'}
+              aria-pressed={r.id === rep.id}
               onClick={() => pickLine(r.id, 0)}
             >
               {repName(r)}
@@ -244,7 +248,7 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
         <select value={lineIdx} onChange={(e) => pickLine(rep.id, Number(e.target.value))} aria-label={tr('קו', 'Line')}>
           {rep.lines.map((l, i) => (
             <option key={i} value={i}>
-              {isMastered(mastery[l.name]) ? '✓ ' : ''}
+              {isMastered(mastery[lineId(l)]) ? '✓ ' : ''}
               {lineText(rep, l).name} ({Math.ceil(l.moves.split(/\s+/).length / 2)} {tr('מהלכים', 'moves')})
             </option>
           ))}
@@ -332,9 +336,9 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
               const st = stats[i];
               if (!st) return null;
               return (
-                <li key={l.name}>
+                <li key={lineId(l)}>
                   <button className="line-stats-name" onClick={() => pickLine(rep.id, i)}>
-                    {isMastered(mastery[l.name]) ? '✓ ' : ''}
+                    {isMastered(mastery[lineId(l)]) ? '✓ ' : ''}
                     {lineText(rep, l).name}
                   </button>
                   <span className={st.rate === null ? 'muted' : st.rate >= 70 ? 'rate good' : st.rate >= 40 ? 'rate mid' : 'rate low'}>

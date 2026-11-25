@@ -5,10 +5,11 @@ import { getAnalysis, saveAnalysis } from './analysisCache';
 import { saveMistake } from './mistakes';
 import Branches from './Branches';
 import GameReview from './GameReview';
-import { isReviewed, reviewedUrls, storedAccuracy } from './gameAnalysis';
+import { isReviewed, storedReviews, storedAccuracy } from './gameAnalysis';
 import { REPERTOIRES } from './repertoire';
 import { withCustom } from './customLines';
 import { go, useNav } from './nav';
+import { createStore, type Store } from './createStore';
 import {
   phaseLabel, reasonLabel, timeClassLabel, MIN_MONTH_GAMES, MIN_OPENING_GAMES, MIN_STRONG_GAMES, SHORT_GAME,
   accuracyByMonth, accuracyTrend, analyzeGame, buildOverview, buildTips, strongestOpenings, summarizeDeep, weakestOpenings,
@@ -38,13 +39,18 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
   const [partial, setPartial] = useState(false);
   const [error, setError] = useState('');
   const [timeClass, setTimeClass] = useState<TimeClass | 'all'>('all');
-  const loadToken = useRef({ cancelled: false });
+  const download = useRef(new AbortController());
   const { review: reviewUrl } = useNav();
   const reviewing = useMemo(() => games?.find((g) => g.url === reviewUrl) ?? null, [games, reviewUrl]); // one game, move by move
 
   const [deepCount, setDeepCount] = useStored('deep-count', 10);
   const [deep, setDeep] = useState<GameAnalysis[] | null>(null);
-  const [deepProgress, setDeepProgress] = useState<{ game: number; total: number; pos: number; posTotal: number } | null>(null);
+  const [deepRunning, setDeepRunning] = useState(false);
+  const [progress] = useState(() => createStore<Deep | null>(null)); // changes at every position: only its own line follows it
+  const setDeepProgress = (p: Deep | null) => {
+    progress.set(p);
+    setDeepRunning(p !== null);
+  };
   const deepRun = useRef<{ engine: Engine; cancelled: boolean } | null>(null);
 
   useEffect(() => () => deepRun.current?.engine.terminate(), []);
@@ -52,9 +58,9 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
   const load = async (name: string) => {
     const user = name.trim();
     if (!user) return;
-    loadToken.current.cancelled = true;
-    const token = { cancelled: false };
-    loadToken.current = token;
+    download.current.abort();
+    const token = new AbortController();
+    download.current = token;
     stopDeep();
     setError('');
     setGames(null);
@@ -62,8 +68,8 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
     go({ review: null });
     setLoading({ fraction: 0, count: 0 });
     try {
-      const { games: all, partial } = await fetchGames(user, (fraction, count) => !token.cancelled && setLoading({ fraction, count }), token);
-      if (token.cancelled) return;
+      const { games: all, partial } = await fetchGames(user, (fraction, count) => !token.signal.aborted && setLoading({ fraction, count }), token.signal);
+      if (token.signal.aborted) return;
       setUsername(user);
       setGames(all);
       setPartial(partial);
@@ -72,9 +78,9 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
       const known = all.slice(-deepCount).reverse().map((g) => getAnalysis(g.url)).filter((a): a is GameAnalysis => !!a);
       if (known.length) setDeep(known);
     } catch (e) {
-      if (!token.cancelled) setError(e instanceof ChessComError ? e.message : tr('משהו השתבש בטעינת המשחקים.', 'Something went wrong while loading the games.'));
+      if (!token.signal.aborted) setError(e instanceof ChessComError ? e.message : tr('משהו השתבש בטעינת המשחקים.', 'Something went wrong while loading the games.'));
     } finally {
-      if (!token.cancelled) setLoading(null);
+      if (!token.signal.aborted) setLoading(null);
     }
   };
 
@@ -96,11 +102,11 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
   // accuracy over time: games reviewed on Chess.com, and games reviewed here (recomputed after a review closes)
   const accuracy = useMemo(() => {
     const chesscom = accuracyByMonth(filtered.filter((g) => g.accuracy !== undefined).map((g) => ({ t: g.endTime, acc: g.accuracy! })));
-    const urls = new Set(reviewedUrls());
+    const reviews = storedReviews();
     const reps = REPERTOIRES.map(withCustom);
     const ownItems = filtered
-      .filter((g) => urls.has(g.url))
-      .map((g) => ({ t: g.endTime, acc: storedAccuracy(g, reps) }))
+      .filter((g) => g.url in reviews)
+      .map((g) => ({ t: g.endTime, acc: storedAccuracy(g, reviews[g.url], reps) }))
       .filter((x): x is { t: number; acc: number } => x.acc !== null);
     return { chesscom, own: accuracyByMonth(ownItems, 1), ownGames: ownItems.length };
   }, [filtered, reviewing]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -228,7 +234,7 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
             {(['all', 'bullet', 'blitz', 'rapid', 'daily'] as const)
               .filter((tc) => tc === 'all' || games.some((g) => g.timeClass === tc))
               .map((tc) => (
-                <button key={tc} className={tc === timeClass ? 'chip active' : 'chip'} onClick={() => setTimeClass(tc)}>
+                <button key={tc} className={tc === timeClass ? 'chip active' : 'chip'} aria-pressed={tc === timeClass} onClick={() => setTimeClass(tc)}>
                   {tc === 'all' ? tr('הכל', 'All') : timeClassLabel(tc)}
                 </button>
               ))}
@@ -322,17 +328,17 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
             <h2>{tr('ניתוח מנוע של המשחקים האחרונים', 'Engine analysis of your recent games')}</h2>
             <p className="muted">
               {tr(
-                'Stockfish עובר על כל מהלך שלך ומוצא טעויות. כל טעות ובלאנדר נכנסים ל"תרגול ← הטעויות שלי". לוקח כ-10 שניות למשחק; משחק שכבר נותח לא מנותח שוב.',
-                'Stockfish goes over each of your moves and finds mistakes. Every mistake and blunder goes to "Practice → My mistakes". About 10 seconds per game; a game already analyzed is not analyzed again.',
+                'Stockfish עובר על כל מהלך שלך ומוצא טעויות. כל טעות ובלאנדר נכנסים ל"תרגול ← הטעויות שלי". לוקח 10 עד 30 שניות למשחק; משחק שכבר נותח לא מנותח שוב.',
+                'Stockfish goes over each of your moves and finds mistakes. Every mistake and blunder goes to "Practice → My mistakes". It takes 10 to 30 seconds per game; a game already analyzed is not analyzed again.',
               )}
             </p>
             <div className="buttons">
-              <select value={deepCount} onChange={(e) => setDeepCount(Number(e.target.value))} disabled={!!deepProgress}>
+              <select value={deepCount} onChange={(e) => setDeepCount(Number(e.target.value))} disabled={deepRunning}>
                 {[5, 10, 20].map((n) => (
                   <option key={n} value={n}>{tr(`${n} משחקים אחרונים`, msg`Last ${n} games`)}</option>
                 ))}
               </select>
-              {deepProgress ? (
+              {deepRunning ? (
                 <button onClick={stopDeep}>{tr('עצור', 'Stop')}</button>
               ) : (
                 <button className="primary" onClick={runDeep} disabled={pending === 0 && !!deep?.length}>
@@ -344,16 +350,24 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
                 </button>
               )}
             </div>
-            {deepProgress && (
-              <div>
-                {tr(`משחק ${deepProgress.game} מתוך ${deepProgress.total}`, msg`Game ${deepProgress.game} of ${deepProgress.total}`)}
-                <Progress value={(deepProgress.game - 1 + (deepProgress.posTotal ? deepProgress.pos / deepProgress.posTotal : 0)) / deepProgress.total} />
-              </div>
-            )}
+            <DeepProgress store={progress} />
             {deepSummary && <DeepResults summary={deepSummary} onDrill={onDrill} />}
           </section>
         </>
       )}
+    </div>
+  );
+}
+
+type Deep = { game: number; total: number; pos: number; posTotal: number };
+
+function DeepProgress({ store }: { store: Store<Deep | null> }) {
+  const p = store.use();
+  if (!p) return null;
+  return (
+    <div>
+      {tr(`משחק ${p.game} מתוך ${p.total}`, msg`Game ${p.game} of ${p.total}`)}
+      <Progress value={(p.game - 1 + (p.posTotal ? p.pos / p.posTotal : 0)) / p.total} />
     </div>
   );
 }
@@ -586,6 +600,14 @@ function AccuracyCard({ chesscom, own, ownGames }: { chesscom: MonthPoint[]; own
   );
 }
 
+/** The values' range in whole steps, at least two steps high (one value, or all the same). */
+function range(values: number[], step: number, min: number, max: number): [number, number] {
+  let lo = Math.floor(Math.min(...values) / step) * step;
+  let hi = Math.ceil(Math.max(...values) / step) * step;
+  if (hi === lo) [lo, hi] = [lo - step, hi + step];
+  return [Math.max(min, lo), Math.min(max, hi)];
+}
+
 function AccuracyChart({ series }: { series: { key: string; label: string; points: MonthPoint[] }[] }) {
   const [hover, setHover] = useState<string | null>(null); // a month: the tooltip shows every series in it
   const [ref, W] = useChartWidth();
@@ -593,8 +615,7 @@ function AccuracyChart({ series }: { series: { key: string; label: string; point
   const H = 180, L = 40, R = 12, T = 12, B = 24;
   const t0 = Math.min(...all.map((p) => p.t));
   const t1 = Math.max(...all.map((p) => p.t));
-  const lo = Math.max(0, Math.floor(Math.min(...all.map((p) => p.avg)) / 10) * 10 - (all.length === 1 ? 10 : 0));
-  const hi = Math.min(100, Math.ceil(Math.max(...all.map((p) => p.avg)) / 10) * 10 + (all.length === 1 ? 10 : 0)) || 100;
+  const [lo, hi] = range(all.map((p) => p.avg), 10, 0, 100);
   const x = (t: number) => (t1 === t0 ? (L + W - R) / 2 : L + ((t - t0) / (t1 - t0)) * (W - L - R));
   const y = (a: number) => T + (1 - (a - lo) / Math.max(1, hi - lo)) * (H - T - B);
   const atHover = hover ? series.map((s) => ({ s, p: s.points.find((p) => p.month === hover) })).filter((x) => x.p) : [];
@@ -660,8 +681,7 @@ function RatingChart({ points: raw }: { points: { t: number; r: number }[] }) {
   const [ref, W] = useChartWidth();
   const H = 200, L = 44, R = 12, T = 12, B = 24;
   const rs = points.map((p) => p.r);
-  const lo = Math.floor(Math.min(...rs) / 50) * 50;
-  const hi = Math.ceil(Math.max(...rs) / 50) * 50 || lo + 50;
+  const [lo, hi] = range(rs, 50, 0, Infinity);
   const x = (i: number) => L + (i / Math.max(1, points.length - 1)) * (W - L - R);
   const y = (r: number) => T + (1 - (r - lo) / Math.max(1, hi - lo)) * (H - T - B);
   const path = points.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.r).toFixed(1)}`).join('');

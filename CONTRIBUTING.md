@@ -36,7 +36,7 @@ For larger changes, also run the browser QA scripts in [`scripts/qa/`](scripts/q
 - **Repertoire lines** live in `src/repertoire.ts` (Hebrew names, ideas and notes) and `src/repertoire.en.ts` (English, keyed by the Hebrew line name). Notes are keyed by move label (`"5.c3"`, `"4...Qb6"`). The user must have exactly one move in every position across a repertoire's lines. Check every user move with Stockfish — it should not lose more than ~2% win chance — and run `check-lines`.
 - **A new repertoire** goes in `REPERTOIRES` (`src/repertoire.ts`) and in `EN` (`src/repertoire.en.ts`, by its id). For the review’s per-opening table, add its Chess.com opening name to `matchRepertoire` in `src/reviewStats.ts` (with a case in `scripts/check-review.ts`). Two repertoires may answer the same position differently (say the Caro-Kann and the Sicilian against 1.e4): the review gives each game to the one it followed longest.
 - **Puzzles** are rebuilt with `scripts/build-puzzles.py`. Give the new set a new file name (`puzzles-vN.json`, and update `src/puzzleData.ts` and `scripts/check-puzzles.ts`) — the service worker caches files by name, so the same name would never reach existing users.
-- **Changing a line name** resets the "mastered" mark of everyone who learned it (the Hebrew name is its id), so avoid it.
+- **Changing a line name**: give the line `id: '<the old Hebrew name>'`, or everyone's "mastered" mark (and its English text) is lost; the name is its id until then.
 - **Storage.** Saved state goes in `localStorage` under `chess-trainer:`; it is synced between devices unless listed as local in `src/syncMerge.ts`. Keep large data (archives, caches) out of it.
 - Match the existing code style; no new runtime dependencies without discussing them first.
 

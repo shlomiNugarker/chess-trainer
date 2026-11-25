@@ -44,11 +44,11 @@ const DRAW_CODES = new Set(['agreed', 'repetition', 'stalemate', 'insufficient',
 export class ChessComError extends Error {}
 const noSuchUser = () => new ChessComError(tr('לא נמצא משתמש בשם הזה ב-Chess.com.', 'No Chess.com user with this name.'));
 
-async function getJson<T>(url: string): Promise<T> {
+async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
   for (let attempt = 0; ; attempt++) {
     let res: Response;
     try {
-      res = await fetch(url);
+      res = await fetch(url, { signal });
     } catch {
       throw new ChessComError(tr('אין חיבור ל-Chess.com. בדוק את החיבור לאינטרנט ונסה שוב.', 'Cannot reach Chess.com. Check your internet connection and try again.'));
     }
@@ -57,8 +57,13 @@ async function getJson<T>(url: string): Promise<T> {
       continue;
     }
     if (res.status === 404) throw noSuchUser();
-    if (!res.ok) throw new ChessComError(tr(`Chess.com החזיר שגיאה (${res.status}). נסה שוב בעוד רגע.`, msg`Chess.com returned an error (${res.status}). Try again in a moment.`));
-    return res.json() as Promise<T>;
+    const failed = () => new ChessComError(tr(`Chess.com החזיר שגיאה (${res.status}). נסה שוב בעוד רגע.`, msg`Chess.com returned an error (${res.status}). Try again in a moment.`));
+    if (!res.ok) throw failed();
+    try {
+      return (await res.json()) as T;
+    } catch {
+      throw failed(); // not JSON, or cut in the middle
+    }
   }
 }
 
@@ -123,7 +128,7 @@ function monthOver(url: string): number {
   return m ? Date.UTC(Number(m[1]), Number(m[2]), 1) + DAY : Infinity;
 }
 
-async function getMonth(url: string, past: boolean): Promise<{ games: ApiGame[] }> {
+async function getMonth(url: string, past: boolean, signal: AbortSignal): Promise<{ games: ApiGame[] }> {
   if (!oldCacheGone && typeof caches !== 'undefined') {
     oldCacheGone = true;
     void caches.delete('chesscom-archives-v1').catch(() => {}); // its copies have no fetch time
@@ -144,7 +149,7 @@ async function getMonth(url: string, past: boolean): Promise<{ games: ApiGame[] 
   }
   let data: { games: ApiGame[] };
   try {
-    data = await getJson<{ games: ApiGame[] }>(url);
+    data = await getJson<{ games: ApiGame[] }>(url, signal);
   } catch (e) {
     // offline: the last copy is better than nothing
     const hit = await cached(false);
@@ -166,11 +171,14 @@ export const MAX_GAMES = 5000;
 export async function fetchGames(
   username: string,
   onProgress: (fraction: number, games: number) => void,
-  signal?: { cancelled: boolean },
+  cancel?: AbortSignal,
 ): Promise<{ games: GameSummary[]; partial: boolean }> {
   const user = username.trim().toLowerCase();
   if (!/^[a-z0-9_-]+$/.test(user)) throw noSuchUser(); // asking would look like a connection error (no CORS on the answer)
-  const { archives } = await getJson<{ archives: string[] }>(`${API}/${user}/games/archives`);
+  // one request that fails stops the others too
+  const stop = new AbortController();
+  cancel?.addEventListener('abort', () => stop.abort());
+  const { archives } = await getJson<{ archives: string[] }>(`${API}/${user}/games/archives`, stop.signal);
   const perMonth: GameSummary[][] = new Array(archives.length);
   let next = archives.length - 1; // newest first
   let done = 0;
@@ -178,15 +186,20 @@ export async function fetchGames(
   onProgress(0, 0);
   // a few requests in parallel: fast, but polite enough to avoid 429s
   const worker = async () => {
-    while (next >= 0 && count < MAX_GAMES && !signal?.cancelled) {
+    while (next >= 0 && count < MAX_GAMES && !stop.signal.aborted) {
       const i = next--;
-      const { games } = await getMonth(archives[i], i < archives.length - 1); // the last archive is this month
+      const { games } = await getMonth(archives[i], i < archives.length - 1, stop.signal); // the last archive is this month
       perMonth[i] = games.map((g) => summarize(g, username)).filter((g): g is GameSummary => g !== null);
       count += perMonth[i].length;
       onProgress(Math.min(1, Math.max(++done / archives.length, count / MAX_GAMES)), count);
     }
   };
-  await Promise.all([worker(), worker(), worker()]);
+  try {
+    await Promise.all([worker(), worker(), worker()]);
+  } catch (e) {
+    stop.abort();
+    throw e;
+  }
   const all = perMonth.flat().sort((a, b) => a.endTime - b.endTime);
   const partial = next >= 0 || all.length > MAX_GAMES;
   return { games: all.slice(-MAX_GAMES), partial };

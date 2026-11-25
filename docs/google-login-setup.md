@@ -1,6 +1,6 @@
 # Google sign-in setup (Firebase) — browser steps
 
-Goal: turn on "Sign in with Google" in the Chess Trainer app (https://chess-trainer-seven-pink.vercel.app), so a player's progress syncs between devices. The code is already in the app. It stays hidden until a Firebase project exists and its config is added.
+Goal: turn on "Sign in with Google" in the Chess Trainer app (https://opening-trainer-app.vercel.app), so a player's progress syncs between devices. The code is already in the app. It stays hidden until a Firebase project exists and its config is added. For a deployment of your own, use its address wherever this one appears.
 
 These steps are done in the browser, signed in to the owner's Google account. They take about 15 minutes. Do them in order; each step ends with a **Check** you can verify on screen.
 
@@ -44,9 +44,9 @@ At the end, report back the 3 values listed in step 8.
 ## 4. Allow the app's domain
 
 1. Still in **Authentication**, open the **Settings** tab → **Authorized domains**.
-2. Click **Add domain** and enter `chess-trainer-seven-pink.vercel.app` (no `https://`, no slash), then **Add**.
+2. Click **Add domain** and enter `opening-trainer-app.vercel.app` (no `https://`, no slash), then **Add**.
 
-**Check:** the list contains `localhost`, `<projectId>.firebaseapp.com`, and `chess-trainer-seven-pink.vercel.app`.
+**Check:** the list contains `localhost`, `<projectId>.firebaseapp.com`, and `opening-trainer-app.vercel.app`.
 
 ## 5. Create the database and its security rules
 
@@ -84,8 +84,8 @@ Firebase created a Google OAuth client automatically. It needs to know the app's
 
 1. Open https://console.cloud.google.com/apis/credentials and make sure the project selector at the top shows the same project (`chess-trainer…`, same Project ID as step 1).
 2. Under **OAuth 2.0 Client IDs**, click **Web client (auto created by Google Service)**.
-3. **Authorized JavaScript origins** → **Add URI** → `https://chess-trainer-seven-pink.vercel.app`
-4. **Authorized redirect URIs** → **Add URI** → `https://chess-trainer-seven-pink.vercel.app/__/auth/handler`
+3. **Authorized JavaScript origins** → **Add URI** → `https://opening-trainer-app.vercel.app`
+4. **Authorized redirect URIs** → **Add URI** → `https://opening-trainer-app.vercel.app/__/auth/handler`
    Keep the URI that's already there (`https://<projectId>.firebaseapp.com/__/auth/handler`).
 5. Click **Save**.
 6. Optional, but nicer: left menu **Google Auth Platform → Branding** (older consoles: **OAuth consent screen**). Set **App name** to `Chess Trainer`, user support email to the owner's email, and **Save**. This is the name shown in the Google sign-in window.

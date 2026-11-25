@@ -265,4 +265,31 @@ assert.deepEqual([dv.mine[0].repId, dv.mine[0].played, dv.mine[0].expected, dv.m
         assert.ok(!/(^|[^\u2066\w.])(\.{3}|\d+\.{1,3})[KQRBNOa-h]/.test(isolateMoves(t).replace(/\u2066[^\u2069]*\u2069/g, '')), `not isolated: ${t}`);
 }
 
+// "My review" and the game review call the same moves mistakes, and a position between two suspects is searched once
+{
+  const { analyzeGame } = await import('../src/reviewStats.ts');
+  const { parseGame, buildReview, analyzePositions, MISTAKE_CLASSES } = await import('../src/gameAnalysis.ts');
+  const g = parseGame(pgn)!;
+  const searched: string[] = [];
+  const fake = {
+    analyze: async (fen: string, go: string) => {
+      const i = g.fens.indexOf(fen);
+      searched.push(`${i} ${go}`);
+      const white = [20, 20, 25, 20, 30, -10, -500, -450, -900, -900, -900][i] ?? -1000;
+      return { bestMove: 'a2a3', cp: fen.split(' ')[1] === 'w' ? white : -white, mate: null, pv: ['a2a3'] };
+    },
+  };
+  for (const color of ['w', 'b'] as const) {
+    const game = { ...s, pgn, color, url: `same-${color}` } as GameSummary;
+    const mine = (await analyzeGame(fake, game))!;
+    const review = buildReview(g, (await analyzePositions(fake, g))! as Parameters<typeof buildReview>[1], 0);
+    const there = review.moves.filter((m) => m.color === color && MISTAKE_CLASSES.includes(m.cls));
+    assert.deepEqual(mine.mistakes.map((m) => [m.played, m.kind]), there.map((m) => [m.san, m.cls]));
+  }
+  searched.length = 0;
+  await analyzePositions(fake, g);
+  assert.equal(new Set(searched).size, searched.length); // no search twice
+  assert.ok(searched.every((x) => x.includes('depth')));
+}
+
 console.log('check-review: all good');

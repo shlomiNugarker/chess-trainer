@@ -1,9 +1,10 @@
 // Turns a player's games into a short, actionable review.
 // Everything except analyzeGame() is pure and runs instantly on thousands of games.
 
-import { Chess } from 'chess.js';
 import type { GameSummary, TimeClass } from './chesscom.ts';
-import { DROP, type Engine, winPercent } from './engine.ts';
+import { DROP, type Engine } from './engine.ts';
+import { uciToSan } from './chessUtils.ts';
+import { analyzePositions, dropOf, loadReview, parseGame, saveReview, type Eval } from './gameAnalysis.ts';
 import { msg, tr } from './i18n.ts';
 
 export type Score = { games: number; wins: number; draws: number; losses: number; score: number }; // score 0..100
@@ -208,49 +209,34 @@ export function phaseOf(fen: string, moveNumber: number): GamePhase {
   return pieces <= 6 ? 'endgame' : 'middlegame';
 }
 
-/** Evaluate every position of the game once and flag the user's moves that lost at least DROP.inaccuracy win%. */
+/**
+ * The user's mistakes in a game, from the same analysis as the game review (by depth, so the two always agree);
+ * a game that was reviewed before is not searched again.
+ */
 export async function analyzeGame(
-  engine: Engine,
+  engine: Pick<Engine, 'analyze'>,
   game: GameSummary,
-  opts: { movetime?: number; cancelled?: () => boolean; onPosition?: (done: number, total: number) => void } = {},
+  opts: { cancelled?: () => boolean; onPosition?: (done: number, total: number) => void } = {},
 ): Promise<GameAnalysis | null> {
-  const c = new Chess();
-  try {
-    c.loadPgn(game.pgn);
-  } catch {
-    return null; // unusual PGN (e.g. custom start position) — skip it
-  }
-  const moves = c.history({ verbose: true });
-  const fens = [moves[0]?.before ?? c.fen(), ...moves.map((m) => m.after)];
+  const g = parseGame(game.pgn);
+  if (!g) return null; // unusual PGN (e.g. custom start position) — skip it
+  const known = loadReview(game.url);
+  const evals = known?.length === g.fens.length ? known : await analyzePositions(engine, g, { cancelled: opts.cancelled, onUpdate: (_, done, total) => opts.onPosition?.(done, total) });
+  if (!evals) return null;
+  if (evals !== known) saveReview(game.url, evals as Eval[]);
 
-  const movetime = opts.movetime ?? 100;
-  const evals: Awaited<ReturnType<Engine['analyze']>>[] = [];
-  for (let i = 0; i < fens.length; i++) {
-    if (opts.cancelled?.()) return null;
-    evals.push(await engine.analyze(fens[i], `movetime ${movetime}`));
-    opts.onPosition?.(i + 1, fens.length);
-  }
-
-  const dropAt = (i: number) => winPercent(evals[i]) - (100 - winPercent(evals[i + 1])); // user to move at i
   const mistakes: GameMistake[] = [];
   let userMoves = 0;
-  for (let i = 0; i < moves.length; i++) {
-    const m = moves[i];
-    if (m.color !== game.color) continue;
+  g.moves.forEach((m, i) => {
+    if (m.color !== game.color) return;
     userMoves++;
-    if (!kindOf(dropAt(i))) continue;
-    // A fast search is noisy: confirm every suspect with a 6x longer look at both positions.
-    if (opts.cancelled?.()) return null;
-    evals[i] = await engine.analyze(fens[i], `movetime ${movetime * 6}`);
-    evals[i + 1] = await engine.analyze(fens[i + 1], `movetime ${movetime * 6}`);
-    const drop = dropAt(i);
+    const drop = dropOf(evals[i]!, evals[i + 1]!);
     const kind = kindOf(drop);
-    const bestUci = evals[i].bestMove;
-    if (!kind || bestUci === m.from + m.to + (m.promotion ?? '')) continue;
+    const bestUci = evals[i]!.bestMove;
+    if (!kind || bestUci === m.from + m.to + (m.promotion ?? '')) return;
     const moveNumber = Math.floor(i / 2) + 1;
-    const best = new Chess(m.before).move({ from: bestUci.slice(0, 2), to: bestUci.slice(2, 4), promotion: bestUci[4] ?? 'q' }).san;
-    mistakes.push({ fen: m.before, moveNumber, played: m.san, best, bestUci, drop, kind, phase: phaseOf(m.before, moveNumber), gameUrl: game.url });
-  }
+    mistakes.push({ fen: m.before, moveNumber, played: m.san, best: uciToSan(m.before, bestUci), bestUci, drop, kind, phase: phaseOf(m.before, moveNumber), gameUrl: game.url });
+  });
   return { url: game.url, userMoves, mistakes };
 }
 

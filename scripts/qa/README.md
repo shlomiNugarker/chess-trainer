@@ -19,7 +19,7 @@ npx vite preview --port 4173          # in a second terminal
 python scripts/qa/learn_lines.py      # "Test me" on every line of every repertoire (~15 min)
 python scripts/qa/play.py             # Play: training in every repertoire, leaving the line, a regular game, hints and games that must not leak (~4 min)
 python scripts/qa/screens.py          # Learn extras, puzzles (solved to the end), my mistakes, review, account, phone, offline (~4 min)
-python scripts/qa/nav.py              # the Back button, a game that survives a reload, the daily goal (~2 min)
+python scripts/qa/nav.py              # the Back button, reload, daily goal, keyboard in dialogs, a slow or missing engine (~3 min)
 ```
 
 On Windows you can start and stop the preview server from PowerShell:
@@ -31,7 +31,7 @@ Get-NetTCPConnection -LocalPort 4173 -State Listen | ForEach-Object { Stop-Proce
 
 ### Sync
 
-Signing in and syncing between devices runs against the local Firebase emulators (Java and `firebase-tools` needed), never against the real project. The other scripts run on a build without Firebase, so they do not cover it.
+Signing in, syncing between devices and `firestore.rules` run against the local Firebase emulators (Java and `firebase-tools` needed), never against the real project. The other scripts run on a build without Firebase, so they do not cover it.
 
 ```bash
 firebase emulators:start --only auth,firestore --project demo-chess     # in a second terminal

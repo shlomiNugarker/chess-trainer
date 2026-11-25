@@ -8,6 +8,7 @@ import { EN } from './repertoire.en.ts';
 // keyed by move label: "2.Bf4" for White, "4...Qb6" for Black (checked by scripts/check-lines.ts).
 
 export type Line = {
+  id?: string; // the name it had first, after a rename: progress and the English text are kept by it (lineId)
   name: string;
   moves: string;
   idea?: string;
@@ -1871,6 +1872,9 @@ export const isolateMoves = (he: string) => he.replace(MOVES, (m) => (/[.+#]/.te
 /** The repertoire's name in the current language. */
 export const repName = (r: Repertoire) => (getLang() !== 'he' && EN[r.id]?.name) || isolateMoves(r.name);
 
+/** What a line is known by everywhere but on the screen. */
+export const lineId = (l: Line) => l.id ?? l.name;
+
 /** A line's name, idea and notes: Hebrew in Hebrew, English in every other language (hasExplanations in i18n.ts). */
 export function lineText(r: Repertoire, l: Line) {
   if (l.custom) {
@@ -1883,7 +1887,7 @@ export function lineText(r: Repertoire, l: Line) {
       notes: {} as Record<string, string>,
     };
   }
-  const en = getLang() !== 'he' ? EN[r.id]?.lines[l.name] : undefined;
+  const en = getLang() !== 'he' ? EN[r.id]?.lines[lineId(l)] : undefined;
   return en ?? hebrewText(l);
 }
 
@@ -1919,7 +1923,7 @@ export function lineMoves(moves: string): Move[] {
 }
 
 const movesCache = new WeakMap<Line, Move[]>();
-const movesOf = (l: Line) => {
+export const movesOf = (l: Line) => {
   let m = movesCache.get(l);
   if (!m) movesCache.set(l, (m = lineMoves(l.moves)));
   return m;

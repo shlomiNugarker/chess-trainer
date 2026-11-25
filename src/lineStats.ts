@@ -3,7 +3,7 @@
 
 import type { LineRecord } from './mastery';
 import type { Mistake } from './mistakes';
-import { lineMoves, moveLabel, posKey, type Repertoire } from './repertoire';
+import { lineId, lineMoves, moveLabel, posKey, type Repertoire } from './repertoire';
 
 export type LineStat = {
   tries: number; // "test me" runs
@@ -22,7 +22,7 @@ export function lineStats(rep: Repertoire, mastery: Record<string, LineRecord>, 
     missesAt.set(k, (missesAt.get(k) ?? 0) + (m.misses ?? 1));
   }
   return rep.lines.map((l) => {
-    const r = mastery[l.name];
+    const r = mastery[lineId(l)];
     let hardest: LineStat['hardest'];
     lineMoves(l.moves).forEach((mv, ply) => {
       if (mv.color !== rep.userColor) return;

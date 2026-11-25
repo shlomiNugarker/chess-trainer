@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { PREFIX } from './syncMerge';
 
 // Small settings that should survive a reload (level, threshold, username...).
-
-const PREFIX = 'chess-trainer:';
 
 export function readStored<T>(key: string, fallback: T): T {
   try {
@@ -10,6 +9,14 @@ export function readStored<T>(key: string, fallback: T): T {
     return raw === null ? fallback : (JSON.parse(raw) as T);
   } catch {
     return fallback;
+  }
+}
+
+export function writeStored(key: string, value: unknown) {
+  try {
+    localStorage.setItem(PREFIX + key, JSON.stringify(value));
+  } catch {
+    /* storage unavailable — ignore */
   }
 }
 
@@ -24,11 +31,7 @@ export function useStored<T>(key: string, initial: T) {
   useEffect(() => {
     if (Object.is(saved.current, value)) return;
     saved.current = value;
-    try {
-      localStorage.setItem(PREFIX + key, JSON.stringify(value));
-    } catch {
-      /* storage unavailable — ignore */
-    }
+    writeStored(key, value);
   }, [key, value]);
   return [value, setValue] as const;
 }

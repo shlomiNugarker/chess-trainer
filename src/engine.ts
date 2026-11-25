@@ -8,11 +8,21 @@ export type Analysis = {
   pv: string[]; // principal variation in UCI, starting with bestMove
 };
 
+/** Fired on window when an engine could not start (detail: false), and if it starts after all (true). */
+export const ENGINE_STATUS = 'chess-trainer:engine-status';
+const START_TIMEOUT = 25_000;
+
+const announce = (ok: boolean) => window.dispatchEvent(new CustomEvent(ENGINE_STATUS, { detail: ok }));
+
 export class Engine {
   private worker: Worker;
   private queue: Promise<unknown> = Promise.resolve();
   private listener: ((line: string) => void) | null = null;
-  private ready: Promise<void>;
+  /** Settles once the engine has started (cancel() does not touch it). */
+  readonly ready: Promise<void>;
+  private round = 0; // cancel() starts a new one: searches of an older round are dropped
+  private searching = false;
+  private startTimer: ReturnType<typeof setTimeout>;
 
   constructor() {
     // resolved here, not at module load, so pure helpers in this file also run under Node (scripts/)
@@ -21,19 +31,27 @@ export class Engine {
       const line = typeof e.data === 'string' ? e.data : String(e.data);
       this.listener?.(line);
     };
+    this.worker.onerror = () => announce(false);
+    this.startTimer = setTimeout(() => announce(false), START_TIMEOUT); // e.g. the .wasm file did not arrive
     this.ready = this.exec(['uci'], (l) => l === 'uciok').then(() =>
       this.exec(['isready'], (l) => l === 'readyok'),
-    ).then(() => undefined);
+    ).then(() => {
+      clearTimeout(this.startTimer);
+      announce(true);
+    });
   }
 
   /** Send commands and resolve once `done(line)` returns true. Commands are serialized. */
-  private exec(cmds: string[], done: (line: string) => boolean, onLine?: (l: string) => void) {
+  private exec(cmds: string[], done: (line: string) => boolean, onLine?: (l: string) => void, dropped?: () => boolean) {
     const run = () =>
       new Promise<void>((resolve) => {
+        if (dropped?.()) return resolve();
+        this.searching = !!dropped;
         this.listener = (line) => {
           onLine?.(line);
           if (done(line)) {
             this.listener = null;
+            this.searching = false;
             resolve();
           }
         };
@@ -54,8 +72,18 @@ export class Engine {
     await this.exec(['ucinewgame', 'isready'], (l) => l === 'readyok');
   }
 
+  /**
+   * Forget the searches asked for so far: the one running stops now, those waiting are skipped (their promises
+   * never settle). For callers that have moved on, e.g. after "take back": the next search starts at once.
+   */
+  cancel() {
+    this.round++;
+    if (this.searching) this.worker.postMessage('stop');
+  }
+
   /** Search a position. `go` is e.g. "movetime 700" or "depth 14". */
   async analyze(fen: string, go = 'movetime 700'): Promise<Analysis> {
+    const round = this.round;
     await this.ready;
     let cp: number | null = null;
     let mate: number | null = null;
@@ -76,12 +104,15 @@ export class Engine {
         }
         if (l.startsWith('bestmove')) bestMove = l.split(' ')[1];
       },
+      () => round !== this.round,
     );
+    if (round !== this.round) return new Promise(() => {});
     // the last full info line normally ends in bestmove's line; if not, keep just the move itself
     return { bestMove, cp, mate, pv: pv[0] === bestMove ? pv : bestMove ? [bestMove] : [] };
   }
 
   terminate() {
+    clearTimeout(this.startTimer);
     this.worker.terminate();
   }
 }

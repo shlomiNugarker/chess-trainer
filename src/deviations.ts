@@ -24,7 +24,7 @@ export type UserDeviation = {
   lastUrl: string;
 };
 
-const MAX_GAMES = 400; // the most recent; enough for a picture and fast to parse
+const RECENT_GAMES = 400; // the most recent; enough for a picture and fast to parse
 const MAX_PLIES = 30;
 
 /** Walks one game through one repertoire's book. */
@@ -47,7 +47,7 @@ export function findDeviations(games: GameSummary[], reps: Repertoire[]) {
   const opp = new Map<string, OpponentDeviation>();
   const mine = new Map<string, UserDeviation>();
 
-  for (const g of games.slice(-MAX_GAMES)) {
+  for (const g of games.slice(-RECENT_GAMES)) {
     const own = reps.filter((r) => r.userColor === g.color);
     if (!own.length) continue;
     let sans: string[];

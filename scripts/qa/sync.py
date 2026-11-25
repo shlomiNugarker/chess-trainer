@@ -2,7 +2,7 @@
 
 Needs the emulators and an emulator build of the app, see README.md ("Sync"). Every browser context is one device.
 """
-import json, time, urllib.request, uuid
+import json, time, urllib.error, urllib.request, uuid
 from playwright.sync_api import Error, sync_playwright
 from common import Report, args, wait_until
 
@@ -118,6 +118,41 @@ class Device:
         return done
 
 
+def rules():
+    """firestore.rules, asked directly: each user only their own document, and only of the right shape."""
+    def call(url, method='GET', body=None, token=None):
+        headers = {'Content-Type': 'application/json'}
+        if token: headers['Authorization'] = f'Bearer {token}'
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, method=method, headers=headers, data=json.dumps(body).encode() if body is not None else None)) as res:
+                return res.status, json.load(res)
+        except urllib.error.HTTPError as e:
+            return e.code, None
+
+    def person(name):
+        body = {'postBody': 'id_token=' + json.dumps({'sub': name, 'email': f'{name}@example.com', 'email_verified': True}) + '&providerId=google.com', 'requestUri': 'http://localhost', 'returnSecureToken': True}
+        res = call('http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key=demo', 'POST', body)[1]
+        return res['localId'], res['idToken']
+
+    base = f'http://127.0.0.1:8080/v1/projects/{PROJECT}/databases/(default)/documents'
+    good = {'data': {'mapValue': {}}, 'stamps': {'mapValue': {}}, 'updatedAt': {'integerValue': '1'}}
+    write = lambda path, fields, token: call(f'{base}/{path}', 'PATCH', {'fields': fields}, token)[0]
+    (u1, t1), (u2, t2) = person('rules-one'), person('rules-two')
+    r.check(write(f'users/{u1}', good, t1) == 200, 'rules: a user writes their own document')
+    r.check(call(f'{base}/users/{u1}', token=t1)[0] == 200, 'rules: and reads it')
+    r.check(call(f'{base}/users/{u1}', token=t2)[0] == 403 and write(f'users/{u1}', good, t2) == 403, "rules: not another user's")
+    r.check(call(f'{base}/users/{u1}')[0] == 403 and write(f'users/{u1}', good, None) == 403, 'rules: nobody without signing in')
+    r.check(call(f'{base}/users', token=t1)[0] == 403, 'rules: no list of users')
+    r.check(write(f'other/{u1}', good, t1) == 403 and write(f'users/{u1}/more/x', good, t1) == 403, 'rules: nothing outside users/{uid}')
+    for label, bad in (('an extra field', {**good, 'x': {'stringValue': 'y'}}), ('data that is not a map', {**good, 'data': {'stringValue': 'y'}}),
+                       ('stamps that are not a map', {**good, 'stamps': {'stringValue': 'y'}}), ('a time that is not a number', {**good, 'updatedAt': {'stringValue': 'y'}}),
+                       ('no time', {k: v for k, v in good.items() if k != 'updatedAt'})):
+        r.check(write(f'users/{u2}', bad, t2) == 403, f'rules: refused with {label}')
+    r.check(call(f'{base}/users/{u1}', 'DELETE', token=t1)[0] == 200, 'rules: a user deletes their own document')
+
+
+clear_emulators()
+rules()
 clear_emulators()
 with sync_playwright() as p:
     b = p.chromium.launch()
@@ -282,6 +317,32 @@ with sync_playwright() as p:
     r.check(D.page.locator('.account-panel').count() == 0, 'trying again loads a fresh page')
     r.check(D.sign_in(), 'and signing in works there')
     D.ctx.close()
+    # ---- too much for one document ----
+    G = Device(b, 'big', 'big' + uuid.uuid4().hex[:6])
+    G.open()
+    known = set(cloud_users())
+    G.sign_in()
+    G.set('skill', 12)
+    wait_until(lambda: any(d.get('skill') == 12 for u, d in cloud_users().items() if u not in known), 15)
+    G.page.evaluate("k => localStorage.setItem(k, JSON.stringify([{ fen: 'x'.repeat(1100000), repertoire: 'london', at: 1, due: 1 }]))", P + 'mistakes')
+    G.account()
+    r.check(wait_until(lambda: 'too much data' in G.page.locator('.sync-status').inner_text(), 15), 'too much to sync: the account panel says so', G.page.locator('.sync-status').inner_text())
+    r.check(len(G.get('mistakes')) == 1 and any(d.get('skill') == 12 for u, d in cloud_users().items() if u not in known), 'nothing is lost, here or in the cloud')
+    G.set('mistakes', [])
+    r.check(wait_until(lambda: 'Synced' in G.page.locator('.sync-status').inner_text(), 15), 'and syncing goes on when it fits again')
+    G.ctx.close()
+
+    # ---- a clock that is behind: its change is still the newer one ----
+    H, K = Device(b, 'clock-ahead', 'clock'), Device(b, 'clock-behind', 'clock')
+    K.ctx.add_init_script('{ const now = Date.now; Date.now = () => now() - 3600000; }')
+    H.open(); H.sign_in(); H.set('skill', 4); H.page.wait_for_timeout(5000)
+    K.open(); K.sign_in()
+    r.check(K.get('skill') == 4, 'the device whose clock is an hour behind gets the setting', str(K.get('skill')))
+    K.set('skill', 15); K.page.wait_for_timeout(5000)
+    H.page.reload(); H.page.wait_for_selector('.tabs')
+    r.check(wait_until(lambda: H.get('skill') == 15, 15), 'and its later change wins', str(H.get('skill')))
+    H.ctx.close(); K.ctx.close()
+
     # ---- another Google account on the same device ----
     first, second = 'first' + uuid.uuid4().hex[:6], 'second' + uuid.uuid4().hex[:6]
     F = Device(b, 'shared', first)
@@ -326,6 +387,8 @@ with sync_playwright() as p:
     F.page.locator('.google-btn').click()
     F.page.wait_for_timeout(6000)
     r.check(F.get('chesscom-user') == 'first-player' and len(F.get('mistakes') or []) == 1, 'full storage: the first account stays on the device', str(F.get('chesscom-user')))
+    F.account()
+    r.check('No room' in F.page.locator('.sync-status').inner_text(), 'full storage: the account panel says why', F.page.locator('.sync-status').inner_text())
     r.check(cloud_users()[two].get('chesscom-user') == 'second-player' and 'mistakes' not in cloud_users()[two], 'full storage: and is not uploaded to the second', str(cloud_users()[two]))
     F.ctx.close()
 
