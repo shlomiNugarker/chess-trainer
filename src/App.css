@@ -986,10 +986,16 @@ aside {
   .tab-icon { font-size: 20px; opacity: 1; }
   .lang-switch { margin: 0; box-shadow: none; flex: 0.8; }
 
+  /* beside the icon, not on it: "235" is wider than the icon */
   .badge {
     position: absolute;
-    top: 6px;
-    inset-inline-end: calc(50% - 22px);
+    top: 3px;
+    inset-inline-start: calc(50% + 8px);
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    font-size: 10px;
+    line-height: 16px;
   }
 
   /* settings: one chip that opens a bottom sheet */
@@ -1296,3 +1302,28 @@ button.progress-pill { border: none; cursor: pointer; font: inherit; }
 
 /* direction glyphs that the browser does not mirror by itself (‹ › are mirrored, ⏮ ⏭ are not) */
 [dir='rtl'] .rtl-flip { display: inline-block; transform: scaleX(-1); }
+
+/* ---------- touch: what a finger taps is 44px tall ---------- */
+@media (max-width: 600px), (pointer: coarse) {
+  button, .account-foot a, .manage-row { min-height: 44px; }
+  .icon-btn { min-width: 44px; }
+  .account-foot a, .small-link { display: inline-flex; align-items: center; min-height: 44px; }
+  .manage-row input { width: 22px; height: 22px; }
+  button.link { padding-block: 6px; }
+  .moves { padding-block: 4px; }
+  .moves button.move, .review-moves button.move { min-width: 34px; padding-inline: 6px; }
+}
+
+/* ---------- game review on a phone ---------- */
+@media (max-width: 600px) {
+  .wide-only { display: none; }
+  .game-review-head { flex-wrap: nowrap; gap: 8px; margin-bottom: 6px; }
+  .game-review-head > button { flex: none; min-width: 44px; padding: 0 12px; font-size: 20px; }
+  .game-review-title { flex: 1; flex-wrap: nowrap; }
+  .game-review-title > * { flex: none; }
+  .game-review-title .game-review-info { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* the board gives up a little height so the whole coach card fits above the tab bar; svh: it does not change
+     size when the browser's own bars come and go */
+  .learn .board-wrap { width: min(100%, max(300px, calc(100svh - 344px))); } /* the start of the explanation stays in view */
+  .game-review .board-wrap { width: min(100%, max(292px, calc(100svh - 334px - env(safe-area-inset-bottom)))); }
+}

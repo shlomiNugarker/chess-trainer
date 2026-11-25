@@ -5,7 +5,7 @@ import { DROP, Engine, whiteWinPercent, winPercent } from './engine';
 import { REPERTOIRES, buildBook, lineInfo, noteForNext, posKey, repName } from './repertoire';
 import { useHiddenRepertoires, visibleOf } from './hiddenReps';
 import { useRepertoire, withCustom } from './customLines';
-import { MISTAKES_CHANGED, loadMistakes, saveMistake } from './mistakes';
+import { practiceMistakes, saveMistake, useMistakeCount } from './mistakes';
 import { BLUE_ARROW, BOARD_THEME, GREEN_ARROW, LAST_MOVE, WRONG_MOVE, judge, ltr, pvToSan, sanToUci, uciToArrow, uciToSan } from './chessUtils';
 import { useStored } from './storage';
 import { LEARN_UNTIL, clearLearned, learnMove, loadLearned } from './learned';
@@ -58,6 +58,8 @@ const thresholds = () => [
 /** A request from another screen to start training a repertoire (nonce makes repeats count). */
 export type TrainRequest = { repertoireId: string; nonce: number };
 
+const practiceCount = () => practiceMistakes().length;
+
 export default function Trainer({ trainRequest, active = true }: { trainRequest?: TrainRequest | null; active?: boolean }) {
   const [mode, setMode] = useState<Mode>('train');
   const modeRef = useRef<Mode>('train'); // read by callbacks that must see a mode switch immediately
@@ -98,7 +100,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [notice, setNotice] = useState<string>('');
   const [hint, setHint] = useState<Arrow | null>(null);
-  const [mistakeCount, setMistakeCount] = useState(loadMistakes().length);
+  const mistakeCount = useMistakeCount(practiceCount);
   const [engineReady, setEngineReady] = useState(false);
 
   const opponent = useRef<Engine | null>(null);
@@ -122,12 +124,6 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
   useEffect(() => {
     opponent.current?.setOption('Skill Level', skill);
   }, [skill]);
-
-  useEffect(() => {
-    const refresh = () => setMistakeCount(loadMistakes().length);
-    window.addEventListener(MISTAKES_CHANGED, refresh);
-    return () => window.removeEventListener(MISTAKES_CHANGED, refresh);
-  }, []);
 
   const sync = useCallback(() => {
     const g = gameRef.current;
@@ -312,7 +308,6 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
         }
         const correct = expected[0];
         saveMistake({ fen: fenBefore, played: move.san, correct, source: 'book', repertoire: rep.id });
-        setMistakeCount(loadMistakes().length);
         playSound('error', 0.12);
         setFeedback({
           kind: 'book',
@@ -374,7 +369,6 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
       const stopAt = inLearningZone && correctAll ? LEARN_STOP_DROP : threshold;
       if (drop >= stopAt) {
         saveMistake({ fen: fenBefore, played: move.san, correct: bestSan, source: 'engine', repertoire: rep.id, drop });
-        setMistakeCount(loadMistakes().length);
         const line = pvToSan(fenBefore, pre.pv);
         playSound('error', 0.12);
         setFeedback({

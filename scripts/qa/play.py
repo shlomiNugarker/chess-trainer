@@ -194,7 +194,7 @@ with sync_playwright() as p:
             settings(pg2, mode='train'); pg2.wait_for_timeout(1500)
             was = count()
             pg2.evaluate("""() => { const k = 'chess-trainer:mistakes', l = JSON.parse(localStorage.getItem(k) || '[]');
-              l.push({ fen: 'x', played: 'a3', correct: 'a4', source: 'book', repertoire: 'london', at: 1, box: 0, due: 1 });
+              l.push({ fen: 'x', played: 'a3', correct: 'a4', source: 'book', repertoire: 'italian', at: 1, box: 0, due: 1 });
               localStorage.setItem(k, JSON.stringify(l)); window.dispatchEvent(new Event('chess-trainer:mistakes-changed')); }""")
             pg2.wait_for_timeout(300)
             r.check(count() == was + 1, 'the "To review" count follows a mistake saved on another screen', f'{was} -> {count()}')

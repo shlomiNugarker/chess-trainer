@@ -1,5 +1,8 @@
 // Mistakes are saved locally and drilled later with spaced repetition (Leitner boxes).
 
+import { useEffect, useState } from 'react';
+import { HIDDEN_CHANGED, hiddenIds } from './hiddenReps';
+
 export type Mistake = {
   fen: string; // position before the mistake (user to move)
   played: string; // SAN
@@ -51,9 +54,15 @@ export function saveMistake(m: Omit<Mistake, 'at' | 'box' | 'due'>) {
   store(all);
 }
 
+/** The mistakes to practice: all but those of hidden openings (they stay saved, and come back with the opening). */
+export function practiceMistakes(): Mistake[] {
+  const hidden = hiddenIds();
+  return loadMistakes().filter((m) => !hidden.includes(m.repertoire));
+}
+
 /** Mistakes due for review now, oldest due first. */
 export function dueMistakes(now = Date.now()): Mistake[] {
-  return loadMistakes()
+  return practiceMistakes()
     .filter((m) => m.due <= now)
     .sort((a, b) => a.due - b.due);
 }
@@ -72,4 +81,21 @@ export function recordReview(m: Pick<Mistake, 'fen' | 'repertoire'>, correct: bo
   }
   x.reviewed = now;
   store(all);
+}
+
+/** A count of mistakes that follows every change: new ones, reviews, hidden openings, cards becoming due. */
+export function useMistakeCount(count: () => number): number {
+  const [n, setN] = useState(count);
+  useEffect(() => {
+    const refresh = () => setN(count());
+    window.addEventListener(MISTAKES_CHANGED, refresh);
+    window.addEventListener(HIDDEN_CHANGED, refresh);
+    const timer = setInterval(refresh, 60_000);
+    return () => {
+      window.removeEventListener(MISTAKES_CHANGED, refresh);
+      window.removeEventListener(HIDDEN_CHANGED, refresh);
+      clearInterval(timer);
+    };
+  }, [count]);
+  return n;
 }

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard, type Arrow } from 'react-chessboard';
 import { Engine, winPercent } from './engine';
-import { MAX_BOX, dueMistakes, loadMistakes, recordReview, type Mistake } from './mistakes';
+import { MAX_BOX, dueMistakes, loadMistakes, practiceMistakes, recordReview, type Mistake } from './mistakes';
 import { REPERTOIRES, repName } from './repertoire';
 import { formatDate, tr } from './i18n';
 import { BOARD_THEME, GREEN_ARROW, ltr, sanToUci, uciToArrow } from './chessUtils';
@@ -97,7 +97,8 @@ export default function Drill() {
   };
 
   if (!current) {
-    const all = loadMistakes();
+    const all = practiceMistakes();
+    const inHidden = loadMistakes().length - all.length;
     const nextDue = all.length ? Math.min(...all.map((m) => m.due)) : null;
     return (
       <div className="card drill-empty">
@@ -107,7 +108,7 @@ export default function Drill() {
             ? tr(`כל הכבוד! פתרת ${solved} תרגילים.`, `Well done! You solved ${solved} exercises.`)
             : tr('אין מה לחזור היום 🎉', 'Nothing to review today 🎉')}
         </h2>
-        <p className="muted">
+        {(all.length > 0 || !inHidden) && <p className="muted">
           {all.length
             ? tr(
                 `יש לך ${all.length} עמדות במאגר. החזרה הבאה: ${formatDate(nextDue!)}.`,
@@ -117,7 +118,15 @@ export default function Drill() {
                 'עוד אין טעויות שמורות. שחק באימון הפתיחות או הרץ ניתוח מנוע בסקירה — כל טעות תגיע לכאן.',
                 'No saved mistakes yet. Train an opening or run an engine analysis in My review — every mistake ends up here.',
               )}
-        </p>
+        </p>}
+        {inHidden > 0 && (
+          <p className="muted">
+            {tr(
+              `${inHidden} עמדות שמורות בפתיחות שהסתרת. הן יחזרו כשתציג את הפתיחה ב"למד".`,
+              `${inHidden} positions are saved in openings you have hidden. They come back when you show the opening in Learn.`,
+            )}
+          </p>
+        )}
       </div>
     );
   }

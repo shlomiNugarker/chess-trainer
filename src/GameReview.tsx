@@ -198,11 +198,11 @@ export default function GameReview({ game, username, active, onClose, onLearn, o
   return (
     <div className="game-review">
       <header className="game-review-head">
-        <button className="ghost" onClick={onClose}>‹ {tr('חזרה למשחקים', 'Back to games')}</button>
+        <button className="ghost" onClick={onClose} aria-label={tr('חזרה למשחקים', 'Back to games')}>‹ <span className="wide-only">{tr('חזרה למשחקים', 'Back to games')}</span></button>
         <div className="game-review-title">
-          <strong>{tr('סקירת משחק', 'Game review')}</strong>
+          <strong className="wide-only">{tr('סקירת משחק', 'Game review')}</strong>
           <span className={`pill result-${game.result}`}>{resultText}</span>
-          <span className="muted">{tr('מול', 'vs')} {game.opponent} · {formatDate(game.endTime)} · {game.opening}</span>
+          <span className="muted game-review-info">{tr('מול', 'vs')} <bdi>{game.opponent}</bdi><span className="wide-only"> · {formatDate(game.endTime)} · {game.opening}</span></span>
           <a href={game.url} target="_blank" rel="noreferrer" className="small-link">Chess.com ↗</a>
         </div>
       </header>

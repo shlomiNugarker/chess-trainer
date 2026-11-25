@@ -270,8 +270,8 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
           <h3>{tr('אילו פתיחות להציג', 'Which openings to show')}</h3>
           <p className="muted">
             {tr(
-              'פתיחה מוסתרת לא מופיעה כאן ובבחירת הפתיחה באימון. שום דבר לא נמחק — אפשר להחזיר אותה בכל רגע.',
-              'A hidden opening doesn’t appear here or in the training opening picker. Nothing is deleted — you can show it again any time.',
+              'פתיחה מוסתרת לא מופיעה כאן, בבחירת הפתיחה באימון וב"הטעויות שלי". שום דבר לא נמחק — אפשר להחזיר אותה בכל רגע.',
+              'A hidden opening doesn’t appear here, in the training opening picker or in My mistakes. Nothing is deleted — you can show it again any time.',
             )}
           </p>
           {REPERTOIRES.map((r) => {

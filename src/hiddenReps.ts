@@ -1,5 +1,5 @@
-// Repertoires the user chose to hide from the pickers (say, an opening they don't play). Nothing is deleted:
-// progress stays, and a hidden repertoire can be shown again. Shared by Learn and the Trainer (both can be
+// Repertoires the user chose to hide from the pickers and the practice (say, an opening they don't play).
+// Nothing is deleted: progress stays, and a hidden repertoire can be shown again. Shared by Learn and the Trainer (both can be
 // mounted at once), stored like every other setting, so it syncs between devices.
 
 import { useMemo, useSyncExternalStore } from 'react';
@@ -7,6 +7,9 @@ import { REPERTOIRES, type Repertoire } from './repertoire';
 
 const KEY = 'chess-trainer:hidden-repertoires';
 const listeners = new Set<() => void>();
+
+/** Fired on window when an opening is hidden or shown, so counters elsewhere can refresh. */
+export const HIDDEN_CHANGED = 'chess-trainer:hidden-changed';
 
 function read(): string {
   try {
@@ -40,6 +43,12 @@ export function visibleOf(hidden: string[]): Repertoire[] {
   return v.length ? v : REPERTOIRES;
 }
 
+/** Ids of the hidden repertoires, outside React. */
+export function hiddenIds(): string[] {
+  const hidden = parse(read());
+  return REPERTOIRES.every((r) => hidden.includes(r.id)) ? [] : hidden;
+}
+
 export function useHiddenRepertoires() {
   const raw = useSyncExternalStore(subscribe, read, () => '[]');
   const hidden = useMemo(() => parse(raw), [raw]);
@@ -53,6 +62,7 @@ export function useHiddenRepertoires() {
       /* storage unavailable — ignore */
     }
     listeners.forEach((fn) => fn());
+    window.dispatchEvent(new Event(HIDDEN_CHANGED));
   };
   return { hidden, visible, toggle };
 }

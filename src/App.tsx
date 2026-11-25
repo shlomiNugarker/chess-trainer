@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Trainer, { type TrainRequest } from './Trainer';
 import Review from './Review';
 import Practice, { type PracticeView } from './Practice';
 import Learn from './Learn';
-import { MISTAKES_CHANGED, dueMistakes } from './mistakes';
+import { dueMistakes, useMistakeCount } from './mistakes';
 import { useStored } from './storage';
 import { dir, setLang, tr, useLang } from './i18n';
 import Account from './Account';
@@ -14,6 +14,8 @@ import './App.css';
 
 type Screen = 'play' | 'learn' | 'review' | 'drill';
 
+const dueCount = () => dueMistakes().length;
+
 export default function App() {
   const [screen, setScreen] = useStored<Screen>('screen', 'learn'); // first visit starts at Learn; then the last tab
   const [trainRequest, setTrainRequest] = useState<TrainRequest | null>(null);
@@ -23,20 +25,10 @@ export default function App() {
     setPracticeView(v);
     setScreen('drill');
   };
-  const [due, setDue] = useState(() => dueMistakes().length);
+  const due = useMistakeCount(dueCount);
   const lang = useLang(); // re-renders the whole app when the language changes
   const cloud = useCloud();
   const [accountOpen, setAccountOpen] = useState(false);
-
-  useEffect(() => {
-    const refresh = () => setDue(dueMistakes().length);
-    window.addEventListener(MISTAKES_CHANGED, refresh);
-    const timer = setInterval(refresh, 60_000); // cards become due as time passes
-    return () => {
-      window.removeEventListener(MISTAKES_CHANGED, refresh);
-      clearInterval(timer);
-    };
-  }, []);
 
   const tabs: { id: Screen; label: string; icon: string; badge?: number }[] = [
     { id: 'play', label: tr('שחק', 'Play'), icon: '♟' },

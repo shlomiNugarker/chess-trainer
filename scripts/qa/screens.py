@@ -1,11 +1,12 @@
 """QA: Learn extras, Practice (puzzles, my mistakes), My review, account and language, phone layouts, offline.
 
-    python scripts/qa/screens.py [--url URL] [--only learn,puzzles,mistakes,review,account,phone,offline]
+    python scripts/qa/screens.py [--url URL] [--only learn,puzzles,mistakes,review,account,phone,touch,offline]
                                  [--chesscom USER] [--account-url URL]
 
 The review section loads real games from Chess.com; the account panel needs a build with Firebase configured,
 so by default it is checked on the live site.
 """
+import re
 import json, time
 from playwright.sync_api import sync_playwright
 from common import LIVE, Report, args, hscroll, lines, puzzles_by_board, wait_until
@@ -361,6 +362,95 @@ def phone(b):
         ctx.close()
 
 
+# buttons a finger must hit (shorter than 44px), among the ones that can be seen now
+SMALL_JS = """() => [...document.querySelectorAll('button, .account-panel a, .manage-row')].filter(e => e.offsetParent !== null && !e.disabled)
+  .map(e => [e, e.getBoundingClientRect().height]).filter(([, h]) => h > 0 && h < 43.5)
+  .map(([e, h]) => `${e.className || e.tagName}:${Math.round(h)}`)"""
+BADGE_JS = """() => { const b = document.querySelector('.tabs .badge').getBoundingClientRect(), t = document.querySelector('.tabs .badge').closest('button');
+  const i = t.querySelector('.tab-icon').getBoundingClientRect(), l = t.querySelector('.tab-label').getBoundingClientRect(), tb = t.getBoundingClientRect();
+  const over = (x) => Math.max(0, Math.min(b.right, x.right) - Math.max(b.left, x.left)) * Math.max(0, Math.min(b.bottom, x.bottom) - Math.max(b.top, x.top));
+  return { icon: over(i) / (i.width * i.height), label: over(l), inside: b.left >= tb.left - 1 && b.right <= tb.right + 1 && b.top >= tb.top }; }"""
+SEED_JS = """(n) => { const l = []; for (let i = 0; i < n; i++) l.push({ fen: `r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - ${i} 3`,
+  played: 'a3', correct: 'Bc4', source: 'book', repertoire: i < 15 ? 'london' : 'italian', at: 1, box: 0, due: i + 1 });
+  localStorage.setItem('chess-trainer:mistakes', JSON.stringify(l)); localStorage.setItem('chess-trainer:guide-dismissed', 'true'); }"""
+
+
+@section('touch')
+def touch(b):
+    """Phones: sizes for a finger, the badge, hidden openings in the practice, and the game review on a small screen."""
+    for tag, locale, w, h in [('touch-he', 'he-IL', 375, 667), ('touch-en', 'en-US', 360, 740)]:
+        ctx, pg = open_page(b, tag, locale, w, h)
+        pg.evaluate(SEED_JS, 235); pg.reload(); pg.wait_for_selector('.tabs')
+        badge = lambda: int(pg.locator('.tabs .badge').inner_text()) if pg.locator('.tabs .badge').count() else 0
+        r.check(badge() == 235, f'{tag}: 235 positions to review', str(badge()))
+        o = pg.evaluate(BADGE_JS)
+        r.check(o['icon'] < 0.2 and o['label'] == 0 and o['inside'], f'{tag}: the badge does not hide the icon', str(o))
+        for i, name in [(0, 'Play'), (1, 'Learn'), (3, 'Practice')]:
+            tab(pg, i); time.sleep(1.5)
+            small = pg.evaluate(SMALL_JS)
+            r.check(not small, f'{tag}: {name} has no button too small for a finger', f'{len(small)}: {sorted(set(small))[:6]}')
+            r.check(hscroll(pg) <= 0, f'{tag}: {name} has no horizontal scroll')
+            r.shot(pg, f'{tag}-{name}')
+        tab(pg, 1); time.sleep(0.8)
+        end = pg.evaluate("document.querySelector('.learn .stepper').getBoundingClientRect().bottom")
+        bar = pg.evaluate("document.querySelector('.tabs').getBoundingClientRect().top")
+        r.check(end + 40 <= bar, f'{tag}: Learn shows the step buttons and the start of the explanation without scrolling', f'{end:.0f} / {bar:.0f}')
+
+        # hidden openings leave the practice and come back
+        pg.click('.manage-chip'); box = pg.locator('.manage-row input[type="checkbox"]').nth([x['id'] for x in data].index('london'))
+        time.sleep(0.3)
+        small = pg.evaluate(SMALL_JS)
+        r.check(not small, f'{tag}: the list of openings has no row too small for a finger', f'{len(small)}: {sorted(set(small))[:6]}')
+        box.uncheck(); time.sleep(0.5)
+        r.check(badge() == 220, f'{tag}: hiding an opening takes its positions out at once', str(badge()))
+        r.check('220' in pg.locator('.today').inner_text(), f'{tag}: also in "today"', pg.locator('.today').inner_text()[:60].replace('\n', ' '))
+        tab(pg, 0); time.sleep(0.5)
+        r.check(re.search(r'220', pg.locator('.trainer aside').inner_text()) is not None, f'{tag}: and in Play')
+        tab(pg, 3); pg.locator('.segmented button').nth(1).click(); time.sleep(0.8)
+        r.check('220' in pg.locator('.status').last.inner_text() and 'London' not in pg.locator('main').last.inner_text() and 'לונדון' not in pg.locator('main').last.inner_text(),
+                f'{tag}: the practice starts with an opening that is shown', pg.locator('main').last.inner_text()[-120:].replace('\n', ' '))
+        stored = pg.evaluate("JSON.parse(localStorage.getItem('chess-trainer:mistakes')).length")
+        r.check(stored == 235, f'{tag}: nothing was deleted', str(stored))
+        pg.evaluate("""() => { const l = JSON.parse(localStorage.getItem('chess-trainer:mistakes')).filter(m => m.repertoire === 'london');
+          localStorage.setItem('chess-trainer:mistakes', JSON.stringify(l)); }""")
+        pg.reload(); pg.wait_for_selector('.tabs'); tab(pg, 3); pg.locator('.segmented button').nth(1).click(); time.sleep(0.8)
+        r.check(pg.locator('.drill-empty').count() == 1 and '15' in pg.locator('.drill-empty').inner_text() and pg.locator('.drill-empty p').count() == 1, f'{tag}: only hidden ones left: the empty screen says so',
+                pg.locator('.drill-empty').inner_text()[:120].replace('\n', ' ') if pg.locator('.drill-empty').count() else 'not empty')
+        tab(pg, 1); time.sleep(0.5)
+        if not pg.locator('.manage-card').count(): pg.click('.manage-chip')
+        pg.locator('.manage-row input[type="checkbox"]').nth([x['id'] for x in data].index('london')).check(); time.sleep(0.5)
+        r.check(badge() == 15, f'{tag}: showing the opening brings them back', str(badge()))
+
+        # account panel
+        if pg.locator('.account-tab').count():
+            pg.click('.account-tab'); time.sleep(0.4)
+            small = pg.evaluate(SMALL_JS)
+            r.check(not small, f'{tag}: account has no button too small for a finger', f'{len(small)}: {sorted(set(small))[:6]}')
+            pg.locator('.account-panel .icon-btn').click()
+
+        # My review and the game review
+        tab(pg, 2); pg.fill('.review input', a.chesscom); pg.locator('.review button.primary').first.click()
+        pg.wait_for_selector('.recent-game', timeout=180000); time.sleep(1)
+        small = pg.evaluate(SMALL_JS)
+        r.check(not small, f'{tag}: My review has no button too small for a finger', f'{len(small)}: {sorted(set(small))[:6]}')
+        r.check(hscroll(pg) <= 0, f'{tag}: My review has no horizontal scroll')
+        pg.locator('.recent-game').first.click(); pg.wait_for_selector('.game-review')
+        pg.evaluate('scrollTo(0, 0)')
+        for _ in range(9): pg.locator('.stepper button.primary').click()
+        time.sleep(0.5)
+        box = pg.evaluate("""() => { const t = (q) => document.querySelector(q).getBoundingClientRect();
+          return { coach: t('.game-review .coach').bottom, bar: t('.tabs').top, board: t('.game-review .review-board').width, head: t('.game-review-head').height, scroll: scrollY }; }""")
+        r.check(box['coach'] <= box['bar'] and box['scroll'] == 0, f'{tag}: game review shows the whole coach card without scrolling', str(box))
+        info = pg.locator('.game-review-info').inner_text()
+        r.check(not re.search(r'\d{4}', info) and pg.evaluate("(() => { const e = document.querySelector('.game-review-info'); return e.scrollWidth <= e.clientWidth + 1; })()"), f'{tag}: the opponent is not cut', info)
+        r.check(box['board'] >= 260, f'{tag}: and the board is still big', str(box['board']))
+        small = pg.evaluate(SMALL_JS)
+        r.check(not small, f'{tag}: game review has no button too small for a finger', f'{len(small)}: {sorted(set(small))[:6]}')
+        r.check(hscroll(pg) <= 0, f'{tag}: game review has no horizontal scroll')
+        r.shot(pg, f'{tag}-game-review')
+        ctx.close()
+
+
 @section('offline')
 def offline(b):
     ctx, pg = open_page(b, 'offline', 'en-US', 1280, 900)
@@ -391,6 +481,6 @@ with sync_playwright() as p:
     if not a.only: tour(pg, 'desktop-en')
     learn(pg); mistakes(pg); puzzles(pg); review(pg)  # mistakes first: the puzzle section adds its own
     ctx.close()
-    account(b); phone(b); offline(b)
+    account(b); phone(b); touch(b); offline(b)
     b.close()
 r.done()
