@@ -23,7 +23,7 @@ Learn a chess opening repertoire step by step, train it against Stockfish until 
 
 ## Run it
 
-Requires Node.js 22+.
+Requires Node.js 24.
 
 ```bash
 npm install

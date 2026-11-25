@@ -24,6 +24,8 @@ it, copy `node_modules/stockfish/bin/stockfish-<version>-lite-single.{js,wasm}` 
 `src/engine.ts` and `public/sw.js`, bump `CACHE` in `public/sw.js` (installed apps keep the engine, the icons and
 the manifest until it changes) and update `THIRD_PARTY_NOTICES.md`.
 
+Vercel runs the same command as its build (`buildCommand` in `vercel.json`), so a failing check is not deployed.
+
 Please also try your change in the browser, on a narrow phone-sized window as well as on desktop.
 
 For larger changes, also run the browser QA scripts in [`scripts/qa/`](scripts/qa/README.md): they play every repertoire line through the real UI and go through every screen on desktop and phone, in both languages and offline.
