@@ -16,7 +16,7 @@ import {
 import { saveMistake } from './mistakes';
 import { DAILY_GOAL, dayStreak, recordPuzzleDay, todayCount, daysLabel } from './daily';
 import { useStored } from './storage';
-import { tr } from './i18n';
+import { msg, tr } from './i18n';
 import { BOARD_THEME, GREEN_ARROW, LAST_MOVE, ltr, uciToArrow } from './chessUtils';
 import { useClickToMove } from './useClickToMove';
 import { playSound, useMoveSound } from './sound';
@@ -231,7 +231,7 @@ export default function Puzzles() {
       <span className="pill puzzle-rating" title={tr('הדירוג שלך בפאזלים', 'Your puzzle rating')}>
         {tr('דירוג', 'Rating')} <b>{stats.rating}</b>
       </span>
-      <span className={today >= DAILY_GOAL ? 'pill daily-pill done' : 'pill daily-pill'} title={tr(`המטרה היומית: ${DAILY_GOAL} פאזלים`, `Daily goal: ${DAILY_GOAL} puzzles`)}>
+      <span className={today >= DAILY_GOAL ? 'pill daily-pill done' : 'pill daily-pill'} title={tr(`המטרה היומית: ${DAILY_GOAL} פאזלים`, msg`Daily goal: ${DAILY_GOAL} puzzles`)}>
         🎯 {tr('היום', 'Today')} {Math.min(today, DAILY_GOAL)}/{DAILY_GOAL}
       </span>
       {streakDays > 0 && <span className="pill">🔥 {daysLabel(streakDays)}</span>}
@@ -305,10 +305,10 @@ export default function Puzzles() {
                 : status === 'shown'
                   ? tr('זה הפתרון', 'That is the solution')
                   : status === 'solving'
-                    ? tr(`מצא את המהלך הטוב ביותר ל${side}`, `Find the best move for ${side}`)
+                    ? tr(`מצא את המהלך הטוב ביותר ל${side}`, msg`Find the best move for ${side}`)
                     : tr('היריב משחק…', 'Opponent is moving…')}
             </span>
-            <span className="pill">{tr(`פאזל ${puzzle.rating}`, `Puzzle ${puzzle.rating}`)}</span>
+            <span className="pill">{tr(`פאזל ${puzzle.rating}`, msg`Puzzle ${puzzle.rating}`)}</span>
           </div>
 
           {wrong && status === 'solving' && (
@@ -317,7 +317,7 @@ export default function Puzzles() {
               <p className="muted">
                 {tr(
                   `החץ הירוק מראה את המהלך הנכון: ${ltr(applyUci(fen, wrong).san)}. שחק אותו כדי להמשיך. העמדה נשמרה ב"הטעויות שלי".`,
-                  `The green arrow shows the right move: ${applyUci(fen, wrong).san}. Play it to go on. The position was saved to "My mistakes".`,
+                  msg`The green arrow shows the right move: ${applyUci(fen, wrong).san}. Play it to go on. The position was saved to "My mistakes".`,
                 )}
               </p>
             </div>
@@ -328,15 +328,15 @@ export default function Puzzles() {
               <strong>
                 {delta !== null &&
                   (delta >= 0
-                    ? tr(`הדירוג שלך: ${stats.rating} (${ltr('+' + delta)})`, `Your rating: ${stats.rating} (+${delta})`)
-                    : tr(`הדירוג שלך: ${stats.rating} (${ltr(String(delta))})`, `Your rating: ${stats.rating} (${delta})`))}
+                    ? tr(`הדירוג שלך: ${stats.rating} (${ltr('+' + delta)})`, msg`Your rating: ${stats.rating} (+${delta})`)
+                    : tr(`הדירוג שלך: ${stats.rating} (${ltr(String(delta))})`, msg`Your rating: ${stats.rating} (${delta})`))}
               </strong>
-              {themes.length > 0 && <p>{tr(`הנושא: ${themes.join(' · ')}`, `Theme: ${themes.join(' · ')}`)}</p>}
+              {themes.length > 0 && <p>{tr(`הנושא: ${themes.join(' · ')}`, msg`Theme: ${themes.join(' · ')}`)}</p>}
               {goalJustMet && (
                 <p className="daily-done">
                   {tr(
                     `🎯 המטרה היומית הושגה! 🔥 ${daysLabel(streakDays)} ברצף. אפשר להמשיך או לחזור מחר.`,
-                    `🎯 Daily goal reached! 🔥 ${daysLabel(streakDays)} in a row. Keep going, or come back tomorrow.`,
+                    msg`🎯 Daily goal reached! 🔥 ${daysLabel(streakDays)} in a row. Keep going, or come back tomorrow.`,
                   )}
                 </p>
               )}
@@ -360,10 +360,8 @@ export default function Puzzles() {
           </div>
 
           <div className="muted puzzle-stats">
-            {tr(
-              `פתרת ${stats.solved} מתוך ${stats.played}` + (stats.best > 1 ? ` · שיא רצף: ${stats.best}` : ''),
-              `Solved ${stats.solved} of ${stats.played}` + (stats.best > 1 ? ` · Best streak: ${stats.best}` : ''),
-            )}
+            {tr(`פתרת ${stats.solved} מתוך ${stats.played}`, msg`Solved ${stats.solved} of ${stats.played}`)}
+            {stats.best > 1 && ` · ${tr(`שיא רצף: ${stats.best}`, msg`Best streak: ${stats.best}`)}`}
             {' · '}
             <a href={`https://lichess.org/training/${puzzle.id}`} target="_blank" rel="noreferrer">
               {tr('פאזלים: Lichess', 'Puzzles: Lichess')}

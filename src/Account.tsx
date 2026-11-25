@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { preloadCloud, signIn, signOut, useCloud } from './cloud';
-import { setLang, tr, useLang } from './i18n';
+import { explanationsNote } from './repertoire';
+import { LANGS, hasExplanations, locale, setLang, msg, tr, useLang } from './i18n';
 
 /** The account panel: Google sign-in (to keep progress in sync between devices) and the language. */
 export default function Account({ onClose }: { onClose: () => void }) {
@@ -15,12 +16,12 @@ export default function Account({ onClose }: { onClose: () => void }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  const time = cloud.lastSync ? new Date(cloud.lastSync).toLocaleTimeString(lang === 'he' ? 'he-IL' : 'en-GB', { hour: '2-digit', minute: '2-digit' }) : '';
+  const time = cloud.lastSync ? new Date(cloud.lastSync).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' }) : '';
   const statusText = {
     idle: '',
     'signing-in': tr('מתחבר…', 'Signing in…'),
     syncing: tr('מסנכרן…', 'Syncing…'),
-    synced: tr(`מסונכרן ✓${time ? ` · ${time}` : ''}`, `Synced ✓${time ? ` · ${time}` : ''}`),
+    synced: tr(`מסונכרן ✓${time ? ` · ${time}` : ''}`, msg`Synced ✓${time ? ` · ${time}` : ''}`),
     offline: tr('אין חיבור — יסונכרן כשיחזור האינטרנט', 'Offline — will sync when you are back online'),
     error: tr('הסנכרון נכשל — ננסה שוב בקרוב', 'Sync failed — will try again soon'),
   }[cloud.status];
@@ -69,10 +70,12 @@ export default function Account({ onClose }: { onClose: () => void }) {
         <div className="account-row">
           <span>{tr('שפה', 'Language')}</span>
           <div className="chips">
-            <button className={lang === 'he' ? 'chip active' : 'chip'} onClick={() => setLang('he')} lang="he">עברית</button>
-            <button className={lang === 'en' ? 'chip active' : 'chip'} onClick={() => setLang('en')} lang="en">English</button>
+            {LANGS.map((l) => (
+              <button key={l.id} className={l.id === lang ? 'chip active' : 'chip'} aria-pressed={l.id === lang} onClick={() => setLang(l.id)} lang={l.id}>{l.name}</button>
+            ))}
           </div>
         </div>
+        {!hasExplanations(lang) && <p className="muted lang-note">{explanationsNote()}</p>}
 
         {/* GPL: whoever gets the app (and the Stockfish engine in it) can get the source */}
         <p className="muted account-foot">

@@ -1,5 +1,5 @@
 import { Chess, type Move } from 'chess.js';
-import { getLang } from './i18n.ts';
+import { getLang, msg, tr } from './i18n.ts';
 import { EN } from './repertoire.en.ts';
 
 // A repertoire is a set of lines (SAN, from the initial position).
@@ -1861,23 +1861,30 @@ export const REPERTOIRES: Repertoire[] = [
 
 /** The repertoire's name in the current language. */
 // moves like "1.e4" inside a Hebrew name are isolated as left-to-right text, or they show as "e4.1"
-export const repName = (r: Repertoire) => (getLang() === 'en' && EN[r.id]?.name) || r.name.replace(/\d+\.\S+/g, (m) => `⁦${m}⁩`);
+export const repName = (r: Repertoire) => (getLang() !== 'he' && EN[r.id]?.name) || r.name.replace(/\d+\.\S+/g, (m) => `⁦${m}⁩`);
 
-/** A line's name, idea and notes in the current language (Hebrew when a translation is missing). */
+/** A line's name, idea and notes: Hebrew in Hebrew, English in every other language (hasExplanations in i18n.ts). */
 export function lineText(r: Repertoire, l: Line) {
   if (l.custom) {
-    const he = getLang() === 'he';
     return {
-      name: he ? `★ מול ${l.custom}` : `★ Vs ${l.custom}`,
-      idea: he
-        ? `ענף שהוספת מהמשחקים שלך: יריבים שיחקו נגדך ${l.custom}, וזו התשובה של Stockfish.`
-        : `A branch you added from your games: opponents played ${l.custom} against you, and this is Stockfish's answer.`,
+      name: tr(`★ מול ${l.custom}`, msg`★ Vs ${l.custom}`),
+      idea: tr(
+        `ענף שהוספת מהמשחקים שלך: יריבים שיחקו נגדך ${l.custom}, וזו התשובה של Stockfish.`,
+        msg`A branch you added from your games: opponents played ${l.custom} against you, and this is Stockfish's answer.`,
+      ),
       notes: {} as Record<string, string>,
     };
   }
-  const en = getLang() === 'en' ? EN[r.id]?.lines[l.name] : undefined;
+  const en = getLang() !== 'he' ? EN[r.id]?.lines[l.name] : undefined;
   return { name: en?.name ?? l.name, idea: en?.idea ?? l.idea, notes: en?.notes ?? l.notes ?? {} };
 }
+
+/** Shown in languages that have only the interface translated. */
+export const explanationsNote = () =>
+  tr(
+    'ההסברים על הפתיחות באנגלית. המהלכים כתובים באותיות האנגליות: K מלך, Q מלכה, R צריח, B רץ, N פרש.',
+    'The explanations of the openings are in English. Moves use the English letters: K king, Q queen, R rook, B bishop, N knight.',
+  );
 
 /** Position key: board, side, castling, en-passant (ignores move counters). */
 export const posKey = (fen: string) => fen.split(' ').slice(0, 4).join(' ');

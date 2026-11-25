@@ -6,7 +6,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Chess } from 'chess.js';
 import { REPERTOIRES, buildBook, moveLabel, posKey, type Repertoire } from './repertoire';
-import { tr } from './i18n';
+import { msg, tr } from './i18n';
 
 const KEY = 'chess-trainer:custom-lines';
 export const CUSTOM_CHANGED = 'chess-trainer:custom-lines-changed';
@@ -97,7 +97,7 @@ export function importPgn(repId: string, text: string): ImportResult[] {
     .filter(Boolean);
   const results: ImportResult[] = [];
   for (const [n, pgn] of games.entries()) {
-    const which = games.length > 1 ? tr(`משחק ${n + 1}: `, `Game ${n + 1}: `) : '';
+    const which = games.length > 1 ? tr(`משחק ${n + 1}: `, msg`Game ${n + 1}: `) : '';
     const c = new Chess();
     try {
       c.loadPgn(pgn);
@@ -125,7 +125,7 @@ export function importPgn(repId: string, text: string): ImportResult[] {
       if (known?.length && m.color === rep.userColor) {
         conflict = tr(
           `הקו משחק ${moveLabel(i, m.san)}, אבל ברפרטואר שלך משחקים כאן ${moveLabel(i, known[0])}. אפשר רק מהלך אחד שלך בכל עמדה.`,
-          `The line plays ${moveLabel(i, m.san)}, but your repertoire plays ${moveLabel(i, known[0])} here. Only one move of yours per position.`,
+          msg`The line plays ${moveLabel(i, m.san)}, but your repertoire plays ${moveLabel(i, known[0])} here. Only one move of yours per position.`,
         );
         break;
       }
@@ -141,7 +141,7 @@ export function importPgn(repId: string, text: string): ImportResult[] {
     }
     const dev = moveLabel(firstNew, sans[firstNew]);
     addCustomLine(repId, sans, dev);
-    results.push({ ok: true, text: which + tr(`נוסף: ★ מול ${dev} (${Math.ceil(sans.length / 2)} מהלכים)`, `Added: ★ Vs ${dev} (${Math.ceil(sans.length / 2)} moves)`) });
+    results.push({ ok: true, text: which + tr(`נוסף: ★ מול ${dev} (${Math.ceil(sans.length / 2)} מהלכים)`, msg`Added: ★ Vs ${dev} (${Math.ceil(sans.length / 2)} moves)`) });
   }
   if (!games.length) results.push({ ok: false, text: tr('הדבק PGN או מהלכים.', 'Paste a PGN or moves.') });
   return results;

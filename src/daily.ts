@@ -1,7 +1,7 @@
 // A small daily habit: a goal of a few puzzles a day, and a streak of days in a row the goal was met.
 
 import { readStored } from './storage';
-import { tr } from './i18n';
+import { msg, tr } from './i18n';
 
 export const DAILY_GOAL = 5;
 const KEY = 'chess-trainer:daily';
@@ -48,4 +48,4 @@ export function dayStreak(now = new Date()): number {
 }
 
 /** "יום אחד" / "3 ימים", "1 day" / "3 days". */
-export const daysLabel = (n: number) => tr(n === 1 ? 'יום אחד' : `${n} ימים`, n === 1 ? '1 day' : `${n} days`);
+export const daysLabel = (n: number) => (n === 1 ? tr('יום אחד', '1 day') : tr(`${n} ימים`, msg`${n} days`));

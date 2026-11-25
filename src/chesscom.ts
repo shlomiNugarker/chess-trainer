@@ -1,7 +1,7 @@
 // Chess.com public API (https://www.chess.com/news/view/published-data-api). No auth, CORS-enabled.
 // We load the monthly archives (newest first, up to MAX_GAMES games) and boil each game down to the few fields the review needs.
 
-import { tr } from './i18n.ts';
+import { msg, tr } from './i18n.ts';
 
 export type Result = 'win' | 'loss' | 'draw';
 export type TimeClass = 'bullet' | 'blitz' | 'rapid' | 'daily';
@@ -56,7 +56,7 @@ async function getJson<T>(url: string): Promise<T> {
       continue;
     }
     if (res.status === 404) throw new ChessComError(tr('לא נמצא משתמש בשם הזה ב-Chess.com.', 'No Chess.com user with this name.'));
-    if (!res.ok) throw new ChessComError(tr(`Chess.com החזיר שגיאה (${res.status}). נסה שוב בעוד רגע.`, `Chess.com returned an error (${res.status}). Try again in a moment.`));
+    if (!res.ok) throw new ChessComError(tr(`Chess.com החזיר שגיאה (${res.status}). נסה שוב בעוד רגע.`, msg`Chess.com returned an error (${res.status}). Try again in a moment.`));
     return res.json() as Promise<T>;
   }
 }

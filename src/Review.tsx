@@ -15,7 +15,7 @@ import {
 } from './reviewStats';
 import { ltr } from './chessUtils';
 import { useStored } from './storage';
-import { formatDate, getLang, tr, useLang } from './i18n';
+import { formatDate, locale, msg, tr, useLang } from './i18n';
 
 const pct = (n: number) => ltr(`${Math.round(n)}%`);
 const date = formatDate;
@@ -202,7 +202,7 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
       {loading && (
         <div className="card">
           {loading.count
-            ? tr(`טוען משחקים… ${loading.count.toLocaleString()}`, `Loading games… ${loading.count.toLocaleString()}`)
+            ? tr(`טוען משחקים… ${loading.count.toLocaleString(locale())}`, msg`Loading games… ${loading.count.toLocaleString(locale())}`)
             : tr('מתחבר ל-Chess.com…', 'Connecting to Chess.com…')}
           <Progress value={loading.fraction} />
         </div>
@@ -210,8 +210,8 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
       {games && partial && games.length > 0 && (
         <p className="muted small-print">
           {tr(
-            `הסקירה מבוססת על ${games.length.toLocaleString()} המשחקים האחרונים (מאז ${date(games[0].endTime)}).`,
-            `Based on your last ${games.length.toLocaleString()} games (since ${date(games[0].endTime)}).`,
+            `הסקירה מבוססת על ${games.length.toLocaleString(locale())} המשחקים האחרונים (מאז ${date(games[0].endTime)}).`,
+            msg`Based on your last ${games.length.toLocaleString(locale())} games (since ${date(games[0].endTime)}).`,
           )}
         </p>
       )}
@@ -254,15 +254,15 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
           </section>
 
           <section className="tiles">
-            <Tile label={tr('משחקים', 'Games')} value={overview.total.games.toLocaleString()} />
+            <Tile label={tr('משחקים', 'Games')} value={overview.total.games.toLocaleString(locale())} />
             <Tile
               label={tr('ניצחון / תיקו / הפסד', 'Win / draw / loss')}
               // no ltr(): the numbers must read right-to-left in the same order as the label
-              value={[overview.total.wins, overview.total.draws, overview.total.losses].map((n) => n.toLocaleString()).join(' / ')}
+              value={[overview.total.wins, overview.total.draws, overview.total.losses].map((n) => n.toLocaleString(locale())).join(' / ')}
             />
             <Tile label={tr('ניקוד', 'Score')} value={pct(overview.total.score)} />
             {overview.accuracy && (
-              <Tile label={tr(`דיוק ממוצע (${overview.accuracy.games} משחקים שנבדקו)`, `Average accuracy (${overview.accuracy.games} reviewed games)`)} value={pct(overview.accuracy.avg)} />
+              <Tile label={tr(`דיוק ממוצע (${overview.accuracy.games} משחקים שנבדקו)`, msg`Average accuracy (${overview.accuracy.games} reviewed games)`)} value={pct(overview.accuracy.avg)} />
             )}
           </section>
 
@@ -271,7 +271,7 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
               <h2>
                 {tr(
                   `הדירוג שלך ב${timeClassLabel(overview.ratingSeries.timeClass)} לאורך זמן`,
-                  `Your ${timeClassLabel(overview.ratingSeries.timeClass).toLowerCase()} rating over time`,
+                  msg`Your ${timeClassLabel(overview.ratingSeries.timeClass).toLowerCase()} rating over time`,
                 )}
               </h2>
               <RatingChart points={overview.ratingSeries.points} />
@@ -309,7 +309,7 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
               ))}
               <p className="muted">
                 {pct((overview.shortLosses / overview.total.losses) * 100)}{' '}
-                {tr(`מההפסדים נגמרו עד מהלך ${SHORT_GAME}.`, `of your losses ended by move ${SHORT_GAME}.`)}
+                {tr(`מההפסדים נגמרו עד מהלך ${SHORT_GAME}.`, msg`of your losses ended by move ${SHORT_GAME}.`)}
               </p>
             </section>
           )}
@@ -327,7 +327,7 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
             <div className="buttons">
               <select value={deepCount} onChange={(e) => setDeepCount(Number(e.target.value))} disabled={!!deepProgress}>
                 {[5, 10, 20].map((n) => (
-                  <option key={n} value={n}>{tr(`${n} משחקים אחרונים`, `Last ${n} games`)}</option>
+                  <option key={n} value={n}>{tr(`${n} משחקים אחרונים`, msg`Last ${n} games`)}</option>
                 ))}
               </select>
               {deepProgress ? (
@@ -338,13 +338,13 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
                     ? tr('הכל כבר נותח ✓', 'All analyzed ✓')
                     : pending === Math.min(deepCount, filtered.length)
                       ? tr('נתח', 'Analyze')
-                      : tr(`נתח ${pending} משחקים חדשים`, `Analyze ${pending} new games`)}
+                      : tr(`נתח ${pending} משחקים חדשים`, msg`Analyze ${pending} new games`)}
                 </button>
               )}
             </div>
             {deepProgress && (
               <div>
-                {tr(`משחק ${deepProgress.game} מתוך ${deepProgress.total}`, `Game ${deepProgress.game} of ${deepProgress.total}`)}
+                {tr(`משחק ${deepProgress.game} מתוך ${deepProgress.total}`, msg`Game ${deepProgress.game} of ${deepProgress.total}`)}
                 <Progress value={(deepProgress.game - 1 + (deepProgress.posTotal ? deepProgress.pos / deepProgress.posTotal : 0)) / deepProgress.total} />
               </div>
             )}
@@ -427,7 +427,7 @@ function Bar({ label, value, text }: { label: string; value: number; text: strin
 
 function ScoreRow({ name, s }: { name: string; s: Score }) {
   return (
-    <div title={tr(`${s.wins} ניצחונות, ${s.draws} תיקו, ${s.losses} הפסדים`, `${s.wins} wins, ${s.draws} draws, ${s.losses} losses`)}>
+    <div title={tr(`${s.wins} ניצחונות, ${s.draws} תיקו, ${s.losses} הפסדים`, msg`${s.wins} wins, ${s.draws} draws, ${s.losses} losses`)}>
       <Bar label={name} value={s.score / 100} text={`${pct(s.score)} · ${s.games}`} />
     </div>
   );
@@ -452,11 +452,11 @@ function Strengths({ overview }: { overview: ReturnType<typeof buildOverview> })
             {best
               ? tr(
                   `${ltr(best.name)} — ${pct(best.score)} ב-${best.games} משחקים (הממוצע שלך ${label}: ${pct(avg)}).`,
-                  `${best.name} — ${pct(best.score)} in ${best.games} games (your average ${label.toLowerCase()}: ${pct(avg)}).`,
+                  msg`${best.name} — ${pct(best.score)} in ${best.games} games (your average ${label.toLowerCase()}: ${pct(avg)}).`,
                 )
               : tr(
                   `עוד אין פתיחה שבולטת מעל הממוצע שלך (${pct(avg)}, צריך לפחות ${MIN_STRONG_GAMES} משחקים בפתיחה).`,
-                  `No opening stands out above your average yet (${pct(avg)}; it takes ${MIN_STRONG_GAMES}+ games in an opening).`,
+                  msg`No opening stands out above your average yet (${pct(avg)}; it takes ${MIN_STRONG_GAMES}+ games in an opening).`,
                 )}
           </li>
         ))}
@@ -486,7 +486,7 @@ function OpeningTable({ title, rows, average, onTrain }: { title: string; rows: 
       <p className="muted">
         {tr(
           `ניקוד % · מספר משחקים. בירוק: 3 החזקות (מ-${MIN_STRONG_GAMES} משחקים, מעל הממוצע שלך: ${pct(average)}). באדום: 3 החלשות (מ-${MIN_OPENING_GAMES} משחקים).`,
-          `Score % · number of games. In green: the 3 strongest (${MIN_STRONG_GAMES}+ games, above your average of ${pct(average)}). In red: the 3 weakest (${MIN_OPENING_GAMES}+ games).`,
+          msg`Score % · number of games. In green: the 3 strongest (${MIN_STRONG_GAMES}+ games, above your average of ${pct(average)}). In red: the 3 weakest (${MIN_OPENING_GAMES}+ games).`,
         )}
       </p>
     </section>
@@ -514,7 +514,7 @@ function DeepResults({ summary, onDrill }: { summary: ReturnType<typeof summariz
               <li key={m.gameUrl + m.fen}>
                 {tr(
                   `מהלך ${m.moveNumber}: שיחקת ${ltr(m.played)}, עדיף ${ltr(m.best)} — איבדת ${pct(m.drop)} מסיכויי הניצחון.`,
-                  `Move ${m.moveNumber}: you played ${m.played}, better was ${m.best} — you lost ${pct(m.drop)} win chance.`,
+                  msg`Move ${m.moveNumber}: you played ${m.played}, better was ${m.best} — you lost ${pct(m.drop)} win chance.`,
                 )}{' '}
                 <a href={m.gameUrl} target="_blank" rel="noreferrer">{tr('למשחק', 'Game')}</a>
               </li>
@@ -546,28 +546,38 @@ function useChartWidth() {
 function AccuracyCard({ chesscom, own, ownGames }: { chesscom: MonthPoint[]; own: MonthPoint[]; ownGames: number }) {
   if (!chesscom.length && !own.length) return null;
   const trend = accuracyTrend(chesscom.length >= 2 ? chesscom : own);
-  const monthName = (p: MonthPoint) => new Date(p.t).toLocaleDateString(getLang() === 'he' ? 'he-IL' : 'en-GB', { month: 'long', year: 'numeric' });
+  const monthName = (p: MonthPoint) => new Date(p.t).toLocaleDateString(locale(), { month: 'long', year: 'numeric' });
   return (
     <section className="card accuracy-card">
       <h2>{tr('הדיוק שלך לאורך זמן', 'Your accuracy over time')}</h2>
       {trend ? (
         <p className={trend.delta >= 2 ? 'trend up' : trend.delta <= -2 ? 'trend down' : 'trend'}>
-          {tr(
-            `${monthName(trend.last)}: ${pct(trend.last.avg)} (${trend.last.n} משחקים) — ${trend.delta >= 2 ? 'עלייה' : trend.delta <= -2 ? 'ירידה' : 'בערך כמו'} ${trend.delta >= 2 || trend.delta <= -2 ? `של ${ltr(Math.abs(Math.round(trend.delta)))} נקודות לעומת` : ''} הממוצע של החודשים שלפני (${pct(trend.before)}).`,
-            `${monthName(trend.last)}: ${pct(trend.last.avg)} (${trend.last.n} games) — ${trend.delta >= 2 ? `up ${Math.round(trend.delta)} points from` : trend.delta <= -2 ? `down ${Math.abs(Math.round(trend.delta))} points from` : 'about the same as'} the months before (${pct(trend.before)}).`,
-          )}
+          {trend.delta >= 2
+            ? tr(
+                `${monthName(trend.last)}: ${pct(trend.last.avg)} (${trend.last.n} משחקים) — עלייה של ${ltr(Math.round(trend.delta))} נקודות לעומת הממוצע של החודשים שלפני (${pct(trend.before)}).`,
+                msg`${monthName(trend.last)}: ${pct(trend.last.avg)} (${trend.last.n} games) — up ${Math.round(trend.delta)} points from the months before (${pct(trend.before)}).`,
+              )
+            : trend.delta <= -2
+              ? tr(
+                  `${monthName(trend.last)}: ${pct(trend.last.avg)} (${trend.last.n} משחקים) — ירידה של ${ltr(Math.round(-trend.delta))} נקודות לעומת הממוצע של החודשים שלפני (${pct(trend.before)}).`,
+                  msg`${monthName(trend.last)}: ${pct(trend.last.avg)} (${trend.last.n} games) — down ${Math.round(-trend.delta)} points from the months before (${pct(trend.before)}).`,
+                )
+              : tr(
+                  `${monthName(trend.last)}: ${pct(trend.last.avg)} (${trend.last.n} משחקים) — בערך כמו הממוצע של החודשים שלפני (${pct(trend.before)}).`,
+                  msg`${monthName(trend.last)}: ${pct(trend.last.avg)} (${trend.last.n} games) — about the same as the months before (${pct(trend.before)}).`,
+                )}
         </p>
       ) : (
         <p className="muted">{tr('עוד אין מספיק חודשים כדי לראות מגמה.', 'Not enough months yet to see a trend.')}</p>
       )}
       <AccuracyChart series={[
         { key: 'chesscom', label: tr('Chess.com (משחקים שסקרת שם)', 'Chess.com (games you reviewed there)'), points: chesscom },
-        { key: 'own', label: ownGames === 1 ? tr('הסקירה כאן (משחק אחד)', 'Reviewed here (1 game)') : tr(`הסקירה כאן (${ownGames} משחקים)`, `Reviewed here (${ownGames} games)`), points: own },
+        { key: 'own', label: ownGames === 1 ? tr('הסקירה כאן (משחק אחד)', 'Reviewed here (1 game)') : tr(`הסקירה כאן (${ownGames} משחקים)`, msg`Reviewed here (${ownGames} games)`), points: own },
       ]} />
       <p className="muted">
         {tr(
           `ממוצע לפי חודש. מ-Chess.com נספרים רק חודשים עם ${MIN_MONTH_GAMES} משחקים לפחות. שני המנועים שונים, אז הקווים לא זהים — חשוב הכיוון של כל קו.`,
-          `Monthly average. Chess.com months count from ${MIN_MONTH_GAMES} games. The two engines differ, so the lines are not identical — what matters is where each one goes.`,
+          msg`Monthly average. Chess.com months count from ${MIN_MONTH_GAMES} games. The two engines differ, so the lines are not identical — what matters is where each one goes.`,
         )}
       </p>
     </section>
@@ -587,7 +597,7 @@ function AccuracyChart({ series }: { series: { key: string; label: string; point
   const y = (a: number) => T + (1 - (a - lo) / Math.max(1, hi - lo)) * (H - T - B);
   const atHover = hover ? series.map((s) => ({ s, p: s.points.find((p) => p.month === hover) })).filter((x) => x.p) : [];
   const hoverT = atHover[0]?.p?.t;
-  const month = (t: number) => new Date(t).toLocaleDateString(getLang() === 'he' ? 'he-IL' : 'en-GB', { month: 'short', year: '2-digit' });
+  const month = (t: number) => new Date(t).toLocaleDateString(locale(), { month: 'short', year: '2-digit' });
   return (
     <>
       <div className="chart" dir="ltr" ref={ref}>
@@ -622,7 +632,7 @@ function AccuracyChart({ series }: { series: { key: string; label: string; point
             {month(hoverT)}
             {atHover.map(({ s, p }) => (
               <div key={s.key} className={`legend acc-${s.key}`}>
-                <i /><strong>{Math.round(p!.avg)}%</strong> · {p!.n === 1 ? tr('משחק אחד', '1 game') : tr(`${p!.n} משחקים`, `${p!.n} games`)}
+                <i /><strong>{Math.round(p!.avg)}%</strong> · {p!.n === 1 ? tr('משחק אחד', '1 game') : tr(`${p!.n} משחקים`, msg`${p!.n} games`)}
               </div>
             ))}
           </div>
@@ -660,7 +670,7 @@ function RatingChart({ points: raw }: { points: { t: number; r: number }[] }) {
       <svg
         viewBox={`0 0 ${W} ${H}`}
         role="img"
-        aria-label={tr(`דירוג מ-${points[0].r} ל-${points[points.length - 1].r}`, `Rating from ${points[0].r} to ${points[points.length - 1].r}`)}
+        aria-label={tr(`דירוג מ-${points[0].r} ל-${points[points.length - 1].r}`, msg`Rating from ${points[0].r} to ${points[points.length - 1].r}`)}
         onMouseMove={(e) => {
           const box = e.currentTarget.getBoundingClientRect();
           const px = ((e.clientX - box.left) / box.width) * W;

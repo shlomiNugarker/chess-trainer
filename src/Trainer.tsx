@@ -15,7 +15,7 @@ import { playSound, setSoundOn, useMoveSound, useSoundOn } from './sound';
 import { useScrollToMove } from './useScrollToMove';
 import { useFitBoard } from './useFitBoard';
 import { useSidePanel } from './useSidePanel';
-import { tr, useLang } from './i18n';
+import { msg, tr, useLang } from './i18n';
 
 /** Below this win% loss a non-best move is not worth a remark. */
 const MIN_REMARK_DROP = 2;
@@ -24,7 +24,7 @@ const LEARN_STOP_DROP = 5; // in the learning zone, below this the correction do
 const bookEndNotice = () =>
   tr(
     `סוף הקו בספר. עד מהלך ${LEARN_UNTIL} המחשב משחק את המהלכים הכי טובים, וכל מהלך שלך נבדק — אם יש טוב יותר, תקבל תיקון ותוכל לנסות שוב. המהלכים נשמרים לפעם הבאה.`,
-    `End of the book line. Up to move ${LEARN_UNTIL} the computer plays the best moves and each of your moves is checked — if there is a better one, you get a correction and can try again. The moves are saved for next time.`,
+    msg`End of the book line. Up to move ${LEARN_UNTIL} the computer plays the best moves and each of your moves is checked — if there is a better one, you get a correction and can try again. The moves are saved for next time.`,
   );
 
 type Mode = 'train' | 'play'; // opening training, or a regular game against the engine
@@ -297,10 +297,10 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
           setNotice(
             !learnedMove ? ''
               : fresh
-                ? tr(`✓ ${ltr(move.san)} — נכון. בפעם הבאה שתגיע לכאן תצטרך לזכור אותו.`, `✓ ${move.san} — correct. Next time you get here you will need to remember it.`)
+                ? tr(`✓ ${ltr(move.san)} — נכון. בפעם הבאה שתגיע לכאן תצטרך לזכור אותו.`, msg`✓ ${move.san} — correct. Next time you get here you will need to remember it.`)
                 : tr(
                     `זכרת! ✓ ${ltr(move.san)} הוא המהלך שלמדת כאן. (זכרת ${hits} מתוך ${seen} עמדות שלמדת, במשחק הזה)`,
-                    `You remembered! ✓ ${move.san} is the move you learned here. (${hits} of ${seen} learned positions remembered this game)`,
+                    msg`You remembered! ✓ ${move.san} is the move you learned here. (${hits} of ${seen} learned positions remembered this game)`,
                   ),
           );
           opponentMove(learnedMove ? 'free' : 'book');
@@ -316,11 +316,11 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
           text: learnedMove
             ? tr(
                 `במשחק קודם למדת שכאן המהלך הטוב ביותר הוא ${ltr(correct)}. שיחקת ${ltr(move.san)}.`,
-                `In an earlier game you learned that the best move here is ${correct}. You played ${move.san}.`,
+                msg`In an earlier game you learned that the best move here is ${correct}. You played ${move.san}.`,
               )
             : tr(
                 `בקו שלך משחקים כאן ${expected.map(ltr).join(' או ')}. שיחקת ${ltr(move.san)}.`,
-                `Your line plays ${expected.join(' or ')} here. You played ${move.san}.`,
+                msg`Your line plays ${expected.join(` ${tr('או', 'or')} `)} here. You played ${move.san}.`,
               ),
           correctUci: sanToUci(fenBefore, correct),
           playedSan: move.san,
@@ -350,7 +350,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
 
       if (pre.bestMove === move.from + move.to + (move.promotion ?? '')) {
         learn(bestSan);
-        setNotice(tr(`✓ ${ltr(move.san)} — המהלך הטוב ביותר.`, `✓ ${move.san} — the best move.`));
+        setNotice(tr(`✓ ${ltr(move.san)} — המהלך הטוב ביותר.`, msg`✓ ${move.san} — the best move.`));
         opponentMove('free');
         return;
       }
@@ -374,14 +374,12 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
         setFeedback({
           kind: 'engine',
           tone: drop >= DROP.inaccuracy ? 'error' : 'warn',
-          title: drop >= DROP.inaccuracy ? `${judge(drop)}: ${ltr(move.san)}` : tr(`אפשר טוב יותר: ${ltr(bestSan)}`, `There is better: ${bestSan}`),
-          text: tr(
-            `המהלך הטוב ביותר: ${ltr(bestSan)} (המהלך שלך איבד ${ltr(Math.round(drop) + '%')}; ` +
-              `סיכויי הניצחון שלך: ${ltr(Math.round(before) + '%')} ← ${ltr(Math.round(after) + '%')}).` +
-              (line.includes(' ') ? ` ההמשך: ${ltr(line)}` : ''),
-            `Best move: ${bestSan} (yours lost ${Math.round(drop)}%; your win chance: ${Math.round(before)}% → ${Math.round(after)}%).` +
-              (line.includes(' ') ? ` Continuation: ${line}` : ''),
-          ),
+          title: drop >= DROP.inaccuracy ? `${judge(drop)}: ${ltr(move.san)}` : tr(`אפשר טוב יותר: ${ltr(bestSan)}`, msg`There is better: ${bestSan}`),
+          text:
+            tr(
+              `המהלך הטוב ביותר: ${ltr(bestSan)} (המהלך שלך איבד ${ltr(Math.round(drop) + '%')}; סיכויי הניצחון שלך: ${ltr(Math.round(before) + '%')} ← ${ltr(Math.round(after) + '%')}).`,
+              msg`Best move: ${bestSan} (yours lost ${Math.round(drop)}%; your win chance: ${Math.round(before)}% → ${Math.round(after)}%).`,
+            ) + (line.includes(' ') ? ` ${tr(`ההמשך: ${ltr(line)}`, msg`Continuation: ${line}`)}` : ''),
           correctUci: pre.bestMove,
           playedSan: move.san,
         });
@@ -392,9 +390,9 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
           drop >= MIN_REMARK_DROP
             ? tr(
                 `המהלך הטוב ביותר היה ${ltr(bestSan)} (המהלך שלך איבד ${ltr(Math.round(drop) + '%')}).`,
-                `The best move was ${bestSan} (yours lost ${Math.round(drop)}%).`,
+                msg`The best move was ${bestSan} (yours lost ${Math.round(drop)}%).`,
               )
-            : tr(`✓ ${ltr(move.san)} — מהלך טוב (הטוב ביותר: ${ltr(bestSan)}).`, `✓ ${move.san} — a good move (best: ${bestSan}).`),
+            : tr(`✓ ${ltr(move.san)} — מהלך טוב (הטוב ביותר: ${ltr(bestSan)}).`, msg`✓ ${move.san} — a good move (best: ${bestSan}).`),
         );
         if (drop >= MIN_REMARK_DROP) {
           setUndoable({ ply: gameRef.current.history().length - 1, bestUci: pre.bestMove, bestSan });
@@ -448,7 +446,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
     while (g.history().length > undoable.ply) g.undo();
     sync();
     setHint(uciToArrow(undoable.bestUci, GREEN_ARROW));
-    setNotice(tr(`חזרת אחורה. שחק את ${ltr(undoable.bestSan)} — החץ הירוק מראה אותו.`, `You went back. Play ${undoable.bestSan} — the green arrow shows it.`));
+    setNotice(tr(`חזרת אחורה. שחק את ${ltr(undoable.bestSan)} — החץ הירוק מראה אותו.`, msg`You went back. Play ${undoable.bestSan} — the green arrow shows it.`));
     setUndoable(null);
     setStatus('user');
     startPreAnalysis();
@@ -591,7 +589,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
           <label>
             <span>
               {tr('רמת המחשב', 'Computer level')} <b>{skill}</b>
-              {mode === 'train' && <span className="muted"> · {tr(`ממהלך ${LEARN_UNTIL + 1}`, `from move ${LEARN_UNTIL + 1}`)}</span>}
+              {mode === 'train' && <span className="muted"> · {tr(`ממהלך ${LEARN_UNTIL + 1}`, msg`from move ${LEARN_UNTIL + 1}`)}</span>}
             </span>
             <input type="range" min={0} max={20} value={skill} onChange={(e) => setSkill(Number(e.target.value))} />
           </label>
@@ -600,14 +598,14 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
             <summary>{tr('עוד אפשרויות', 'More options')}</summary>
             <div className="more-settings-body">
               <div className="toggles">
-                {mode === 'train' && toggle(correctAll, setCorrectAll, tr(`תיקון בכל מהלך עד מהלך ${LEARN_UNTIL}`, `Correct every move up to move ${LEARN_UNTIL}`))}
+                {mode === 'train' && toggle(correctAll, setCorrectAll, tr(`תיקון בכל מהלך עד מהלך ${LEARN_UNTIL}`, msg`Correct every move up to move ${LEARN_UNTIL}`))}
                 {mode === 'train' && toggle(showNotes, setShowNotes, tr('הצג את שם הקו והסברים', 'Show the line name and explanations'))}
                 {toggle(showEval, setShowEval, tr('הצג מד סיכויים', 'Show win-chance bar'))}
                 {toggle(soundOn, setSoundOn, tr('צלילים', 'Sounds'))}
               </div>
               {mode === 'train' && (
                 <label>
-                  {correctAll ? tr(`מתי לעצור (ממהלך ${LEARN_UNTIL + 1})`, `When to stop (from move ${LEARN_UNTIL + 1})`) : tr('מתי לעצור', 'When to stop')}
+                  {correctAll ? tr(`מתי לעצור (ממהלך ${LEARN_UNTIL + 1})`, msg`When to stop (from move ${LEARN_UNTIL + 1})`) : tr('מתי לעצור', 'When to stop')}
                   <select value={threshold} onChange={(e) => setThreshold(Number(e.target.value))}>
                     {thresholds().map((t) => (
                       <option key={t.value} value={t.value}>{t.label}</option>
@@ -674,7 +672,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
               <div className="line-info-head">
                 <span aria-hidden>📖</span>
                 <strong>{info.name}</strong>
-                {info.others > 0 && <span className="muted">{tr(info.others === 1 ? '(ועוד קו אחד מכאן)' : `(ועוד ${info.others} קווים מכאן)`, info.others === 1 ? '(+1 more line from here)' : `(+${info.others} more lines from here)`)}</span>}
+                {info.others > 0 && <span className="muted">{info.others === 1 ? tr('(ועוד קו אחד מכאן)', '(+1 more line from here)') : tr(`(ועוד ${info.others} קווים מכאן)`, msg`(+${info.others} more lines from here)`)}</span>}
               </div>
               {info.notes.map((n) => (
                 <p key={n.label}>

@@ -5,13 +5,16 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { startCloud } from './cloud'
+import { langReady } from './i18n'
 
 startCloud() // Google sign-in + sync (only when configured, see docs/google-login-setup.md)
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
+void langReady.then(() =>
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  ),
 )
 
 // installable app + offline (production only: the dev server must never be served from a cache)

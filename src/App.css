@@ -1327,3 +1327,5 @@ button.progress-pill { border: none; cursor: pointer; font: inherit; }
   .learn .board-wrap { width: min(100%, max(300px, calc(100svh - 344px))); } /* the start of the explanation stays in view */
   .game-review .board-wrap { width: min(100%, max(292px, calc(100svh - 334px - env(safe-area-inset-bottom)))); }
 }
+
+.lang-note { font-size: 12px; line-height: 1.5; }

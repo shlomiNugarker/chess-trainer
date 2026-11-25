@@ -13,7 +13,7 @@ import {
 import { BOARD_THEME, GREEN_ARROW, ltr, pvToSan, uciToArrow } from './chessUtils';
 import { useFitBoard } from './useFitBoard';
 import { useSidePanel } from './useSidePanel';
-import { formatDate, tr, useLang } from './i18n';
+import { formatDate, msg, tr, useLang } from './i18n';
 
 const CLASS_LABEL: Record<MoveClass, [string, string]> = {
   book: ['ספר', 'Book'],
@@ -292,10 +292,10 @@ export default function GameReview({ game, username, active, onClose, onLearn, o
           <button className="next-mistake" onClick={nextMistake} disabled={!myMistakes.length}>
             {progress
               ? myMistakes.length
-                ? tr(`לטעות הבאה שלי (${myMistakes.length}) · מנתח ${progress.done}/${progress.total}`, `My next mistake (${myMistakes.length}) · analyzing ${progress.done}/${progress.total}`)
-                : tr(`מנתח את המשחק… ${progress.done}/${progress.total}`, `Analyzing the game… ${progress.done}/${progress.total}`)
+                ? tr(`לטעות הבאה שלי (${myMistakes.length}) · מנתח ${progress.done}/${progress.total}`, msg`My next mistake (${myMistakes.length}) · analyzing ${progress.done}/${progress.total}`)
+                : tr(`מנתח את המשחק… ${progress.done}/${progress.total}`, msg`Analyzing the game… ${progress.done}/${progress.total}`)
               : myMistakes.length
-                ? tr(`לטעות הבאה שלי (${myMistakes.length})`, `My next mistake (${myMistakes.length})`)
+                ? tr(`לטעות הבאה שלי (${myMistakes.length})`, msg`My next mistake (${myMistakes.length})`)
                 : tr('אין לך טעויות במשחק הזה 🎉', 'No mistakes of yours in this game 🎉')}
           </button>
 
@@ -325,7 +325,7 @@ export default function GameReview({ game, username, active, onClose, onLearn, o
               ))}
             </div>
             {game.accuracy !== undefined && (
-              <p className="muted">{tr(`הדיוק שלך לפי Chess.com: ${pct(game.accuracy)} (מנוע אחר ועומק אחר, אז המספרים לא זהים).`, `Your accuracy on Chess.com: ${pct(game.accuracy)} (a different engine and depth, so the numbers differ).`)}</p>
+              <p className="muted">{tr(`הדיוק שלך לפי Chess.com: ${pct(game.accuracy)} (מנוע אחר ועומק אחר, אז המספרים לא זהים).`, msg`Your accuracy on Chess.com: ${pct(game.accuracy)} (a different engine and depth, so the numbers differ).`)}</p>
             )}
           </section>
 
@@ -354,10 +354,10 @@ export default function GameReview({ game, username, active, onClose, onLearn, o
                     ? book.left.mine
                       ? tr(
                           `יצאת מהרפרטואר (${repLabel}) ב-${ltr(leftName)} — בקו: ${ltr(book.left.expected.join(' / '))}.`,
-                          `You left your repertoire (${repLabel}) with ${leftName} — the line plays ${book.left.expected.join(' / ')}.`,
+                          msg`You left your repertoire (${repLabel}) with ${leftName} — the line plays ${book.left.expected.join(' / ')}.`,
                         )
-                      : tr(`היריב יצא מהרפרטואר שלך ב-${ltr(leftName)}.`, `Your opponent left your repertoire with ${leftName}.`)
-                    : tr(`המשחק הלך לפי הרפרטואר ${book.plies} חצאי מהלכים, עד סוף הקו.`, `The game followed your repertoire for ${book.plies} half-moves, to the end of the line.`)}{' '}
+                      : tr(`היריב יצא מהרפרטואר שלך ב-${ltr(leftName)}.`, msg`Your opponent left your repertoire with ${leftName}.`)
+                    : tr(`המשחק הלך לפי הרפרטואר ${book.plies} חצאי מהלכים, עד סוף הקו.`, msg`The game followed your repertoire for ${book.plies} half-moves, to the end of the line.`)}{' '}
                   {book.left && <button className="link" onClick={() => go(book.left!.ply + 1)}>{tr('הראה', 'Show')}</button>}{' '}
                   <button className="link" onClick={() => onLearn(book.repId, book.lineMoves)}>{tr('פתח את הקו ב"למד" ›', 'Open the line in Learn ›')}</button>
                 </p>
@@ -369,7 +369,7 @@ export default function GameReview({ game, username, active, onClose, onLearn, o
                   <button onClick={() => save(realMistakes)}>
                     {realMistakes.length === 1
                       ? tr('הוסף את הטעות שלי לתרגול', 'Add my mistake to practice')
-                      : tr(`הוסף את ${realMistakes.length} הטעויות שלי לתרגול`, `Add my ${realMistakes.length} mistakes to practice`)}
+                      : tr(`הוסף את ${realMistakes.length} הטעויות שלי לתרגול`, msg`Add my ${realMistakes.length} mistakes to practice`)}
                   </button>
                 )
               )}

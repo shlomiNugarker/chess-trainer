@@ -5,7 +5,7 @@ import Practice, { type PracticeView } from './Practice';
 import Learn from './Learn';
 import { dueMistakes, useMistakeCount } from './mistakes';
 import { useStored } from './storage';
-import { dir, setLang, tr, useLang } from './i18n';
+import { LANGS, dir, setLang, tr, useLang } from './i18n';
 import Account from './Account';
 import { useCloud } from './cloud';
 import { REPERTOIRES } from './repertoire';
@@ -27,6 +27,7 @@ export default function App() {
   };
   const due = useMistakeCount(dueCount);
   const lang = useLang(); // re-renders the whole app when the language changes
+  const nextLang = LANGS[(LANGS.findIndex((l) => l.id === lang) + 1) % LANGS.length];
   const cloud = useCloud();
   const [accountOpen, setAccountOpen] = useState(false);
 
@@ -68,10 +69,10 @@ export default function App() {
               <span className="tab-label">{tr('חשבון', 'Account')}</span>
             </button>
           ) : (
-            // no cloud configured: the other language, always one tap away
-            <button className="tab lang-switch" onClick={() => setLang(lang === 'he' ? 'en' : 'he')} lang={lang === 'he' ? 'en' : 'he'}>
+            // no cloud configured: the next language, always one tap away
+            <button className="tab lang-switch" onClick={() => setLang(nextLang.id)} lang={nextLang.id}>
               <span className="tab-icon" aria-hidden>🌐</span>
-              <span className="tab-label">{lang === 'he' ? 'English' : 'עברית'}</span>
+              <span className="tab-label">{nextLang.name}</span>
             </button>
           )}
         </div>

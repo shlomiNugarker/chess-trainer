@@ -7,11 +7,11 @@ import { addCustomLine, withCustom } from './customLines';
 import { findDeviations, movesText, type OpponentDeviation, type UserDeviation } from './deviations';
 import { saveMistake } from './mistakes';
 import { ltr } from './chessUtils';
-import { tr, useLang } from './i18n';
+import { msg, tr, useLang } from './i18n';
 
 const SHOW = 5;
 const ANSWER_PLIES = 5; // the answer, then two more moves for each side
-const gamesLabel = (n: number) => (n === 1 ? tr('משחק אחד', '1 game') : tr(`${n} משחקים`, `${n} games`));
+const gamesLabel = (n: number) => (n === 1 ? tr('משחק אחד', '1 game') : tr(`${n} משחקים`, msg`${n} games`));
 
 /**
  * "Where your games leave your lines": opponent moves the repertoire doesn't answer (add Stockfish's answer as a
@@ -137,7 +137,7 @@ export default function Branches({
                 <li key={key}>
                   <span>
                     <b>{repName(rep(d.repId))}</b> · <span dir="ltr">{ltr(movesText(d.prefix))}</span> —{' '}
-                    {tr(`שיחקת ${ltr(d.played)} במקום ${ltr(d.label)}`, `you played ${d.played} instead of ${d.label}`)}{' '}
+                    {tr(`שיחקת ${ltr(d.played)} במקום ${ltr(d.label)}`, msg`you played ${d.played} instead of ${d.label}`)}{' '}
                     <span className="muted">· {gamesLabel(d.count)}</span>
                   </span>
                   {done ? (

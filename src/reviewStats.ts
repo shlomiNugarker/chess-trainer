@@ -4,7 +4,7 @@
 import { Chess } from 'chess.js';
 import type { GameSummary, TimeClass } from './chesscom.ts';
 import { DROP, type Engine, winPercent } from './engine.ts';
-import { tr } from './i18n.ts';
+import { msg, tr } from './i18n.ts';
 
 export type Score = { games: number; wins: number; draws: number; losses: number; score: number }; // score 0..100
 
@@ -29,7 +29,7 @@ export const MIN_STRONG_GAMES = 10;
 export const STRONG_MARGIN = 5;
 
 /** Chess.com files games with no recognized opening as "Undefined" (and we say "Unknown" when there is no name) — not an opening. */
-const isNamed = (r: OpeningRow) => !/^(Undefined|Unknown|לא ידוע)$/.test(r.name);
+const isNamed = (r: OpeningRow) => !/^(Undefined|Unknown|לא ידוע)$/.test(r.name) && r.name !== tr('לא ידוע', 'Unknown');
 
 /** The (up to) 3 lowest-scoring openings with enough games. */
 export function weakestOpenings(rows: OpeningRow[]): OpeningRow[] {
@@ -53,6 +53,7 @@ const REASONS: Record<string, [string, string]> = {
   resigned: ['כניעה', 'Resigned'],
   timeout: ['נגמר הזמן', 'Out of time'],
   abandoned: ['נטישה', 'Abandoned'],
+  aborted: ['בוטל', 'Aborted'],
   agreed: ['הסכמה', 'Agreed'],
   repetition: ['חזרה על עמדה', 'Repetition'],
   stalemate: ['פט', 'Stalemate'],
@@ -293,7 +294,7 @@ export function buildTips(o: Overview, deep: DeepSummary | null): Tip[] {
       title: tr('השעון מפיל אותך', 'The clock is beating you'),
       text: tr(
         `${pct((timeouts / losses) * 100)} מההפסדים שלך הם על זמן. נסה משחקים ארוכים יותר (רפיד 10+5), ובעמדות פשוטות שחק מהר יותר.`,
-        `${pct((timeouts / losses) * 100)} of your losses are on time. Try longer games (rapid 10+5), and play faster in simple positions.`,
+        msg`${pct((timeouts / losses) * 100)} of your losses are on time. Try longer games (rapid 10+5), and play faster in simple positions.`,
       ),
       weight: (timeouts / losses) * 100,
     });
@@ -306,15 +307,15 @@ export function buildTips(o: Overview, deep: DeepSummary | null): Tip[] {
     if (!weak) continue;
     const side = color === 'w' ? tr('בלבן', 'as White') : tr('בשחור', 'as Black');
     tips.push({
-      title: tr(`הפתיחה החלשה ${side}: ${weak.name}`, `Your weakest opening ${side}: ${weak.name}`),
+      title: tr(`הפתיחה החלשה ${side}: ${weak.name}`, msg`Your weakest opening ${side}: ${weak.name}`),
       text: weak.repertoireId
         ? tr(
             `אתה משיג רק ${pct(weak.score)} ב-${weak.games} משחקים. יש לך כאן קווים מוכנים — תתאמן עליהם.`,
-            `You score only ${pct(weak.score)} in ${weak.games} games. There are ready lines for it here — train them.`,
+            msg`You score only ${pct(weak.score)} in ${weak.games} games. There are ready lines for it here — train them.`,
           )
         : tr(
             `אתה משיג רק ${pct(weak.score)} ב-${weak.games} משחקים. בחר קו אחד מוכן לפתיחה הזו ולמד אותו עד מהלך 10.`,
-            `You score only ${pct(weak.score)} in ${weak.games} games. Pick one ready line for this opening and learn it to move 10.`,
+            msg`You score only ${pct(weak.score)} in ${weak.games} games. Pick one ready line for this opening and learn it to move 10.`,
           ),
       action: weak.repertoireId ? { type: 'train', repertoireId: weak.repertoireId } : undefined,
       weight: o.byColor[color].score - weak.score + weak.games / 5,
@@ -328,7 +329,7 @@ export function buildTips(o: Overview, deep: DeepSummary | null): Tip[] {
       title: tr('פער גדול בין הצבעים', 'A big gap between colors'),
       text: tr(
         `עם לבן אתה משיג ${pct(o.byColor.w.score)} ועם שחור ${pct(o.byColor.b.score)}. כדאי להשקיע בפתיחות עם ${weakSide}.`,
-        `As White you score ${pct(o.byColor.w.score)} and as Black ${pct(o.byColor.b.score)}. Put time into your openings with ${weakSide}.`,
+        msg`As White you score ${pct(o.byColor.w.score)} and as Black ${pct(o.byColor.b.score)}. Put time into your openings with ${weakSide}.`,
       ),
       weight: Math.abs(gap),
     });
@@ -339,7 +340,7 @@ export function buildTips(o: Overview, deep: DeepSummary | null): Tip[] {
       title: tr('הפסדים מוקדמים', 'Early losses'),
       text: tr(
         `${pct((o.shortLosses / losses) * 100)} מההפסדים שלך נגמרים עד מהלך ${SHORT_GAME}. לפני כל מהלך שאל: מה היריב מאיים? והאם כל הכלים שלי מוגנים?`,
-        `${pct((o.shortLosses / losses) * 100)} of your losses end by move ${SHORT_GAME}. Before every move ask: what is my opponent threatening, and are all my pieces protected?`,
+        msg`${pct((o.shortLosses / losses) * 100)} of your losses end by move ${SHORT_GAME}. Before every move ask: what is my opponent threatening, and are all my pieces protected?`,
       ),
       weight: (o.shortLosses / losses) * 80,
     });
@@ -350,10 +351,10 @@ export function buildTips(o: Overview, deep: DeepSummary | null): Tip[] {
     const [phase, n] = (Object.entries(deep.byPhase) as [GamePhase, number][]).sort((a, b) => b[1] - a[1])[0];
     if (n > 0) {
       tips.push({
-        title: tr(`רוב הטעויות שלך: ב${phaseLabel(phase)}`, `Most of your mistakes: in the ${phaseLabel(phase)}`),
+        title: tr(`רוב הטעויות שלך: ב${phaseLabel(phase)}`, msg`Most of your mistakes: in the ${phaseLabel(phase)}`),
         text: tr(
           `ב-${deep.games} המשחקים שנותחו היו ${deep.counts.blunder} בלאנדרים (${perGame.toFixed(1)} למשחק). הן מחכות לך במסך החזרה.`,
-          `The ${deep.games} analyzed games had ${deep.counts.blunder} blunders (${perGame.toFixed(1)} per game). They are waiting for you in Review.`,
+          msg`The ${deep.games} analyzed games had ${deep.counts.blunder} blunders (${perGame.toFixed(1)} per game). They are waiting for you in Review.`,
         ),
         action: { type: 'drill' },
         weight: 40 + perGame * 20,

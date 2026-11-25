@@ -1,15 +1,14 @@
 """QA: Learn extras, Practice (puzzles, my mistakes), My review, account and language, phone layouts, offline.
 
-    python scripts/qa/screens.py [--url URL] [--only learn,puzzles,mistakes,review,account,phone,touch,offline]
+    python scripts/qa/screens.py [--url URL] [--only learn,puzzles,mistakes,review,account,phone,touch,lang,offline]
                                  [--chesscom USER] [--account-url URL]
 
 The review section loads real games from Chess.com; the account panel needs a build with Firebase configured,
 so by default it is checked on the live site.
 """
-import re
-import json, time
+import json, pathlib, re, time
 from playwright.sync_api import sync_playwright
-from common import LIVE, Report, args, hscroll, lines, puzzles_by_board, wait_until
+from common import LIVE, SHOTS, Report, args, hscroll, lines, puzzles_by_board, wait_until
 
 
 def extra(p):
@@ -451,6 +450,70 @@ def touch(b):
         ctx.close()
 
 
+@section('lang')
+def languages(b):
+    """Spanish: chosen by the browser, every screen, kept after a reload, offline, and what happens when its texts cannot load."""
+    src = (pathlib.Path(__file__).resolve().parents[2] / 'src/lang/es.ts').read_text(encoding='utf-8')
+    # English sentences that must not show (explanations of openings stay English, so only the interface's own texts)
+    english = [k for k in re.findall(r"^  '([^'{]+)':", src, re.M) if len(k.split()) >= 3]
+    left = lambda pg: [k for k in english if k in pg.evaluate('document.body.innerText')]
+    for tag, w, h in [('es-desktop', 1280, 900), ('es-phone', 360, 740)]:
+        ctx, pg = open_page(b, tag, 'es-MX', w, h)
+        r.check(pg.evaluate('document.documentElement.lang + document.documentElement.dir') == 'esltr', f'{tag}: a Spanish browser gets Spanish')
+        r.check('ajedrez' in pg.title(), f'{tag}: title', pg.title())
+        for i, name in enumerate(['play', 'learn', 'review', 'practice']):
+            tab(pg, i); time.sleep(2 if i != 3 else 4)
+            r.check(not left(pg) and hscroll(pg) <= 0, f'{tag}: {name} is in Spanish and fits', f'{left(pg)[:4]} scroll {hscroll(pg)}')
+            r.shot(pg, f'{tag}-{name}')
+        cut = pg.evaluate("[...document.querySelectorAll('.tabs .tab-label')].filter(e => e.scrollWidth > e.clientWidth + 1 || e.getBoundingClientRect().height > 22).map(e => e.innerText)")
+        r.check(not cut, f'{tag}: the tab names fit', str(cut))
+        tab(pg, 1); time.sleep(0.5)
+        r.check('están en inglés' in pg.locator('.learn').inner_text(), f'{tag}: Learn says the explanations are in English')
+        tab(pg, 3); pg.locator('.segmented button').nth(1).click(); time.sleep(0.5)
+        r.check('Nada que repasar' in pg.inner_text('body') and not left(pg), f'{tag}: my mistakes', str(left(pg)[:4]))
+        if tag == 'es-desktop':
+            tab(pg, 2); pg.fill('.review input', a.chesscom); pg.locator('.review button.primary').first.click()
+            pg.wait_for_selector('.recent-game', timeout=180000); time.sleep(2)
+            r.check(not left(pg) and 'Desconocida' not in text(pg, '.strengths'), f'{tag}: the whole review is in Spanish', str(left(pg)[:6]))
+            pg.screenshot(path=str(SHOTS / f'{tag}-review-full.png'), full_page=True)
+            pg.locator('.recent-game').first.click(); pg.wait_for_selector('.game-review')
+            for _ in range(3): pg.locator('.stepper button.primary').click()
+            r.check(wait_until(lambda: 'Aún se está analizando' not in text(pg, '.coach'), 30) and not left(pg), f'{tag}: game review', f"{text(pg, '.coach')[:90]} {left(pg)[:4]}")
+            r.shot(pg, f'{tag}-game-review')
+        ctx.close()
+
+    # switching, and keeping the choice
+    ctx, pg = open_page(b, 'es-switch', 'en-US', 1280, 900)
+    asked = []
+    pg.on('request', lambda q: asked.append(q.url) if '/assets/es-' in q.url else None)
+    pg.reload(); pg.wait_for_selector('.tabs'); pg.wait_for_timeout(500)
+    r.check(not asked and pg.evaluate('document.documentElement.lang') == 'en', 'English does not download the Spanish texts', str(len(asked)))
+    pg.click('.lang-switch'); pg.wait_for_function("document.documentElement.lang === 'es'")
+    r.check('Aprender' in pg.inner_text('.tabs'), 'switching to Spanish')
+    pg.reload(); pg.wait_for_selector('.tabs')
+    r.check('Aprender' in pg.inner_text('.tabs'), 'Spanish is kept after a reload')
+    pg.click('.lang-switch'); pg.wait_for_function("document.documentElement.dir === 'rtl'")
+    pg.click('.lang-switch'); pg.wait_for_function("document.documentElement.lang === 'en'")
+    r.check('Learn' in pg.inner_text('.tabs'), 'and back through Hebrew to English')
+    ctx.close()
+
+    # the Spanish texts cannot be loaded: the app works in English
+    ctx = b.new_context(locale='es-ES', viewport={'width': 1280, 'height': 900}, service_workers='block'); pg = ctx.new_page()
+    errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
+    ctx.route('**/assets/es-*.js', lambda route: route.abort())
+    pg.goto(a.url); pg.wait_for_selector('.tabs', timeout=15000)
+    r.check('Learn' in pg.inner_text('.tabs') and not errs, 'without the Spanish file the app opens in English', str(errs))
+    ctx.close()
+
+    # offline after one visit
+    ctx, pg = open_page(b, 'es-offline', 'es-ES', 1280, 900)
+    pg.evaluate('navigator.serviceWorker.ready.then(() => true)'); time.sleep(3)
+    pg.reload(); pg.wait_for_selector('.tabs'); time.sleep(2)
+    ctx.set_offline(True); pg.reload(); pg.wait_for_selector('.tabs')
+    r.check('Aprender' in pg.inner_text('.tabs'), 'Spanish works offline')
+    ctx.close()
+
+
 @section('offline')
 def offline(b):
     ctx, pg = open_page(b, 'offline', 'en-US', 1280, 900)
@@ -481,6 +544,6 @@ with sync_playwright() as p:
     if not a.only: tour(pg, 'desktop-en')
     learn(pg); mistakes(pg); puzzles(pg); review(pg)  # mistakes first: the puzzle section adds its own
     ctx.close()
-    account(b); phone(b); touch(b); offline(b)
+    account(b); phone(b); touch(b); languages(b); offline(b)
     b.close()
 r.done()

@@ -2,7 +2,7 @@
   "name": "chess-trainer",
   "private": true,
   "version": "0.0.0",
-  "description": "Learn chess openings step by step, train them against Stockfish, solve puzzles and review your Chess.com games — a free PWA in Hebrew and English.",
+  "description": "Learn chess openings step by step, train them against Stockfish, solve puzzles and review your Chess.com games — a free PWA in Hebrew, English and Spanish.",
   "license": "GPL-3.0-or-later",
   "author": "Shlomi Nugarker",
   "homepage": "https://opening-trainer-app.vercel.app",
@@ -21,7 +21,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint src scripts",
-    "test": "node --experimental-strip-types scripts/check-lines.ts && node --experimental-strip-types scripts/check-review.ts && node --experimental-strip-types scripts/check-puzzles.ts && node --experimental-strip-types scripts/check-sync.ts",
+    "test": "node --experimental-strip-types scripts/check-i18n.ts && node --experimental-strip-types scripts/check-lines.ts && node --experimental-strip-types scripts/check-review.ts && node --experimental-strip-types scripts/check-puzzles.ts && node --experimental-strip-types scripts/check-sync.ts",
     "check": "npm run lint && npm run build && npm test",
     "preview": "vite preview"
   },

@@ -1,6 +1,6 @@
 # Chess Trainer
 
-Learn a chess opening repertoire step by step, train it against Stockfish until you know it by heart, solve puzzles at your level, and review your own Chess.com games — in the browser, on your phone, even offline. Hebrew and English.
+Learn a chess opening repertoire step by step, train it against Stockfish until you know it by heart, solve puzzles at your level, and review your own Chess.com games — in the browser, on your phone, even offline. Hebrew, English and Spanish.
 
 **Live:** https://opening-trainer-app.vercel.app (also at https://chess-trainer-seven-pink.vercel.app)
 
@@ -37,6 +37,7 @@ Production build: `npm run build`, then `npm run preview`.
 ```bash
 npm run check   # lint + build + all the checks below
 npm test        # just the checks:
+                #   scripts/check-i18n.ts     every text of the interface is translated
                 #   scripts/check-lines.ts    every repertoire line is legal, notes exist in both languages
                 #   scripts/check-review.ts   Chess.com review logic and the move-by-move game review
                 #   scripts/check-puzzles.ts  every puzzle in public/puzzles-v3.json is legal
@@ -68,7 +69,7 @@ Without configuration the app works fully, with progress kept in the browser. To
 | `src/Branches.tsx`, `src/deviations.ts`, `src/customLines.ts` | Where games leave the repertoire; branches added from your games |
 | `src/engine.ts` | Stockfish Web Worker wrapper and the Lichess win% formula |
 | `src/cloud.ts`, `src/firebase.ts`, `src/syncMerge.ts`, `src/Account.tsx` | Optional sign-in and sync |
-| `src/i18n.ts` | Two languages without a library: `tr('עברית', 'English')` |
+| `src/i18n.ts`, `src/lang/` | The languages, without a library: `tr('עברית', 'English')` in place, and a dictionary per extra language (Spanish: the interface; the opening explanations show in English) |
 | `public/engine/` | Stockfish 19 lite (WASM) |
 | `public/puzzles-v3.json` | Puzzle set, built by `scripts/build-puzzles.py` (a new set gets a new file name — the service worker caches by name) |
 | `public/sw.js` | Offline cache |

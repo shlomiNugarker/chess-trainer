@@ -4,7 +4,7 @@ import { Chessboard, type Arrow } from 'react-chessboard';
 import { Engine, winPercent } from './engine';
 import { MAX_BOX, dueMistakes, loadMistakes, practiceMistakes, recordReview, type Mistake } from './mistakes';
 import { REPERTOIRES, repName } from './repertoire';
-import { formatDate, tr } from './i18n';
+import { formatDate, msg, tr } from './i18n';
 import { BOARD_THEME, GREEN_ARROW, ltr, sanToUci, uciToArrow } from './chessUtils';
 import { useClickToMove } from './useClickToMove';
 import { playSound, useMoveSound } from './sound';
@@ -38,7 +38,7 @@ export default function Drill() {
     const post = await engine.current.analyze(after, 'movetime 300');
     const drop = winPercent(pre) - (100 - winPercent(post));
     return drop < ALT_TOLERANCE
-      ? { ok: true, text: tr(`גם ${ltr(san)} טוב! המהלך של המנוע היה ${ltr(m.correct)}.`, `${san} is good too! The engine's move was ${m.correct}.`) }
+      ? { ok: true, text: tr(`גם ${ltr(san)} טוב! המהלך של המנוע היה ${ltr(m.correct)}.`, msg`${san} is good too! The engine's move was ${m.correct}.`) }
       : { ok: false, text: '' };
   };
 
@@ -66,7 +66,7 @@ export default function Drill() {
         setQueue((q) => [...q, current]); // failed cards come back later in this session
         setAnswer({
           ok: false,
-          text: tr(`לא. שיחקת ${ltr(san)}, המהלך הנכון הוא ${ltr(current.correct)}.`, `No. You played ${san}; the right move is ${current.correct}.`),
+          text: tr(`לא. שיחקת ${ltr(san)}, המהלך הנכון הוא ${ltr(current.correct)}.`, msg`No. You played ${san}; the right move is ${current.correct}.`),
         });
       }
     });
@@ -86,7 +86,7 @@ export default function Drill() {
     if (!current || answer) return;
     recordReview(current, false);
     setQueue((q) => [...q, current]);
-    setAnswer({ ok: false, text: tr(`המהלך הנכון: ${ltr(current.correct)}.`, `The right move: ${current.correct}.`) });
+    setAnswer({ ok: false, text: tr(`המהלך הנכון: ${ltr(current.correct)}.`, msg`The right move: ${current.correct}.`) });
   };
 
   const next = () => {
@@ -105,14 +105,14 @@ export default function Drill() {
         <div className="empty-mark" aria-hidden>♞</div>
         <h2>
           {solved
-            ? tr(`כל הכבוד! פתרת ${solved} תרגילים.`, `Well done! You solved ${solved} exercises.`)
+            ? tr(`כל הכבוד! פתרת ${solved} תרגילים.`, msg`Well done! You solved ${solved} exercises.`)
             : tr('אין מה לחזור היום 🎉', 'Nothing to review today 🎉')}
         </h2>
         {(all.length > 0 || !inHidden) && <p className="muted">
           {all.length
             ? tr(
                 `יש לך ${all.length} עמדות במאגר. החזרה הבאה: ${formatDate(nextDue!)}.`,
-                `You have ${all.length} positions saved. Next review: ${formatDate(nextDue!)}.`,
+                msg`You have ${all.length} positions saved. Next review: ${formatDate(nextDue!)}.`,
               )
             : tr(
                 'עוד אין טעויות שמורות. שחק באימון הפתיחות או הרץ ניתוח מנוע בסקירה — כל טעות תגיע לכאן.',
@@ -123,7 +123,7 @@ export default function Drill() {
           <p className="muted">
             {tr(
               `${inHidden} עמדות שמורות בפתיחות שהסתרת. הן יחזרו כשתציג את הפתיחה ב"למד".`,
-              `${inHidden} positions are saved in openings you have hidden. They come back when you show the opening in Learn.`,
+              msg`${inHidden} positions are saved in openings you have hidden. They come back when you show the opening in Learn.`,
             )}
           </p>
         )}
@@ -132,6 +132,7 @@ export default function Drill() {
   }
 
   const toMove = current.fen.split(' ')[1] as 'w' | 'b';
+  const side = toMove === 'w' ? tr('לבן', 'White') : tr('שחור', 'Black');
   const arrows: Arrow[] = answer && !answer.ok ? [uciToArrow(sanToUci(current.fen, current.correct), GREEN_ARROW)] : [];
   const rep = REPERTOIRES.find((r) => r.id === current.repertoire);
 
@@ -161,16 +162,16 @@ export default function Drill() {
           <span className="status-text">
             {checking
               ? tr('בודק…', 'Checking…')
-              : tr(`מצא את המהלך הטוב ביותר ל${toMove === 'w' ? 'לבן' : 'שחור'}`, `Find the best move for ${toMove === 'w' ? 'White' : 'Black'}`)}
+              : tr(`מצא את המהלך הטוב ביותר ל${side}`, msg`Find the best move for ${side}`)}
           </span>
-          <span className="pill">{tr(`נשארו ${queue.length - index}`, `${queue.length - index} left`)}</span>
+          <span className="pill">{tr(`נשארו ${queue.length - index}`, msg`${queue.length - index} left`)}</span>
         </div>
 
         <div className="muted drill-meta">
           {current.source === 'puzzle'
             ? tr('מתוך פאזל', 'From a puzzle')
             : rep
-              ? tr(`מתוך האימון: ${repName(rep)}`, `From training: ${repName(rep)}`)
+              ? tr(`מתוך האימון: ${repName(rep)}`, msg`From training: ${repName(rep)}`)
               : tr('מתוך משחק שלך ב-Chess.com', 'From one of your Chess.com games')}
           {current.puzzleId && (
             <>
@@ -184,12 +185,12 @@ export default function Drill() {
               <a href={current.gameUrl} target="_blank" rel="noreferrer">{tr('למשחק', 'Game')}</a>
             </>
           )}
-          {' · '}{current.box === 0 ? tr('עמדה חדשה', 'New position') : tr(`שלב ${current.box} מתוך ${MAX_BOX}`, `Step ${current.box} of ${MAX_BOX}`)}
+          {' · '}{current.box === 0 ? tr('עמדה חדשה', 'New position') : tr(`שלב ${current.box} מתוך ${MAX_BOX}`, msg`Step ${current.box} of ${MAX_BOX}`)}
         </div>
         <div className="muted">
           {current.source === 'puzzle'
-            ? tr(`בפאזל ניסית ${ltr(current.played)}.`, `In the puzzle you tried ${current.played}.`)
-            : tr(`באותה עמדה שיחקת בעבר ${ltr(current.played)}.`, `Last time here you played ${current.played}.`)}
+            ? tr(`בפאזל ניסית ${ltr(current.played)}.`, msg`In the puzzle you tried ${current.played}.`)
+            : tr(`באותה עמדה שיחקת בעבר ${ltr(current.played)}.`, msg`Last time here you played ${current.played}.`)}
         </div>
 
         {answer && (
