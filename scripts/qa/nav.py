@@ -1,7 +1,7 @@
 """QA: the Back button, a game that survives a reload, the daily goal, the keyboard in dialogs, and the engine
 when it is slow or cannot load (English, ~3 min).
 
-    python scripts/qa/nav.py [--url URL] [--only back,reload,ends,computer,goal,keys,engine]
+    python scripts/qa/nav.py [--url URL] [--only back,reload,ends,computer,drag,goal,keys,engine]
 """
 import json, subprocess, time
 from playwright.sync_api import sync_playwright
@@ -178,6 +178,61 @@ with sync_playwright() as p:
                 pg.click('.trainer button:has-text("Take back")'); wait(1000)
                 r.check(pg.inner_text('.trainer .status-text') == 'Your move' and len(moves()) == n - 1 and not pg.locator('.trainer .notice').count(), f'the computer, {name}: take back goes on from your move', f"{pg.inner_text('.trainer .status-text')} {len(moves())} of {n}")
             c6.close()
+        pg = ctx.pages[0]
+
+    if not a.only or 'drag' in a.only:
+        # promotion by dragging: with the mouse, and with a finger on a phone (touch events of the browser itself)
+        raw = subprocess.run(['node', '--experimental-strip-types', '--no-warnings', str(ROOT / 'scripts/qa/dump-ends.ts')], cwd=ROOT, capture_output=True, text=True, encoding='utf-8', check=True).stdout
+        cases = {k: v for k, v in json.loads(raw).items() if 'promotion' in k}
+        for how, options in (('mouse', {'viewport': {'width': 1280, 'height': 900}}), ('finger', {'viewport': {'width': 390, 'height': 844}, 'has_touch': True, 'is_mobile': True})):
+            c7 = b.new_context(locale='en-US', service_workers='block', **options); pg = c7.new_page(); r.watch(pg, how)
+            cdp = c7.new_cdp_session(pg)
+            def center(sq):
+                box = pg.locator(f'.trainer [data-square="{sq}"]').bounding_box()
+                return box['x'] + box['width'] / 2, box['y'] + box['height'] / 2
+            def drag(sq1, sq2):
+                (x1, y1), (x2, y2) = center(sq1), center(sq2)
+                path = [(x1 + (x2 - x1) * i / 12, y1 + (y2 - y1) * i / 12) for i in range(13)]
+                if how == 'mouse':
+                    pg.mouse.move(x1, y1); pg.mouse.down()
+                    for x, y in path: pg.mouse.move(x, y); wait(15)
+                    wait(80); pg.mouse.up()
+                else:
+                    touch = lambda t, p: cdp.send('Input.dispatchTouchEvent', {'type': t, 'touchPoints': [{'x': p[0], 'y': p[1]}] if p else []})
+                    touch('touchStart', path[0])
+                    for p_ in path[1:]: touch('touchMove', p_); wait(15)
+                    wait(80); touch('touchEnd', None)
+                wait(600)
+            piece = lambda sq: pg.evaluate("s => document.querySelector(`.trainer [data-square=${s}] [data-piece]`)?.dataset.piece ?? ''", sq)
+            pg.goto(a.url); pg.wait_for_selector('.tabs')
+            for name, c in cases.items():
+                pg.evaluate('g => { localStorage.setItem("chess-trainer:screen", JSON.stringify("play")); localStorage.setItem("chess-trainer:game", g); }',
+                            json.dumps({'mode': 'play', 'repertoire': 'italian', 'color': c['color'], 'phase': 'free', 'moves': c['moves'].split(), 'at': pg.evaluate('Date.now()')}))
+                reload(); turn()
+                n, (p1, p2), pawn = len(moves()), c['play'], c['color'] + 'P'
+                # a page that can scroll both ways, or "it does not scroll" would say nothing
+                pg.evaluate("() => { document.body.style.minHeight = '2400px'; scrollTo(0, 24); }"); wait(200)
+                top = pg.evaluate('scrollY')
+                drag(p1, 'e4' if c['color'] == 'b' else 'e5')
+                r.check(len(moves()) == n and piece(p1) == pawn, f'{how}, {name}: dropped on a square it cannot reach, the pawn goes back', f'{moves()[n:]} {piece(p1)}')
+                drag(p1, p2)
+                played = moves()[n] if len(moves()) > n else ''
+                r.check(played == c['san'] and piece(p1) != pawn, f'{how}, {name}: dragged to {p2}: {c["san"]}', f'{played} {piece(p2)}')
+                r.check(pg.evaluate('scrollY') == top == 24, f'{how}, {name}: the page does not scroll with the drag', f"{top} -> {pg.evaluate('scrollY')}")
+                turn()
+                r.check(len(moves()) == n + 2, f'{how}, {name}: the computer answers', str(moves()[n:]))
+                pg.locator('.trainer button', has_text='Take back').click(); wait(900)
+                r.check(piece(p1) == pawn and len(moves()) == n, f'{how}, {name}: take back gives the pawn back')
+                tapped = p1; pg.click(f'.trainer [data-square="{tapped}"]'); wait(250); pg.click(f'.trainer [data-square="{p2}"]'); wait(700)
+                r.check(len(moves()) > n and moves()[n] == c['san'], f'{how}, {name}: and tapping still works after a drag', str(moves()[n:]))
+                turn()  # or the computer's answer would be saved over the next game
+            if how == 'finger':
+                # the same movement from an empty square does scroll: the check above means something
+                drag('d5', 'd2')
+                r.check(pg.evaluate('scrollY') != 24, 'finger: a drag that does not start on a piece scrolls the page', str(pg.evaluate('scrollY')))
+                # the board library tries to cancel the end of a touch that is scrolling; Chrome says so and goes on
+                r.errors = [e for e in r.errors if not (e.startswith('[finger]') and 'attempt to cancel a touchend' in e)]
+            c7.close()
         pg = ctx.pages[0]
 
     if not a.only or 'goal' in a.only:
