@@ -1,11 +1,11 @@
 """QA: the Back button, a game that survives a reload, the daily goal, the keyboard in dialogs, and the engine
 when it is slow or cannot load (English, ~3 min).
 
-    python scripts/qa/nav.py [--url URL] [--only back,reload,goal,keys,engine]
+    python scripts/qa/nav.py [--url URL] [--only back,reload,ends,goal,keys,engine]
 """
-import json, time
+import json, subprocess, time
 from playwright.sync_api import sync_playwright
-from common import Report, args
+from common import ROOT, Report, args
 
 a = args('Back button and reload QA', lambda p: p.add_argument('--chesscom', default='shlomin1231', help='Chess.com username for the review'))
 r = Report('nav')
@@ -102,6 +102,38 @@ with sync_playwright() as p:
             pg.evaluate('g => localStorage.setItem("chess-trainer:game", g)', json.dumps({'mode': 'play', 'repertoire': 'italian', 'color': 'w', 'phase': 'free', **game}))
             reload(); turn()
             r.check(moves() == [] and pg.locator('.trainer .controls select').first.input_value() == 'train', f'a {label} saved game starts a new one', str(moves()))
+
+    if not a.only or 'ends' in a.only:
+        # a game that stands one move before its end (put in the place of a saved game), and the move is played
+        raw = subprocess.run(['node', '--experimental-strip-types', '--no-warnings', str(ROOT / 'scripts/qa/dump-ends.ts')], cwd=ROOT, capture_output=True, text=True, encoding='utf-8', check=True).stdout
+        why = {'stalemate': 'stalemate', 'threefold repetition': 'three times', 'the 50-move rule': '50 moves', 'not enough material': 'not enough'}
+        cases = json.loads(raw)
+        r.check(len(cases) == 7, 'seven games to finish', str(list(cases)))
+        tab(0); wait(500)
+        for name, c in cases.items():
+            # as if the app was closed in this game
+            pg.evaluate('g => { localStorage.setItem("chess-trainer:screen", JSON.stringify("play")); localStorage.setItem("chess-trainer:game", g); }',
+                        json.dumps({'mode': 'play', 'repertoire': 'italian', 'color': c['color'], 'phase': 'free', 'moves': c['moves'].split(), 'at': pg.evaluate('Date.now()')}))
+            reload(); turn()
+            n = len(moves())
+            pg.click(f'.trainer [data-square="{c["play"][0]}"]'); wait(250); pg.click(f'.trainer [data-square="{c["play"][1]}"]'); wait(700)
+            r.check(len(moves()) > n and moves()[n] == c['san'], f'{name}: {c["san"]} is played', str(moves()[n:]))
+            if name in why:
+                wait(1200)
+                notice = ' '.join(pg.locator('.trainer .notice').all_inner_texts())
+                bar = pg.evaluate("[...document.querySelectorAll('.trainer .evalbar-label')].map(e => e.innerText.match(/\\d+/)?.[0])")
+                r.check(pg.inner_text('.trainer .status-text') == 'Game over' and why[name] in notice, f'{name}: the game is over, and why', notice)
+                r.check(bar == ['50', '50'], f'{name}: the win-chance bar is even', str(bar))
+                r.check(pg.evaluate("localStorage.getItem('chess-trainer:game')") == 'null', f'{name}: a finished game is not continued later')
+                pg.click('.trainer button:has-text("Take back")'); wait(900)
+                r.check(len(moves()) == n and pg.inner_text('.trainer .status-text') == 'Your move' and not pg.locator('.trainer .notice').count(), f'{name}: take back goes on from before it')
+            else:
+                turn()
+                r.check(len(moves()) == n + 2, f'{name}: the computer answers', str(moves()[n:]))
+                pg.click('.trainer button:has-text("Take back")'); wait(900)
+                piece = pg.evaluate("s => document.querySelector(`.trainer [data-square=${s}] [data-piece]`)?.dataset.piece", c['play'][0])
+                r.check(len(moves()) == n and piece == c['color'] + 'P', f'{name}: take back gives the pawn back', str(piece))
+        pg.evaluate("localStorage.removeItem('chess-trainer:game')"); reload(); turn()
 
     if not a.only or 'goal' in a.only:
         tab(3); pg.wait_for_selector('.daily-pill'); wait(2500)

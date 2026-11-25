@@ -58,6 +58,16 @@ const thresholds = () => [
   { label: tr('רק גדולות (מהפסד של 30%)', 'Only big ones (from a 30% loss)'), value: 30 },
 ];
 
+/** Why the game is a draw: without it, a stalemate in a winning position looks like a mistake of the app. */
+const drawText = (g: Chess) =>
+  g.isStalemate()
+    ? tr('תיקו: פט — לצד שבתורו אין מהלך חוקי, והמלך שלו לא בשח.', 'Draw: stalemate — the side to move has no legal move and is not in check.')
+    : g.isInsufficientMaterial()
+      ? tr('תיקו: לא נשארו מספיק כלים כדי לתת מט.', 'Draw: not enough pieces are left to give checkmate.')
+      : g.isThreefoldRepetition()
+        ? tr('תיקו: אותה עמדה חזרה שלוש פעמים.', 'Draw: the same position came up three times.')
+        : tr('תיקו: 50 מהלכים לכל צד בלי לקיחה ובלי הזזת רגלי.', 'Draw: 50 moves by each side without a capture or a pawn move.');
+
 /** A request from another screen to start training a repertoire (nonce makes repeats count). */
 export type TrainRequest = { repertoireId: string; nonce: number };
 
@@ -165,8 +175,10 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
     setNotice(
       g.isCheckmate()
         ? g.turn() === userColor ? tr('מט. הפסדת — נסה שוב.', 'Checkmate. You lost — try again.') : tr('מט! ניצחת.', 'Checkmate! You won.')
-        : tr('תיקו.', 'Draw.'),
+        : drawText(g),
     );
+    // the win-chance bar shows the result, not the estimate from before the last move
+    setEvalWhite(g.isCheckmate() ? (g.turn() === 'w' ? 0 : 100) : 50);
     return true;
   }, [userColor]);
 

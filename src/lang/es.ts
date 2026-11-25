@@ -402,7 +402,10 @@ const es: Record<string, string> = {
   'Only big ones (from a 30% loss)': 'Solo los grandes (desde una pérdida del 30 %)',
   'Checkmate. You lost — try again.': 'Jaque mate. Perdiste: inténtalo de nuevo.',
   'Checkmate! You won.': '¡Jaque mate! Ganaste.',
-  'Draw.': 'Tablas.',
+  'Draw: stalemate — the side to move has no legal move and is not in check.': 'Tablas: rey ahogado. El bando que juega no tiene jugadas legales y no está en jaque.',
+  'Draw: not enough pieces are left to give checkmate.': 'Tablas: no quedan piezas suficientes para dar jaque mate.',
+  'Draw: the same position came up three times.': 'Tablas: la misma posición se repitió tres veces.',
+  'Draw: 50 moves by each side without a capture or a pawn move.': 'Tablas: 50 jugadas de cada bando sin capturas ni movimientos de peón.',
   'Your game goes on from where you stopped.': 'Tu partida sigue donde la dejaste.',
   'End of the book line. Up to move {0} the computer plays the best moves and each of your moves is checked — if there is a better one, you get a correction and can try again. The moves are saved for next time.':
     'Fin de la línea de libro. Hasta la jugada {0} el ordenador hace las mejores jugadas y se comprueba cada una de las tuyas: si hay una mejor, recibes una corrección y puedes intentarlo de nuevo. Las jugadas se guardan para la próxima vez.',
