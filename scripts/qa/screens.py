@@ -364,7 +364,8 @@ def account(b):
     txt = pg.locator('.account-panel').inner_text()
     r.check('Sign in with Google' in txt or 'Sign out' in txt, 'account panel: Google sign-in')
     r.check('Licenses' in txt, 'account panel: licenses link')
-    pg.click('.account-panel .chips button[lang=he]'); time.sleep(0.5)
+    pg.click('.account-panel .chips button[lang=he]')
+    wait_until(lambda: pg.evaluate('document.documentElement.dir') == 'rtl', 10)  # its texts are loaded only now
     r.check(pg.evaluate('document.documentElement.dir') == 'rtl' and '\u05de\u05d0\u05de\u05df \u05e9\u05d7\u05de\u05d8' in pg.locator('body').inner_text(), 'language: Hebrew, right to left')
     pg.click('.account-panel .chips button[lang=en]'); time.sleep(0.5)
     r.check(pg.evaluate('document.documentElement.dir') == 'ltr', 'language: English, left to right')
