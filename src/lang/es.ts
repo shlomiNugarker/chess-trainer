@@ -466,6 +466,16 @@ const es: Record<string, string> = {
   'Cancel': 'Cancelar',
   'Mistakes saved for review': 'Errores guardados para repasar',
   'To review': 'Por repasar',
+
+  // InstallCard.tsx
+  'Keep it one tap away': 'A un toque de distancia',
+  'Install the app: it opens full screen from its own icon, and works offline.': 'Instala la aplicación: se abre a pantalla completa desde su propio icono y funciona sin conexión.',
+  'Install': 'Instalar',
+  'Not now': 'Ahora no',
+  'App on this device': 'Aplicación en este dispositivo',
+  'Install the app': 'Instalar la aplicación',
+  'To install the app: tap Share, then "Add to Home Screen".': 'Para instalar la aplicación: toca Compartir y luego «Añadir a pantalla de inicio».',
+  'Sign in first, and then in the installed app too, so your progress is there as well.': 'Antes inicia sesión, y después también en la aplicación instalada, para que tu progreso esté en ella.',
 };
 
 export default es;

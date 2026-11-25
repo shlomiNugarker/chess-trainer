@@ -35,4 +35,7 @@ export function recordRun(repertoireId: string, lineId: string, mistakes: number
   }
 }
 
+/** Has the user passed a test of any line without a mistake? */
+export const hasMastered = () => Object.values(read()).some((lines) => Object.values(lines).some((r) => r.clean > 0));
+
 export const isMastered = (r?: LineRecord) => !!r && r.last === 0;

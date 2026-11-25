@@ -4,7 +4,7 @@
 export const PREFIX = 'chess-trainer:';
 
 /** Keys that belong to this device only (where you are in the app, sync bookkeeping). */
-const LOCAL_ONLY = new Set(['screen', 'practice-view', 'learn-repertoire', 'learn-line', 'sync-stamps', 'cloud-signed-in', 'cloud-signing-in', 'cloud-last-sync', 'cloud-owner', 'analyses', 'game-reviews', 'game']);
+const LOCAL_ONLY = new Set(['screen', 'practice-view', 'learn-repertoire', 'learn-line', 'sync-stamps', 'cloud-signed-in', 'cloud-signing-in', 'cloud-last-sync', 'cloud-owner', 'analyses', 'game-reviews', 'game', 'install-declined']);
 
 /** Another account's data, kept aside on this device (see switchOwner in cloud.ts); never uploaded. */
 export const ASIDE = PREFIX + 'aside:';

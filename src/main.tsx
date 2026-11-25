@@ -6,6 +6,7 @@ import './index.css'
 import App from './App.tsx'
 import { startCloud } from './cloud'
 import { langReady } from './i18n'
+import './install'
 import { migrateMastery } from './legacyMastery'
 
 startCloud() // Google sign-in + sync (only when configured, see docs/google-login-setup.md)

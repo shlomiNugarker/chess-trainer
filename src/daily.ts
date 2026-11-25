@@ -34,6 +34,9 @@ export function todayCount(now = new Date()): number {
   return load()[dayKey(now)] ?? 0;
 }
 
+/** On how many days puzzles were solved. */
+export const daysPlayed = () => Object.keys(load()).length;
+
 /** Days in a row the goal was met, up to today (today counts once met; until then the streak is still alive from yesterday). */
 export function dayStreak(now = new Date()): number {
   const days = load();

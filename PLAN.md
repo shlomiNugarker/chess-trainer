@@ -113,6 +113,7 @@
 - [x] The board's height follows the room left on the screen (no scrolling, at least 320px)
 - [x] Sounds: move, capture, check, mistake, "well done" (Web Audio, can be muted)
 - [x] PWA: installs to the home screen, a knight icon, works offline (including the engine and the puzzles)
+- [x] A suggestion to install (Learn, a small card — not a popup), only after real use: a line passed without a mistake, or puzzles on two days. "Not now" is for good; the account panel keeps a button. Chrome and Edge open the browser's dialog, an iPhone gets the steps
 - [x] Deployed on Vercel (a push to main publishes)
 
 ## Stage 4 — a wider repertoire

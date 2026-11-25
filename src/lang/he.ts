@@ -487,6 +487,16 @@ const he: Record<string, string> = {
   'Reset': 'אפס',
   'Mistakes saved for review': 'טעויות שנשמרו לחזרה',
   'To review': 'לחזרה',
+
+  // InstallCard.tsx
+  'Keep it one tap away': 'האפליקציה במרחק נגיעה',
+  'Install the app: it opens full screen from its own icon, and works offline.': 'התקנת האפליקציה: היא נפתחת במסך מלא מאייקון משלה, ועובדת גם בלי אינטרנט.',
+  'Install': 'התקן',
+  'Not now': 'לא עכשיו',
+  'App on this device': 'אפליקציה במכשיר הזה',
+  'Install the app': 'התקן את האפליקציה',
+  'To install the app: tap Share, then "Add to Home Screen".': 'כדי להתקין את האפליקציה: שיתוף, ואז "הוספה למסך הבית".',
+  'Sign in first, and then in the installed app too, so your progress is there as well.': 'כדאי להתחבר לפני כן, ואחר כך גם באפליקציה המותקנת, כדי שההתקדמות תהיה גם בה.',
 };
 
 export default he;

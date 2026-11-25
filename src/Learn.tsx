@@ -10,12 +10,13 @@ import { lineStats } from './lineStats';
 import { BLUE_ARROW, BOARD_THEME, GREEN_ARROW, LAST_MOVE, WRONG_MOVE, ltr, uciToArrow } from './chessUtils';
 import { useClickToMove } from './useClickToMove';
 import { playSound, useMoveSound } from './sound';
-import { DAILY_GOAL, dayStreak, todayCount, daysLabel } from './daily';
+import { DAILY_GOAL, dayStreak, daysPlayed, todayCount, daysLabel } from './daily';
 import { useScrollToMove } from './useScrollToMove';
 import { useFitBoard } from './useFitBoard';
 import { useSidePanel } from './useSidePanel';
 import { useStored } from './storage';
-import { hasAnyMastery, isMastered, loadMastery, recordRun } from './mastery';
+import { hasAnyMastery, hasMastered, isMastered, loadMastery, recordRun } from './mastery';
+import { InstallCard } from './InstallCard';
 import { useHiddenRepertoires } from './hiddenReps';
 
 const START = new Chess().fen();
@@ -58,6 +59,8 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
   const [guideDismissed, setGuideDismissed] = useStored('guide-dismissed', false);
   const anyMastery = useMemo(hasAnyMastery, [masteryVersion]); // eslint-disable-line react-hooks/exhaustive-deps
   const showGuide = !guideDismissed && !anyMastery;
+  // not before the app was of use: a line passed without a mistake, or puzzles on two days
+  const offerInstall = useMemo(() => hasMastered() || daysPlayed() >= 2, [masteryVersion]); // eslint-disable-line react-hooks/exhaustive-deps
   // "today": the one or two things worth doing now, one tap each
   const due = useMistakeCount(dueCount);
   const [puzzlesToday, streakDays] = useMemo(() => [todayCount(), dayStreak()], []); // they change on another screen
@@ -190,6 +193,8 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
           <button className="ghost small" onClick={() => setGuideDismissed(true)}>{tr('Got it')}</button>
         </div>
       )}
+
+      {!showGuide && !quiz && offerInstall && <InstallCard />}
 
       {!showGuide && !quiz && (
         <div className="today">

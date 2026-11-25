@@ -1335,5 +1335,16 @@ button.progress-pill { border: none; cursor: pointer; font: inherit; }
 button.link.danger { color: var(--error); }
 
 .engine-failed { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; border-color: var(--error); }
+.install-card { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 12px; padding: 10px 14px; }
+.install-text { flex: 1 1 240px; }
+.install-card p { margin: 2px 0 0; font-size: 13px; line-height: 1.45; }
+.install-card .buttons { display: flex; gap: 8px; }
+.install-row p { margin: 0; font-size: 13px; line-height: 1.5; }
 
 .tabs-only { display: contents; }
+
+/* a low phone has no room above the board: the suggestion goes to the end of the page */
+@media (max-width: 600px) and (max-height: 800px) {
+  .learn:has(> .install-card) { display: flex; flex-direction: column; }
+  .install-card { order: 1; margin: 12px 0 0; }
+}

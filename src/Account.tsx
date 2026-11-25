@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useDialog } from './useDialog';
 import { preloadCloud, signIn, signOut, useCloud } from './cloud';
+import { InstallRow } from './InstallCard';
 import { explanationsNote } from './repertoire';
 import { LANGS, hasExplanations, langName, locale, setLang, msg, tr, useLang } from './i18n';
 
@@ -73,6 +74,7 @@ export default function Account({ onClose }: { onClose: () => void }) {
           </div>
         </div>
         {!hasExplanations() && <p className="muted lang-note">{explanationsNote()}</p>}
+        <InstallRow />
 
         {/* GPL: whoever gets the app (and the Stockfish engine in it) can get the source */}
         <p className="muted account-foot">

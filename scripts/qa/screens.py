@@ -318,6 +318,45 @@ def review(pg):
     r.check(wait_until(lambda: pg.locator('.review .tile-value').count() > 0, 60), 'the review reloads by itself after a page reload')
 
 
+# the browser offers to install (Playwright's does not): a stand-in for Chrome's event
+OFFER_INSTALL = """(outcome = 'dismissed') => { const e = new Event('beforeinstallprompt', { cancelable: true });
+  e.prompt = async () => { window.__asked = (window.__asked ?? 0) + 1; }; e.userChoice = Promise.resolve({ outcome }); window.dispatchEvent(e); window.__kept = e.defaultPrevented; }"""
+IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1'
+MASTERED = """localStorage.setItem('chess-trainer:mastery', JSON.stringify({ london: { 'main-line-vs-d5-and-c5': { tries: 1, clean: 1, last: 0, at: 1 } } }))"""
+
+
+@section('install')
+def install(b):
+    for how in ('declined', 'asked', 'done'):
+        ctx, pg = open_page(b, 'install', 'en-US', 1280, 900)
+        tab(pg, 1); pg.evaluate(OFFER_INSTALL); time.sleep(0.3)
+        r.check(pg.locator('.install-card').count() == 0 and pg.evaluate('window.__kept'), f'install, {how}: not offered to a new user, and the browser does not offer it either')
+        pg.evaluate(MASTERED); pg.reload(); tab(pg, 1)
+        r.check(pg.locator('.install-card').count() == 0, f'install, {how}: no card where the browser does not offer it')
+        pg.evaluate(OFFER_INSTALL, 'accepted' if how == 'done' else 'dismissed'); time.sleep(0.3)
+        r.check(pg.locator('.install-card').count() == 1 and hscroll(pg) <= 0, f'install, {how}: the card, after a line without mistakes', text(pg, '.install-card'))
+        r.shot(pg, 'install')
+        if how == 'declined': pg.click('.install-card button:has-text("Not now")')
+        else: pg.click('.install-card button:text-is("Install")')
+        time.sleep(0.4)
+        r.check(pg.locator('.install-card').count() == 0 and (pg.evaluate('window.__asked ?? 0') == (0 if how == 'declined' else 1)), f'install, {how}: the card goes away' + ('' if how == 'declined' else ', the browser asked once'))
+        pg.reload(); tab(pg, 1); pg.evaluate(OFFER_INSTALL); time.sleep(0.3)
+        r.check(pg.locator('.install-card').count() == (1 if how == 'done' else 0), f'install, {how}: ' + ('the event of an app that was removed offers it again' if how == 'done' else 'it does not come back'))
+        ctx.close()
+    for locale in ('en-US', 'he-IL', 'es-ES'):
+        ctx = b.new_context(locale=locale, viewport={'width': 390, 'height': 664}, user_agent=IPHONE, has_touch=True, is_mobile=True)
+        pg = ctx.new_page(); r.watch(pg, 'iphone'); pg.goto(a.url); pg.wait_for_selector('.tabs')
+        pg.evaluate(MASTERED); pg.reload(); pg.wait_for_selector('.tabs'); tab(pg, 1)
+        r.check(pg.locator('.install-card').count() == 1 and pg.locator('.install-card button').count() == 1 and hscroll(pg) <= 0, f'install, iPhone, {locale}: the steps', text(pg, '.install-card'))
+        r.check(not pg.evaluate(SMALL_JS), f'install, iPhone, {locale}: the button is big enough', str(pg.evaluate(SMALL_JS)))
+        fits = pg.evaluate("""() => [...document.querySelectorAll('.learn button.primary')].pop().getBoundingClientRect().bottom <= document.querySelector('.tabs').getBoundingClientRect().top""")
+        r.check(fits, f'install, iPhone, {locale}: "Next" is still in view on a low phone')
+        r.shot(pg, f'install-iphone-{locale}')
+        pg.locator('.install-card button').tap(); pg.reload(); pg.wait_for_selector('.tabs'); tab(pg, 1)
+        r.check(pg.locator('.install-card').count() == 0, f'install, iPhone, {locale}: closed for good')
+        ctx.close()
+
+
 @section('account')
 def account(b):
     ctx, pg = open_page(b, 'account', 'en-US', 1280, 900, a.account_url)
@@ -329,6 +368,9 @@ def account(b):
     r.check(pg.evaluate('document.documentElement.dir') == 'rtl' and '\u05de\u05d0\u05de\u05df \u05e9\u05d7\u05de\u05d8' in pg.locator('body').inner_text(), 'language: Hebrew, right to left')
     pg.click('.account-panel .chips button[lang=en]'); time.sleep(0.5)
     r.check(pg.evaluate('document.documentElement.dir') == 'ltr', 'language: English, left to right')
+    r.check(pg.locator('.install-row').count() == 0, 'account panel: no install button where the browser does not offer it')
+    pg.evaluate(OFFER_INSTALL); time.sleep(0.3)
+    r.check(text(pg, '.install-row button') == 'Install the app', 'account panel: the install button', text(pg, '.install-row'))
     pg.click('.account-panel button[aria-label="Close"]'); time.sleep(0.3)
     r.check(pg.locator('.account-panel').count() == 0, 'account panel closes')
     ctx.close()
@@ -544,6 +586,6 @@ with sync_playwright() as p:
     if not a.only: tour(pg, 'desktop-en')
     learn(pg); mistakes(pg); puzzles(pg); review(pg)  # mistakes first: the puzzle section adds its own
     ctx.close()
-    account(b); phone(b); touch(b); languages(b); offline(b)
+    install(b); account(b); phone(b); touch(b); languages(b); offline(b)
     b.close()
 r.done()
