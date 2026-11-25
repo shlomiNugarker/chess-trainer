@@ -62,6 +62,7 @@ Without configuration the app works fully, with progress kept in the browser. To
 | `src/Trainer.tsx` | Training / regular game: book phase, coach, corrections |
 | `src/Learn.tsx`, `src/lineStats.ts`, `src/hiddenReps.ts` | Learn page, "test me", per-line stats, hidden openings |
 | `src/repertoire.ts`, `src/repertoire.en.ts` | The opening lines (SAN), ideas and notes — Hebrew and English |
+| `src/nav.ts`, `src/savedGame.ts` | The Back button, and a game that survives a reload |
 | `src/Practice.tsx`, `src/Puzzles.tsx`, `src/puzzleData.ts`, `src/daily.ts` | Puzzles, rating, daily goal |
 | `src/Drill.tsx`, `src/mistakes.ts` | "My mistakes" spaced repetition |
 | `src/Review.tsx`, `src/reviewStats.ts`, `src/chesscom.ts`, `src/analysisCache.ts` | Chess.com review |

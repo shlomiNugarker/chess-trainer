@@ -401,6 +401,7 @@ const es: Record<string, string> = {
   'Checkmate. You lost — try again.': 'Jaque mate. Perdiste: inténtalo de nuevo.',
   'Checkmate! You won.': '¡Jaque mate! Ganaste.',
   'Draw.': 'Tablas.',
+  'Your game goes on from where you stopped.': 'Tu partida sigue donde la dejaste.',
   'End of the book line. Up to move {0} the computer plays the best moves and each of your moves is checked — if there is a better one, you get a correction and can try again. The moves are saved for next time.':
     'Fin de la línea de libro. Hasta la jugada {0} el ordenador hace las mejores jugadas y se comprueba cada una de las tuyas: si hay una mejor, recibes una corrección y puedes intentarlo de nuevo. Las jugadas se guardan para la próxima vez.',
   '✓ {0} — correct. Next time you get here you will need to remember it.': '✓ {0}: correcto. La próxima vez que llegues aquí tendrás que recordarla.',

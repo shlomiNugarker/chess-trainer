@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Trainer, { type TrainRequest } from './Trainer';
 import Review from './Review';
 import Practice, { type PracticeView } from './Practice';
@@ -10,26 +10,27 @@ import Account from './Account';
 import { useCloud } from './cloud';
 import { REPERTOIRES } from './repertoire';
 import { withCustom } from './customLines';
+import { go, goTo, useNav, type Screen } from './nav';
 import './App.css';
 
-type Screen = 'play' | 'learn' | 'review' | 'drill';
-
+const closeAccount = () => go({ account: false });
 const dueCount = () => dueMistakes().length;
 
 export default function App() {
-  const [screen, setScreen] = useStored<Screen>('screen', 'learn'); // first visit starts at Learn; then the last tab
+  const { screen, account: accountOpen } = useNav();
+  const [, saveScreen] = useStored<Screen>('screen', 'learn');
+  useEffect(() => saveScreen(screen), [screen, saveScreen]);
   const [trainRequest, setTrainRequest] = useState<TrainRequest | null>(null);
   const [practiceView, setPracticeView] = useStored<PracticeView>('practice-view', 'puzzles');
   /** Opens the Practice tab on puzzles or on the review of your mistakes. */
   const openPractice = (v: PracticeView) => {
     setPracticeView(v);
-    setScreen('drill');
+    goTo('drill');
   };
   const due = useMistakeCount(dueCount);
   const lang = useLang(); // re-renders the whole app when the language changes
   const nextLang = LANGS[(LANGS.findIndex((l) => l.id === lang) + 1) % LANGS.length];
   const cloud = useCloud();
-  const [accountOpen, setAccountOpen] = useState(false);
 
   const tabs: { id: Screen; label: string; icon: string; badge?: number }[] = [
     { id: 'play', label: tr('שחק', 'Play'), icon: '♟' },
@@ -53,7 +54,7 @@ export default function App() {
               role="tab"
               aria-selected={t.id === screen}
               className={t.id === screen ? 'tab active' : 'tab'}
-              onClick={() => setScreen(t.id)}
+              onClick={() => goTo(t.id)}
             >
               <span className="tab-icon" aria-hidden>{t.icon}</span>
               <span className="tab-label">{t.label}</span>
@@ -62,7 +63,7 @@ export default function App() {
           ))}
           {cloud.enabled ? (
             // account (Google sign-in, sync) and language, in one panel (a fifth item in the phone tab bar)
-            <button className="tab lang-switch account-tab" onClick={() => setAccountOpen(true)} aria-haspopup="dialog">
+            <button className="tab lang-switch account-tab" onClick={() => go({ account: true })} aria-haspopup="dialog">
               <span className="tab-icon" aria-hidden>
                 {cloud.user?.photo ? <img className="avatar avatar-sm" src={cloud.user.photo} alt="" referrerPolicy="no-referrer" /> : '👤'}
               </span>
@@ -87,7 +88,7 @@ export default function App() {
           active={screen === 'review'}
           onTrain={(repertoireId) => {
             setTrainRequest({ repertoireId, nonce: Date.now() });
-            setScreen('play');
+            goTo('play');
           }}
           onDrill={() => openPractice('mistakes')}
           onLearn={(repertoireId, moves) => {
@@ -95,7 +96,7 @@ export default function App() {
             const rep = withCustom(REPERTOIRES.find((r) => r.id === repertoireId)!);
             localStorage.setItem('chess-trainer:learn-repertoire', JSON.stringify(repertoireId));
             localStorage.setItem('chess-trainer:learn-line', JSON.stringify(Math.max(0, rep.lines.findIndex((l) => l.moves === moves))));
-            setScreen('learn');
+            goTo('learn');
           }}
         />
       </div>
@@ -103,14 +104,14 @@ export default function App() {
         <Learn
           onTrain={(repertoireId) => {
             setTrainRequest({ repertoireId, nonce: Date.now() });
-            setScreen('play');
+            goTo('play');
           }}
           onDrill={() => openPractice('mistakes')}
           onPuzzles={() => openPractice('puzzles')}
         />
       )}
       {screen === 'drill' && <Practice view={practiceView} onView={setPracticeView} due={due} />}
-      {accountOpen && <Account onClose={() => setAccountOpen(false)} />}
+      {accountOpen && <Account onClose={closeAccount} />}
     </div>
   );
 }

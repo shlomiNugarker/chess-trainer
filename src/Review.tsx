@@ -8,6 +8,7 @@ import GameReview from './GameReview';
 import { isReviewed, reviewedUrls, storedAccuracy } from './gameAnalysis';
 import { REPERTOIRES } from './repertoire';
 import { withCustom } from './customLines';
+import { go, useNav } from './nav';
 import {
   phaseLabel, reasonLabel, timeClassLabel, MIN_MONTH_GAMES, MIN_OPENING_GAMES, MIN_STRONG_GAMES, SHORT_GAME,
   accuracyByMonth, accuracyTrend, analyzeGame, buildOverview, buildTips, strongestOpenings, summarizeDeep, weakestOpenings,
@@ -38,7 +39,8 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
   const [error, setError] = useState('');
   const [timeClass, setTimeClass] = useState<TimeClass | 'all'>('all');
   const loadToken = useRef({ cancelled: false });
-  const [reviewing, setReviewing] = useState<GameSummary | null>(null); // one game, move by move
+  const { review: reviewUrl } = useNav();
+  const reviewing = useMemo(() => games?.find((g) => g.url === reviewUrl) ?? null, [games, reviewUrl]); // one game, move by move
 
   const [deepCount, setDeepCount] = useStored('deep-count', 10);
   const [deep, setDeep] = useState<GameAnalysis[] | null>(null);
@@ -57,7 +59,7 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
     setError('');
     setGames(null);
     setDeep(null);
-    setReviewing(null);
+    go({ review: null });
     setLoading({ fraction: 0, count: 0 });
     try {
       const { games: all, partial } = await fetchGames(user, (fraction, count) => !token.cancelled && setLoading({ fraction, count }), token);
@@ -168,7 +170,7 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
         game={reviewing}
         username={username}
         active={active}
-        onClose={() => setReviewing(null)}
+        onClose={() => go({ review: null })}
         onLearn={onLearn}
         onDrill={onDrill}
       />
@@ -177,7 +179,7 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
 
   const openReview = (g: GameSummary) => {
     stopDeep(); // one engine at a time — both would compete for the CPU (the games done so far are kept)
-    setReviewing(g);
+    go({ review: g.url });
     window.scrollTo({ top: 0 });
   };
 

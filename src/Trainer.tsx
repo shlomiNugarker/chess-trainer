@@ -16,6 +16,8 @@ import { useScrollToMove } from './useScrollToMove';
 import { useFitBoard } from './useFitBoard';
 import { useSidePanel } from './useSidePanel';
 import { msg, tr, useLang } from './i18n';
+import { go, useNav } from './nav';
+import { loadGame, saveGame } from './savedGame';
 
 /** Below this win% loss a non-best move is not worth a remark. */
 const MIN_REMARK_DROP = 2;
@@ -61,10 +63,11 @@ export type TrainRequest = { repertoireId: string; nonce: number };
 const practiceCount = () => practiceMistakes().length;
 
 export default function Trainer({ trainRequest, active = true }: { trainRequest?: TrainRequest | null; active?: boolean }) {
-  const [mode, setMode] = useState<Mode>('train');
-  const modeRef = useRef<Mode>('train'); // read by callbacks that must see a mode switch immediately
+  const [saved] = useState(loadGame); // the game a reload interrupted, continued once the engines are up
+  const [mode, setMode] = useState<Mode>(saved?.mode ?? 'train');
+  const modeRef = useRef<Mode>(mode); // read by callbacks that must see a mode switch immediately
   const [colorChoice, setColorChoice] = useStored<ColorChoice>('color', 'w');
-  const [playColor, setPlayColor] = useState<Color>('w'); // resolved color in play mode
+  const [playColor, setPlayColor] = useState<Color>(saved?.color ?? 'w'); // resolved color in play mode
   const [storedRepId, setRepId] = useStored('repertoire', REPERTOIRES[0].id);
   const rep = useRepertoire(storedRepId); // includes the branches added from your games
   const repId = rep.id;
@@ -86,7 +89,8 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
   // last user move that was playable but not best: lets the user go back and play the better move
   const [undoable, setUndoable] = useState<{ ply: number; bestUci: string; bestSan: string } | null>(null);
   const learnedThisGame = useRef(new Set<string>()); // just taught — answering them right is not "remembering"
-  const [settingsOpen, setSettingsOpen] = useState(false); // phones: settings fold away to keep the board on screen
+  const { sheet: settingsOpen } = useNav(); // phones: settings fold away to keep the board on screen
+  const setSettingsOpen = (sheet: boolean) => go({ sheet });
   const showEvalRef = useRef(showEval);
   showEvalRef.current = showEval;
   const [evalWhite, setEvalWhite] = useState<number | null>(null); // White's win%, null = unknown
@@ -257,11 +261,41 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hiddenReps]);
 
+  /** Continues the game from before the reload; false if there is none, or it was of another opening. */
+  const continueGame = () => {
+    if (!saved || trainRequest || (saved.mode === 'train' && saved.repertoire !== repId)) return false;
+    const g = saved.board;
+    gameId.current++;
+    gameRef.current = g;
+    const myTurn = g.turn() === userColor;
+    const p: Phase = saved.phase === 'book' && (!myTurn || book.get(posKey(g.fen()))?.length) ? 'book' : 'free';
+    setPhase(p);
+    setNotice(tr('ממשיכים את המשחק מאיפה שעצרת.', 'Your game goes on from where you stopped.'));
+    sync();
+    opponent.current?.newGame();
+    if (myTurn) {
+      setStatus('user');
+      startPreAnalysis();
+    } else opponentMove(p);
+    return true;
+  };
+
   // Start a game once the engines are up
   useEffect(() => {
-    if (engineReady) newGame();
+    if (engineReady && !continueGame()) {
+      if (saved) setMode('train');
+      newGame({ mode: 'train' });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [engineReady]);
+
+  // Keep the game for a reload: after every reply and every accepted move. A move that stopped for a correction is
+  // not kept, so after a reload it is played again.
+  useEffect(() => {
+    if (!engineReady) return;
+    if (status === 'over' || !history.length) saveGame(null);
+    else if (status === 'user' || status === 'opponent') saveGame({ mode, repertoire: repId, color: playColor, phase, moves: history.map((m) => m.san) });
+  }, [engineReady, history, status, mode, repId, playColor, phase]);
 
   // "Train this opening" from the review screen
   useEffect(() => {

@@ -29,7 +29,7 @@ export function recordPuzzleDay(now = new Date()): number {
   return days[k];
 }
 
-/** Puzzles played today. */
+/** Puzzles solved today. */
 export function todayCount(now = new Date()): number {
   return load()[dayKey(now)] ?? 0;
 }

@@ -102,9 +102,6 @@ export default function Puzzles() {
     const r = recordResult(p, score);
     setStats(r.stats);
     setDelta(r.delta);
-    const n = recordPuzzleDay();
-    setToday(n);
-    setGoalJustMet(n === DAILY_GOAL);
   };
 
   /** Fails the puzzle once: the rating goes down, and later tries no longer count. */
@@ -119,6 +116,10 @@ export default function Puzzles() {
     setWrong(null);
     playSound('success', 0.15);
     if (!failed) rate(p, usedHint ? 0.5 : 1);
+    // the daily goal: puzzles solved, also with help or after a wrong try — not one whose solution was shown
+    const n = recordPuzzleDay();
+    setToday(n);
+    setGoalJustMet(n === DAILY_GOAL);
   };
 
   const onMove = (from: string, to: string) => {
