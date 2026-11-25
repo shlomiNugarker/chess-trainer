@@ -4,10 +4,13 @@
 export const PREFIX = 'chess-trainer:';
 
 /** Keys that belong to this device only (where you are in the app, sync bookkeeping). */
-const LOCAL_ONLY = new Set(['screen', 'practice-view', 'learn-repertoire', 'learn-line', 'sync-stamps', 'cloud-signed-in', 'cloud-signing-in', 'cloud-last-sync', 'analyses', 'game-reviews']);
+const LOCAL_ONLY = new Set(['screen', 'practice-view', 'learn-repertoire', 'learn-line', 'sync-stamps', 'cloud-signed-in', 'cloud-signing-in', 'cloud-last-sync', 'cloud-owner', 'analyses', 'game-reviews']);
+
+/** Another account's data, kept aside on this device (see switchOwner in cloud.ts); never uploaded. */
+export const ASIDE = PREFIX + 'aside:';
 
 /** Should this localStorage key travel between devices? (`key` includes the prefix) */
-export const isSynced = (key: string) => key.startsWith(PREFIX) && !LOCAL_ONLY.has(key.slice(PREFIX.length));
+export const isSynced = (key: string) => key.startsWith(PREFIX) && !key.startsWith(ASIDE) && !LOCAL_ONLY.has(key.slice(PREFIX.length));
 
 type Mistake = { fen: string; repertoire: string; at: number; due: number; reviewed?: number };
 type LineRecord = { at: number };

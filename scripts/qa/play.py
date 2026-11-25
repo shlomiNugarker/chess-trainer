@@ -1,9 +1,10 @@
 """QA: the Play screen (English, desktop) — opening training in every repertoire (the book, then the coach),
-leaving the line, and a regular game (hint, take back, new game).
+leaving the line, a regular game (hint, take back, new game), and state that must not leak between
+positions and screens (`states`).
 
     python scripts/qa/play.py [--url URL] [--only sicilian,qga]
 """
-import time
+import json, re, time
 from playwright.sync_api import sync_playwright
 from common import Report, args, lines, wait_until
 
@@ -148,5 +149,56 @@ with sync_playwright() as p:
             r.check(first_turn(pg, 'b'), 'regular game as Black: the engine opens')
         except Exception as e:
             r.check(False, 'regular game', str(e).splitlines()[0][:200]); r.shot(pg, 'play-regular')
+    if not a.only or 'states' in a.only:
+        # what belongs to one position must not stay on another; a slow coach makes the timing certain
+        pg2 = b.new_page(locale='en-US', viewport={'width': 1280, 'height': 900})
+        r.watch(pg2, 'states')
+        pg2.add_init_script("""{ const post = Worker.prototype.postMessage;
+          Worker.prototype.postMessage = function (m, ...rest) { return post.call(this, m === 'go movetime 700' ? 'go movetime 3000' : m, ...rest); }; }""")
+        pg2.goto(a.url); pg2.wait_for_selector('.tabs', timeout=60000)
+        pg2.click('.tabs .tab:has-text("Play")'); pg2.wait_for_selector('.trainer .status-text')
+        arrows = lambda: pg2.evaluate("[...document.querySelectorAll('.trainer svg')].filter(s => s.outerHTML.includes('106, 167, 232')).length")  # the hint's blue
+        try:
+            settings(pg2, mode='play', color='w')
+            first_turn(pg2, 'w')
+            r.check(arrows() == 0, 'no arrow before asking for a hint', str(arrows()))
+            pg2.wait_for_timeout(10000)  # the slow coach finishes the searches of the games before
+            pg2.click('.trainer button:has-text("New game")'); first_turn(pg2, 'w')
+            pg2.click('.trainer button:has-text("Hint")')
+            s = move(pg2, 'a2a3')  # before the coach has answered
+            seen = []
+            for _ in range(24):
+                seen.append(arrows()); pg2.wait_for_timeout(250)
+            r.check('Your move' in s and max(seen) == 0, 'a hint that comes after the move is not drawn', f'{s} {max(seen)}')
+            pg2.click('.trainer button:has-text("Hint")')
+            drawn = False
+            for _ in range(40):
+                if arrows(): drawn = True; break
+                pg2.wait_for_timeout(250)
+            r.check(drawn, 'a hint that was waited for is drawn')
+            pg2.click('.trainer button:has-text("Take back")'); pg2.wait_for_timeout(1000)
+            r.check(arrows() == 0, 'take back removes the hint', str(arrows()))
+
+            # an opening hidden in Learn (the one Play had selected) does not restart a regular game
+            move(pg2, 'h2h3'); before = placement(pg2)
+            first = json.loads(pg2.evaluate("localStorage.getItem('chess-trainer:repertoire')") or 'null')
+            idx = [x['id'] for x in data].index(first) if first else 0
+            pg2.click('.tabs .tab:has-text("Learn")')
+            pg2.click('.manage-chip'); pg2.locator('.manage-row input[type="checkbox"]').nth(idx).click(); pg2.wait_for_timeout(500)
+            r.check(len(json.loads(pg2.evaluate("localStorage.getItem('chess-trainer:hidden-repertoires')") or '[]')) == 1, 'an opening is hidden in Learn')
+            pg2.click('.tabs .tab:has-text("Play")'); pg2.wait_for_timeout(1000)
+            r.check(placement(pg2) == before, 'hiding an opening does not restart a regular game', f'{before} -> {placement(pg2)}')
+
+            # the "To review" count follows changes made elsewhere
+            count = lambda: int(re.search(r'To review\s*(\d+)', pg2.locator('.trainer').inner_text()).group(1))
+            settings(pg2, mode='train'); pg2.wait_for_timeout(1500)
+            was = count()
+            pg2.evaluate("""() => { const k = 'chess-trainer:mistakes', l = JSON.parse(localStorage.getItem(k) || '[]');
+              l.push({ fen: 'x', played: 'a3', correct: 'a4', source: 'book', repertoire: 'london', at: 1, box: 0, due: 1 });
+              localStorage.setItem(k, JSON.stringify(l)); window.dispatchEvent(new Event('chess-trainer:mistakes-changed')); }""")
+            pg2.wait_for_timeout(300)
+            r.check(count() == was + 1, 'the "To review" count follows a mistake saved on another screen', f'{was} -> {count()}')
+        except Exception as e:
+            r.check(False, 'states', str(e).splitlines()[0][:200]); r.shot(pg2, 'play-states')
     b.close()
 r.done()

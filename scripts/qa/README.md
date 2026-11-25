@@ -17,7 +17,7 @@ Build, start the preview server, then run the scripts (from the repo root):
 npm run build
 npx vite preview --port 4173          # in a second terminal
 python scripts/qa/learn_lines.py      # "Test me" on every line of every repertoire (~15 min)
-python scripts/qa/play.py             # Play: training in every repertoire, leaving the line, a regular game (~3 min)
+python scripts/qa/play.py             # Play: training in every repertoire, leaving the line, a regular game, hints and games that must not leak (~4 min)
 python scripts/qa/screens.py          # Learn extras, puzzles (solved to the end), my mistakes, review, account, phone, offline (~4 min)
 ```
 
@@ -37,7 +37,7 @@ firebase emulators:start --only auth,firestore --project demo-chess     # in a s
 export VITE_USE_EMULATORS=1 VITE_FIREBASE_API_KEY=demo VITE_FIREBASE_PROJECT_ID=demo-chess VITE_FIREBASE_APP_ID=demo
 npx vite build --outDir dist-emu
 npx vite preview --outDir dist-emu --port 4188                          # in a third terminal
-python scripts/qa/sync.py --url http://localhost:4188                   # (~2 min; needs internet for Google's sign-in script)
+python scripts/qa/sync.py --url http://localhost:4188                   # (~3 min; needs internet for Google's sign-in script)
 ```
 
 Each script prints every check, ends with a summary, and exits non-zero if a check failed or the page logged an error. Reports (`*.json`) and screenshots (`shots/`) go to `scripts/qa/out/`, which git ignores.
@@ -47,7 +47,7 @@ Each script prints every check, ends with a summary, and exits non-zero if a che
 | Option | Scripts | Meaning |
 |---|---|---|
 | `--url URL` | all | the app to test (default `http://localhost:4173`; the live site works too, except for `sync`) |
-| `--only a,b` | all but `sync` | a subset: repertoire ids (`london,qga`) for `learn_lines`/`play` (`play` also takes `regular`), or sections (`learn,puzzles,mistakes,review,account,phone,offline`) for `screens` |
+| `--only a,b` | all but `sync` | a subset: repertoire ids (`london,qga`) for `learn_lines`/`play` (`play` also takes `regular` and `states`), or sections (`learn,puzzles,mistakes,review,account,phone,offline`) for `screens` |
 | `--chesscom USER` | `screens` | the Chess.com account the review loads (real API calls) |
 | `--account-url URL` | `screens` | a build with Firebase configured, for the account panel (default: the live site, since a local build without `.env.local` has no account panel) |
 

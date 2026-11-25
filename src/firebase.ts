@@ -14,7 +14,7 @@ import {
   signOut as fbSignOut,
   type User,
 } from 'firebase/auth';
-import { connectFirestoreEmulator, doc, getDoc, getFirestore, setDoc } from 'firebase/firestore/lite';
+import { connectFirestoreEmulator, doc, getFirestore, runTransaction } from 'firebase/firestore/lite';
 import { firebaseConfig } from './cloudConfig';
 
 const app = initializeApp(firebaseConfig);
@@ -61,11 +61,22 @@ export const signOut = () => fbSignOut(auth);
 /** The user's synced data: { data: key -> JSON string, stamps: key -> last change time }. */
 export type CloudDoc = { data: Record<string, string>; stamps: Record<string, number>; updatedAt: number };
 
-export async function readDoc(uid: string): Promise<CloudDoc | null> {
-  const snap = await getDoc(doc(db, 'users', uid));
-  return snap.exists() ? (snap.data() as CloudDoc) : null;
-}
+const NOTHING_TO_WRITE = new Error('nothing to write');
 
-export async function writeDoc(uid: string, d: CloudDoc) {
-  await setDoc(doc(db, 'users', uid), d);
+/**
+ * Reads the user's document and writes what `merge` makes of it (null: leave it as it is). If another device
+ * writes in between, it starts over from that device's version, so neither overwrites the other.
+ */
+export async function mergeDoc(uid: string, merge: (remote: CloudDoc | null) => CloudDoc | null) {
+  const ref = doc(db, 'users', uid);
+  try {
+    await runTransaction(db, async (tx) => {
+      const snap = await tx.get(ref);
+      const next = merge(snap.exists() ? (snap.data() as CloudDoc) : null);
+      if (!next) throw NOTHING_TO_WRITE; // ends the transaction without a write
+      tx.set(ref, next);
+    });
+  } catch (e) {
+    if (e !== NOTHING_TO_WRITE) throw e;
+  }
 }

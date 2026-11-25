@@ -89,4 +89,9 @@ assert.equal(m.data[P + 'threshold'], '30');
 assert.equal(m.data[P + 'sound'], 'false');
 assert.deepEqual(JSON.parse(m.data[P + 'daily']), { d1: 4, d2: 1 });
 
+// another account's data kept aside on the device, and whose data it is, never leave the device
+assert.equal(isSynced(P + 'aside:some-uid'), false);
+assert.equal(isSynced(P + 'cloud-owner'), false);
+assert.equal(isSynced(P + 'mistakes'), true);
+
 console.log('check-sync: all good');

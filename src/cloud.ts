@@ -5,7 +5,7 @@
 
 import { useSyncExternalStore } from 'react';
 import { cloudEnabled } from './cloudConfig';
-import { PREFIX, asNewDevice, isSynced, mergeSides, type Side } from './syncMerge';
+import { ASIDE, PREFIX, asNewDevice, isSynced, mergeSides, type Side } from './syncMerge';
 import type { CloudUser } from './firebase';
 
 export type CloudStatus = 'idle' | 'signing-in' | 'syncing' | 'synced' | 'offline' | 'error';
@@ -15,6 +15,7 @@ const SIGNED_IN = PREFIX + 'cloud-signed-in';
 const SIGNING_IN = PREFIX + 'cloud-signing-in';
 const STAMPS = PREFIX + 'sync-stamps';
 const LAST_SYNC = PREFIX + 'cloud-last-sync';
+const OWNER = PREFIX + 'cloud-owner'; // the account (uid) this device's data belongs to
 const PUSH_DELAY = 3000;
 
 const nativeSet = Storage.prototype.setItem;
@@ -68,10 +69,13 @@ const readStamps = (): Record<string, number> => {
 };
 
 let pushTimer: number | undefined;
+/** The account changed: the page is loading again. */
+let leaving = false;
 
 function installHook() {
   Storage.prototype.setItem = function (key: string, value: string) {
     const watched = this === localStorage && isSynced(key);
+    if (watched && leaving) return; // this page still shows the previous account's data
     const unchanged = watched && this.getItem(key) === value;
     nativeSet.call(this, key, value);
     // rewriting the same value is not a change: otherwise a device that is behind becomes "newer" and
@@ -185,6 +189,57 @@ export async function signOut() {
   update({ user: null, status: 'idle' });
 }
 
+// ---- one account at a time ----
+
+/** The account whose data this page has read from localStorage (null: nobody has signed in here yet). */
+let pageOwner: string | null = null;
+
+/**
+ * Another account signed in: the previous one's data is kept aside on this device, and the new one's (if it was
+ * here before) comes back; they are never merged. Language and sound stay, they belong to the device.
+ * Returns false, changing nothing, if there is no room to keep the data aside.
+ */
+function switchOwner(from: string, to: string): boolean {
+  const aside = JSON.stringify({ ...localSide(), lastSync: get(LAST_SYNC) });
+  set(ASIDE + from, aside);
+  if (get(ASIDE + from) !== aside) return false;
+  for (const k of Object.keys(localSide().data)) if (k !== PREFIX + 'lang' && k !== PREFIX + 'sound') remove(k);
+  remove(STAMPS);
+  remove(LAST_SYNC);
+  try {
+    const back = JSON.parse(get(ASIDE + to) ?? 'null') as (Side & { lastSync: string | null }) | null;
+    remove(ASIDE + to); // first, so there is room for the data itself
+    if (back) {
+      for (const [k, v] of Object.entries(back.data)) set(k, v);
+      set(STAMPS, JSON.stringify(back.stamps));
+      if (back.lastSync && Object.entries(back.data).every(([k, v]) => get(k) === v)) set(LAST_SYNC, back.lastSync);
+    }
+  } catch {
+    /* broken copy: the account's data comes from the cloud */
+  }
+  set(OWNER, to);
+  return true;
+}
+
+/** Makes sure the data on this device is the signed-in user's. False: it is not (yet), so do not sync. */
+function ownData(uid: string): boolean {
+  if (leaving) return false;
+  const owner = pageOwner ?? get(OWNER);
+  if (owner && owner !== uid) {
+    if (get(OWNER) !== uid && !switchOwner(owner, uid)) {
+      update({ status: 'error' });
+      return false;
+    }
+    // every screen still shows the other account's data
+    leaving = true;
+    location.reload();
+    return false;
+  }
+  pageOwner = uid;
+  if (get(OWNER) !== uid) set(OWNER, uid); // the first sign-in here: what is on the device joins the account
+  return true;
+}
+
 // ---- syncing ----
 
 let running: Promise<void> | null = null;
@@ -216,34 +271,44 @@ export function sync(reloadOnChange: boolean): Promise<void> {
   }
   running = (async () => {
     const user = state.user;
-    if (!user) return;
+    if (!user || !ownData(user.uid)) return;
+    const stillHere = () => state.user?.uid === user.uid && !leaving;
     update({ status: 'syncing' });
     try {
       const fb = await firebase();
-      const remoteDoc = await fb.readDoc(user.uid);
-      const remote: Side = { data: addPrefix(remoteDoc?.data), stamps: addPrefix(remoteDoc?.stamps) };
-      // the first sync of this device: what is in the account wins over the settings found here
-      const local = get(LAST_SYNC) ? localSide() : asNewDevice(localSide());
-      const merged = mergeSides(local, remote);
+      let local: Side = { data: {}, stamps: {} };
+      let merged = local;
+      // may run more than once, when another device writes at the same moment
+      await fb.mergeDoc(user.uid, (remoteDoc) => {
+        if (!stillHere()) return null;
+        const remote: Side = { data: addPrefix(remoteDoc?.data), stamps: addPrefix(remoteDoc?.stamps) };
+        // the first sync of this device: what is in the account wins over the settings found here
+        local = get(LAST_SYNC) ? localSide() : asNewDevice(localSide());
+        merged = mergeSides(local, remote);
+        const remoteChanged = !remoteDoc || Object.entries(merged.data).some(([k, v]) => remote.data[k] !== v);
+        if (!remoteChanged) return null;
+        return { data: strip(merged.data) as Record<string, string>, stamps: strip(merged.stamps) as Record<string, number>, updatedAt: Date.now() };
+      });
+      if (!stillHere()) return; // signed out (or another account) meanwhile: this device's data is not touched
 
       let localChanged = false;
+      const stamps = readStamps();
       for (const [k, v] of Object.entries(merged.data)) {
-        if (local.data[k] !== v) {
-          set(k, v);
-          localChanged = true;
-        }
+        const here = get(k) ?? undefined;
+        if (here !== local.data[k]) continue; // changed here during the sync: kept, and the next sync merges it
+        stamps[k] = merged.stamps[k];
+        if (here === v) continue;
+        set(k, v);
+        localChanged = true;
       }
-      set(STAMPS, JSON.stringify({ ...readStamps(), ...merged.stamps }));
-
-      const remoteChanged = !remoteDoc || Object.entries(merged.data).some(([k, v]) => remote.data[k] !== v);
-      if (remoteChanged) await fb.writeDoc(user.uid, { data: strip(merged.data) as Record<string, string>, stamps: strip(merged.stamps) as Record<string, number>, updatedAt: Date.now() });
+      set(STAMPS, JSON.stringify(stamps));
 
       const now = Date.now();
       set(LAST_SYNC, String(now));
       update({ status: 'synced', lastSync: now });
       if (localChanged && reloadOnChange) location.reload();
     } catch {
-      update({ status: navigator.onLine ? 'error' : 'offline' });
+      if (stillHere()) update({ status: navigator.onLine ? 'error' : 'offline' });
     }
   })().finally(() => {
     running = null;

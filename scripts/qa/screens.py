@@ -263,8 +263,19 @@ def review(pg):
     r.check(hscroll(pg) <= 0, 'review has no horizontal scroll')
     # one game, move by move
     r.check(pg.locator('.recent-game').count() >= 5, 'game review: the latest games are listed')
+    workers = lambda: len(pg.workers)
+    pg.wait_for_timeout(1500)  # the browser reports a stopped engine a moment later
+    idle = workers()
+    r.check(idle == 2, 'after Stop only the two engines of Play are left', str(idle))
+    if pg.locator('.review button:has-text("Analyze")').count():
+        pg.locator('.review button:has-text("Analyze")').first.click()
+        busy = wait_until(lambda: (pg.wait_for_timeout(100) or workers()) > idle, 10)
+        r.check(busy, 'the engine analysis runs its own engine', f'{idle} -> {workers()}')
+    else: r.note('  skip', 'game review stops the engine analysis: every recent game is already analyzed')
     pg.click('.recent-games-head button.primary')
     pg.wait_for_selector('.game-review', timeout=10000)
+    pg.wait_for_timeout(500)
+    r.check(workers() <= idle + 1, 'game review: only one review engine at a time', f'{idle} -> {workers()}')
     t = time.time()
     done = wait_until(lambda: not pg.locator('.review-progress').count(), 300, 1)
     r.check(done, f'game review: the last game is analyzed ({time.time() - t:.0f}s)')

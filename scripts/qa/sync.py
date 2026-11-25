@@ -28,6 +28,14 @@ def cloud_docs():
     return [{k: v['mapValue'].get('fields', {}) for k, v in d['fields'].items() if 'mapValue' in v} for d in res.get('documents', [])]
 
 
+def cloud_users():
+    """user id -> {key: value} as saved in the cloud."""
+    url = f'http://127.0.0.1:8080/v1/projects/{PROJECT}/databases/(default)/documents/users'
+    res = json.load(urllib.request.urlopen(urllib.request.Request(url, headers={'Authorization': 'Bearer owner'})))
+    return {d['name'].split('/')[-1]: {k: json.loads(v['stringValue']) for k, v in d['fields']['data']['mapValue'].get('fields', {}).items()}
+            for d in res.get('documents', [])}
+
+
 def cloud_value(key):
     docs = cloud_docs()
     v = docs[0]['data'].get(key, {}).get('stringValue') if docs else None
@@ -39,9 +47,34 @@ class Device:
         self.ctx = browser.new_context(locale='en-US', service_workers='block', **ctx)
         self.page = self.ctx.new_page()
         r.watch(self.page, name)
+        self.user = user
         if user:
-            token = json.dumps({'sub': user, 'email': f'{user}@example.com', 'email_verified': True})
-            self.ctx.add_init_script(f'if (location.origin === {json.dumps(a.url)}) localStorage.setItem("emulator-google-user", {json.dumps(token)})')
+            # only the first time: become() changes the Google account of this device
+            self.ctx.add_init_script(f'if (location.origin === {json.dumps(a.url)} && !localStorage.getItem("emulator-google-user")) '
+                                     f'localStorage.setItem("emulator-google-user", {json.dumps(self.token(user))})')
+
+    def token(self, user):
+        return json.dumps({'sub': user, 'email': f'{user}@example.com', 'email_verified': True})
+
+    def become(self, user):
+        """The next sign-in on this device is another person's."""
+        self.page.evaluate('t => localStorage.setItem("emulator-google-user", t)', self.token(user))
+
+    def sign_out(self):
+        self.account()
+        self.page.get_by_text('Sign out').click()
+        self.page.wait_for_selector('.google-btn')
+        self.page.wait_for_timeout(500)
+
+    def hold(self, what):
+        """Holds this device's Firestore requests ('batchGet' or 'commit') until release() is called."""
+        held, self.holding = [], True
+        self.ctx.route(f'**/documents:{what}*', lambda route: held.append(route) if self.holding else route.continue_())
+
+        def release():
+            self.holding = False
+            for route in held: route.continue_()
+        return held, release
 
     def open(self):
         self.page.goto(a.url)
@@ -157,6 +190,50 @@ with sync_playwright() as p:
     A.page.reload(); A.page.wait_for_selector('.tabs')
     r.check(wait_until(lambda: A.get('custom-lines')['london'][0].get('removed') == 2000, 15), 'removed on B, it is removed on A too')
 
+    # ---- two devices sync at the same moment: neither overwrites the other ----
+    noted = len(r.errors)
+    held, release = A.hold('commit')
+    A.set('threshold', 25)
+    for _ in range(40):
+        if held: break
+        A.page.wait_for_timeout(250)
+    r.check(len(held) > 0, 'A has read the cloud and is about to write')
+    B.set('deep-count', 50)
+    for _ in range(40):
+        if cloud_value('deep-count') == 50: break
+        B.page.wait_for_timeout(250)
+    r.check(cloud_value('deep-count') == 50, 'meanwhile B uploads another change')
+    release()
+    for _ in range(40):
+        if cloud_value('threshold') == 25: break
+        A.page.wait_for_timeout(250)
+    A.page.wait_for_timeout(1500)
+    got = (cloud_value('threshold'), cloud_value('deep-count'))
+    r.check(got == (25, 50), 'both changes are in the cloud', str(got))
+    A.ctx.unroute('**/documents:commit*')
+
+    # the refused write (400) is how A learns that B was first, and Chrome logs it
+    r.errors[noted:] = [e for e in r.errors[noted:] if not (e.startswith('[A]') and 'status of 400' in e)]
+
+    # ---- a change made on the device while a sync is running is not lost ----
+    B.set('skill', 14)
+    for _ in range(40):
+        if cloud_value('skill') == 14: break
+        B.page.wait_for_timeout(250)
+    held, release = A.hold('commit')
+    A.set('threshold', 35)
+    for _ in range(40):
+        if held: break
+        A.page.wait_for_timeout(250)
+    r.check(len(held) > 0, "A has read the cloud (with B's skill) and is about to write")
+    A.set('skill', 6)  # newer than B's change
+    release()
+    for _ in range(60):
+        if cloud_value('skill') == 6: break
+        A.page.wait_for_timeout(250)
+    r.check(A.get('skill') == 6 and cloud_value('skill') == 6, "A's newer change is kept and uploaded", f"{A.get('skill')} {cloud_value('skill')}")
+    A.ctx.unroute('**/documents:commit*')
+
     # ---- sign out, then the button works again ----
     B.account()
     B.page.get_by_text('Sign out').click()
@@ -205,6 +282,53 @@ with sync_playwright() as p:
     r.check(D.page.locator('.account-panel').count() == 0, 'trying again loads a fresh page')
     r.check(D.sign_in(), 'and signing in works there')
     D.ctx.close()
+    # ---- another Google account on the same device ----
+    first, second = 'first' + uuid.uuid4().hex[:6], 'second' + uuid.uuid4().hex[:6]
+    F = Device(b, 'shared', first)
+    F.open()
+    known = set(cloud_users())
+    F.set('mistakes', [{'fen': 'f1', 'repertoire': 'london', 'at': 1, 'due': 1}])  # before any sign-in: joins the account
+    F.sign_in()
+    F.set('chesscom-user', 'first-player')
+    wait_until(lambda: any(d.get('chesscom-user') == 'first-player' for d in cloud_users().values()), 15)
+    one = (set(cloud_users()) - known).pop()
+    r.check(len(cloud_users()[one].get('mistakes', [])) == 1, 'progress made before the first sign-in joins the account')
+    F.sign_out()
+    F.set('skill', 19)  # changed while signed out: belongs to the first account, not uploaded yet
+    F.become(second)
+    F.sign_in()
+    F.page.wait_for_timeout(5000)  # the switch loads the page again
+    F.synced()
+    new = set(cloud_users()) - known - {one}
+    r.check(len(new) == 1, 'the second account has its own document')
+    two = new.pop()
+    mixed = {k: v for k, v in cloud_users()[two].items() if k in ('mistakes', 'chesscom-user', 'skill')}
+    r.check(mixed == {}, "nothing of the first account is uploaded to the second", str(mixed))
+    r.check(not F.get('mistakes') and not F.get('chesscom-user'), 'nor shown in the app', f"{F.get('mistakes')} {F.get('chesscom-user')}")
+    r.check(F.page.locator('.account-tab').count() == 1, 'the app works after the switch')
+    F.set('chesscom-user', 'second-player')
+    wait_until(lambda: cloud_users()[two].get('chesscom-user') == 'second-player', 15)
+    r.check(cloud_users()[two].get('chesscom-user') == 'second-player' and cloud_users()[one].get('chesscom-user') == 'first-player', 'each account keeps its own settings')
+    F.sign_out()
+    F.become(first)
+    F.sign_in()
+    F.page.wait_for_timeout(5000)
+    F.synced()
+    r.check(F.get('chesscom-user') == 'first-player' and len(F.get('mistakes') or []) == 1, 'back in the first account: its progress is back', f"{F.get('chesscom-user')}")
+    r.check(F.get('skill') == 19 and cloud_users()[one].get('skill') == 19, 'also what was changed while signed out, now uploaded', f"{F.get('skill')} {cloud_users()[one].get('skill')}")
+    r.check(cloud_users()[two].get('chesscom-user') == 'second-player', "and the second account's cloud copy is untouched")
+
+    # the device has no room to keep the first account's data aside: nothing is mixed and nothing is lost
+    F.sign_out()
+    F.become(second)
+    F.page.evaluate("() => { let n = 262144; for (let i = 0; n > 64; ) { try { localStorage.setItem('fill' + i, 'x'.repeat(n)); i++; } catch { n = n / 2 | 0; } } }")
+    F.account()
+    F.page.locator('.google-btn').click()
+    F.page.wait_for_timeout(6000)
+    r.check(F.get('chesscom-user') == 'first-player' and len(F.get('mistakes') or []) == 1, 'full storage: the first account stays on the device', str(F.get('chesscom-user')))
+    r.check(cloud_users()[two].get('chesscom-user') == 'second-player' and 'mistakes' not in cloud_users()[two], 'full storage: and is not uploaded to the second', str(cloud_users()[two]))
+    F.ctx.close()
+
     # the aborted download above is the point of that check, not a page error
     r.errors = [e for e in r.errors if not (e.startswith('[retry]') and 'ERR_FAILED' in e)]
     b.close()

@@ -189,4 +189,61 @@ assert.deepEqual([dv.mine[0].repId, dv.mine[0].played, dv.mine[0].expected, dv.m
   assert.equal(await analyzePositions(fake, g, { depth: 10, cancelled: () => stop, onUpdate: () => { stop = true; } }), null);
 }
 
+// Chess.com months: a copy saved in the middle of a month is fetched again once the month is over, and only then
+// is it final; offline, the last copy is used
+{
+  const { fetchGames } = await import('../src/chesscom.ts');
+  const store = new Map<string, Response>();
+  const asked: string[] = [];
+  const games = new Map<string, number>([['2026/10', 2], ['2026/11', 1]]); // month -> games so far
+  let online = true;
+  let now = Date.UTC(2026, 10, 20);
+  const real = { now: Date.now, fetch: globalThis.fetch, caches: (globalThis as { caches?: unknown }).caches };
+  Date.now = () => now;
+  (globalThis as { caches?: unknown }).caches = {
+    delete: async () => true,
+    open: async () => ({ match: async (u: string) => store.get(u)?.clone(), put: async (u: string, r: Response) => void store.set(u, r) }),
+  };
+  globalThis.fetch = (async (url: string) => {
+    if (!online) throw new TypeError('offline');
+    if (url.endsWith('/archives')) return Response.json({ archives: [...games.keys()].map((m) => `https://api.chess.com/pub/player/me/games/${m}`) });
+    const month = url.slice(-7);
+    asked.push(month);
+    return Response.json({ games: Array.from({ length: games.get(month)! }, (_, i) => ({ ...api('Me', 'win', 'Opp', 'resigned'), url: `${month}-${i}`, end_time: i })) });
+  }) as typeof fetch;
+  const load = async () => {
+    asked.length = 0;
+    const got = (await fetchGames('me', () => {})).games.length;
+    await new Promise((r) => setTimeout(r, 0)); // the copy is saved in the background
+    return got;
+  };
+
+  assert.equal(await load(), 3);
+  assert.deepEqual(asked.sort(), ['2026/10', '2026/11']);
+  assert.equal(await load(), 3);
+  assert.deepEqual(asked, ['2026/11']); // October is over and saved; November is still going
+
+  games.set('2026/11', 5); // games in the last days of November
+  games.set('2026/12', 1);
+  now = Date.UTC(2026, 11, 5);
+  assert.equal(await load(), 8); // 2 + 5 + 1: nothing of November is missing
+  assert.deepEqual(asked.sort(), ['2026/11', '2026/12']);
+  assert.equal(await load(), 8);
+  assert.deepEqual(asked, ['2026/12']); // now November is final too
+
+  // the archive list itself needs the network; a month that cannot be fetched falls back to its last copy
+  const list = globalThis.fetch;
+  globalThis.fetch = (async (url: string) => {
+    if (!url.endsWith('/archives')) throw new TypeError('offline');
+    return list(url);
+  }) as typeof fetch;
+  assert.equal(await load(), 8);
+  online = false;
+  await assert.rejects(load());
+
+  Date.now = real.now;
+  globalThis.fetch = real.fetch;
+  (globalThis as { caches?: unknown }).caches = real.caches;
+}
+
 console.log('check-review: all good');
