@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChessComError, fetchGames, type GameSummary, type TimeClass } from './chesscom';
-import { Engine } from './engine';
+import { DRILL_DROP, Engine } from './engine';
 import { getAnalysis, saveAnalysis } from './analysisCache';
 import { saveMistake } from './mistakes';
 import Branches from './Branches';
@@ -151,7 +151,7 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
       if (run.cancelled) return;
       if (!a) continue;
       for (const m of a.mistakes) {
-        if (m.kind === 'inaccuracy') continue; // only real mistakes become drills
+        if (m.drop < DRILL_DROP) continue; // only the big mistakes become drills
         saveMistake({ fen: m.fen, played: m.played, correct: m.best, source: 'engine', repertoire: 'chesscom', drop: m.drop, gameUrl: m.gameUrl });
       }
       saveAnalysis(a);
@@ -328,8 +328,8 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
             <h2>{tr('ניתוח מנוע של המשחקים האחרונים', 'Engine analysis of your recent games')}</h2>
             <p className="muted">
               {tr(
-                'Stockfish עובר על כל מהלך שלך ומוצא טעויות. כל טעות ובלאנדר נכנסים ל"תרגול ← הטעויות שלי". לוקח 10 עד 30 שניות למשחק; משחק שכבר נותח לא מנותח שוב.',
-                'Stockfish goes over each of your moves and finds mistakes. Every mistake and blunder goes to "Practice → My mistakes". It takes 10 to 30 seconds per game; a game already analyzed is not analyzed again.',
+                'Stockfish עובר על כל מהלך שלך ומוצא טעויות. כל טעות גדולה נכנסת ל"תרגול ← הטעויות שלי". לוקח 10 עד 30 שניות למשחק; משחק שכבר נותח לא מנותח שוב.',
+                'Stockfish goes over each of your moves and finds mistakes. Every big mistake goes to "Practice → My mistakes". It takes 10 to 30 seconds per game; a game already analyzed is not analyzed again.',
               )}
             </p>
             <div className="buttons">

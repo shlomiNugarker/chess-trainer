@@ -153,17 +153,19 @@ export function buildReview(game: ParsedGame, evals: (Eval | undefined)[], bookP
 
 /**
  * Evaluates every position: a pass over the whole game first (so the review fills in fast), then a deeper look
- * at both sides of every move that seems to lose 10% or more. Searches are by depth, not by time: a fresh
+ * at both sides of every move that seems to lose DROP.inaccuracy or more. Searches are by depth, not by time: a fresh
  * single-threaded engine given the same positions in the same order then always returns the same evals, so the
  * same game always gets the same review (by time, results moved with how busy the device was). In the browser
  * depth 14 takes ~0.1s a position and depth 16 ~0.4s on a desktop.
  * `onUpdate` gets the evals so far after every position.
  */
 export async function analyzePositions(
-  engine: { analyze: (fen: string, go: string) => Promise<Analysis> },
+  engine: { analyze: (fen: string, go: string) => Promise<Analysis>; newGame?: () => Promise<unknown> },
   game: ParsedGame,
   opts: { depth?: number; refineDepth?: number; onUpdate?: (evals: (Eval | undefined)[], done: number, total: number) => void; cancelled?: () => boolean } = {},
 ): Promise<(Eval | undefined)[] | null> {
+  // what the engine remembers from another game would change the results
+  await engine.newGame?.();
   const depth = opts.depth ?? 14;
   const refineDepth = opts.refineDepth ?? 16;
   const evals: (Eval | undefined)[] = new Array(game.fens.length).fill(undefined);
@@ -187,7 +189,7 @@ export async function analyzePositions(
 // ---- device-only cache (listed as local in syncMerge.ts: it can be large and is cheap to rebuild) ----
 
 const KEY = 'chess-trainer:game-reviews';
-const VERSION = 2; // bump when the analysis changes; 2: searches by depth (stable), not by time
+const VERSION = 3; // bump when the analysis changes; 2: searches by depth (stable), not by time; 3: a clean engine for every game
 const MAX = 40;
 type Store = { v: number; games: Record<string, { evals: Eval[]; at: number }> };
 

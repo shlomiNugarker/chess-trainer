@@ -153,7 +153,7 @@ assert.deepEqual([dv.mine[0].repId, dv.mine[0].played, dv.mine[0].expected, dv.m
   assert.equal(classify(15, 'e2e4', 'e2e4', false), 'best'); // the engine's own move is never a mistake
   assert.equal(classify(1, 'e2e4', 'd2d4', false), 'best');
   assert.equal(classify(5, 'e2e4', 'd2d4', false), 'good');
-  assert.deepEqual([10, 20, 30].map((d) => classify(d, 'a', 'b', false)), ['inaccuracy', 'mistake', 'blunder']);
+  assert.deepEqual([5.9, 6, 12, 20].map((d) => classify(d, 'a', 'b', false)), ['good', 'inaccuracy', 'mistake', 'blunder']);
   // accuracy
   assert.equal(Math.round(moveAccuracy(0)), 100);
   assert.ok(moveAccuracy(30) < 30 && moveAccuracy(5) > 80);

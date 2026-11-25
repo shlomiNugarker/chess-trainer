@@ -139,10 +139,13 @@ export class Engine {
 }
 
 /**
- * Win% a move loses to count as an inaccuracy / mistake / blunder (Lichess's thresholds). The one place for
- * the whole app: the trainer's feedback, "My review" and the move-by-move game review all use these.
+ * Win% a move loses to count as an inaccuracy / mistake / blunder: close to what Chess.com marks (compared move by
+ * move, see PLAN.md). The one place for the whole app: the trainer's words, "My review" and the game review.
  */
-export const DROP = { inaccuracy: 10, mistake: 20, blunder: 30 } as const;
+export const DROP = { inaccuracy: 6, mistake: 12, blunder: 20 } as const;
+
+/** Win% a move of a game loses to be added to "My mistakes" in bulk: only the big ones, or the practice would be endless. */
+export const DRILL_DROP = 20;
 
 /** Lichess win% model: 0..100 for the side whose perspective the score is in. */
 export function winPercent(a: Pick<Analysis, 'cp' | 'mate'>): number {

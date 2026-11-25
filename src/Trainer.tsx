@@ -53,9 +53,9 @@ type Feedback = {
 };
 
 const thresholds = () => [
-  { label: tr('רגיש (אי-דיוק ומעלה)', 'Sensitive (inaccuracies and up)'), value: 10 },
-  { label: tr('רגיל (טעות ומעלה)', 'Normal (mistakes and up)'), value: 20 },
-  { label: tr('רק בלאנדרים', 'Blunders only'), value: 30 },
+  { label: tr('רגיש (מהפסד של 10%)', 'Sensitive (from a 10% loss)'), value: 10 },
+  { label: tr('רגיל (מהפסד של 20%)', 'Normal (from a 20% loss)'), value: 20 },
+  { label: tr('רק גדולות (מהפסד של 30%)', 'Only big ones (from a 30% loss)'), value: 30 },
 ];
 
 /** A request from another screen to start training a repertoire (nonce makes repeats count). */

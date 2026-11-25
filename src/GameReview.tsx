@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Chessboard } from 'react-chessboard';
 import type { GameSummary } from './chesscom';
-import { Engine } from './engine';
+import { DRILL_DROP, Engine } from './engine';
 import EvalBar from './EvalBar';
 import { REPERTOIRES, repName } from './repertoire';
 import { withCustom } from './customLines';
@@ -194,7 +194,7 @@ export default function GameReview({ game, username, active, onClose, onLearn, o
     }
     setSaved(next);
   };
-  const realMistakes = myMistakes.filter((m) => m.cls !== 'inaccuracy'); // like the rest of the app: only real mistakes become drills
+  const realMistakes = myMistakes.filter((m) => m.drop >= DRILL_DROP); // like "My review"; a smaller one can be added by its own button
   const repLabel = book ? repName(REPERTOIRES.find((r) => r.id === book.repId)!) : '';
   const leftName = book?.left ? moveName(book.left.ply, parsed.moves[book.left.ply].san) : '';
 
@@ -371,8 +371,8 @@ export default function GameReview({ game, username, active, onClose, onLearn, o
                 ) : (
                   <button onClick={() => save(realMistakes)}>
                     {realMistakes.length === 1
-                      ? tr('הוסף את הטעות שלי לתרגול', 'Add my mistake to practice')
-                      : tr(`הוסף את ${realMistakes.length} הטעויות שלי לתרגול`, msg`Add my ${realMistakes.length} mistakes to practice`)}
+                      ? tr('הוסף את הטעות הגדולה שלי לתרגול', 'Add my big mistake to practice')
+                      : tr(`הוסף את ${realMistakes.length} הטעויות הגדולות שלי לתרגול`, msg`Add my ${realMistakes.length} big mistakes to practice`)}
                   </button>
                 )
               )}

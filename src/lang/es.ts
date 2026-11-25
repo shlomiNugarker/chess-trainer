@@ -148,8 +148,8 @@ const es: Record<string, string> = {
   'Show': 'Mostrar',
   'Open the line in Learn ›': 'Abrir la línea en Aprender ›',
   'Your mistakes were added to practice': 'Tus errores se añadieron a la práctica',
-  'Add my mistake to practice': 'Añadir mi error a la práctica',
-  'Add my {0} mistakes to practice': 'Añadir mis {0} errores a la práctica',
+  'Add my big mistake to practice': 'Añadir mi error grande a la práctica',
+  'Add my {0} big mistakes to practice': 'Añadir mis {0} errores grandes a la práctica',
   'White’s win chances over the game — tap to jump': 'Opciones de ganar de las blancas durante la partida: toca para saltar',
 
   // learn
@@ -313,8 +313,8 @@ const es: Record<string, string> = {
   'How you lose': 'Cómo pierdes',
   'of your losses ended by move {0}.': 'de tus derrotas terminaron antes de la jugada {0} o en ella.',
   'Engine analysis of your recent games': 'Análisis del motor de tus partidas recientes',
-  'Stockfish goes over each of your moves and finds mistakes. Every mistake and blunder goes to "Practice → My mistakes". It takes 10 to 30 seconds per game; a game already analyzed is not analyzed again.':
-    'Stockfish revisa cada una de tus jugadas y encuentra los errores. Cada error y error grave va a «Practicar → Mis errores». Tarda de 10 a 30 segundos por partida; una partida ya analizada no se vuelve a analizar.',
+  'Stockfish goes over each of your moves and finds mistakes. Every big mistake goes to "Practice → My mistakes". It takes 10 to 30 seconds per game; a game already analyzed is not analyzed again.':
+    'Stockfish revisa cada una de tus jugadas y encuentra los errores. Cada error grande va a «Practicar → Mis errores». Tarda de 10 a 30 segundos por partida; una partida ya analizada no se vuelve a analizar.',
   'Last {0} games': 'Últimas {0} partidas',
   'Stop': 'Detener',
   'All analyzed ✓': 'Todo analizado ✓',
@@ -397,9 +397,9 @@ const es: Record<string, string> = {
 
   // play
   'Random': 'Al azar',
-  'Sensitive (inaccuracies and up)': 'Sensible (desde imprecisiones)',
-  'Normal (mistakes and up)': 'Normal (desde errores)',
-  'Blunders only': 'Solo errores graves',
+  'Sensitive (from a 10% loss)': 'Sensible (desde una pérdida del 10 %)',
+  'Normal (from a 20% loss)': 'Normal (desde una pérdida del 20 %)',
+  'Only big ones (from a 30% loss)': 'Solo los grandes (desde una pérdida del 30 %)',
   'Checkmate. You lost — try again.': 'Jaque mate. Perdiste: inténtalo de nuevo.',
   'Checkmate! You won.': '¡Jaque mate! Ganaste.',
   'Draw.': 'Tablas.',

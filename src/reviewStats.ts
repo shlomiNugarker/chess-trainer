@@ -214,7 +214,7 @@ export function phaseOf(fen: string, moveNumber: number): GamePhase {
  * a game that was reviewed before is not searched again.
  */
 export async function analyzeGame(
-  engine: Pick<Engine, 'analyze'>,
+  engine: Pick<Engine, 'analyze'> & Partial<Pick<Engine, 'newGame'>>,
   game: GameSummary,
   opts: { cancelled?: () => boolean; onPosition?: (done: number, total: number) => void } = {},
 ): Promise<GameAnalysis | null> {
