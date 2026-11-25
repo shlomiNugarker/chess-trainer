@@ -12,6 +12,9 @@ export const ASIDE = PREFIX + 'aside:';
 /** Should this localStorage key travel between devices? (`key` includes the prefix) */
 export const isSynced = (key: string) => key.startsWith(PREFIX) && !key.startsWith(ASIDE) && !LOCAL_ONLY.has(key.slice(PREFIX.length));
 
+/** In the learned moves of a repertoire, next to the positions: when they were last reset. */
+export const RESET_MARK = '@reset';
+
 type Mistake = { fen: string; repertoire: string; at: number; due: number; reviewed?: number };
 type LineRecord = { at: number };
 type Stats = { played: number; seen: string[] };
@@ -62,10 +65,17 @@ const MERGERS: Record<string, (a: string, b: string) => string> = {
     const seen = [...(other.seen ?? []).filter((id) => !(base.seen ?? []).includes(id)), ...(base.seen ?? [])].slice(-2000);
     return JSON.stringify({ ...base, seen });
   },
-  // repertoire -> position -> move: every lesson from both devices (the first lesson stays)
+  // repertoire -> position -> move: every lesson from both devices (the first lesson stays); a repertoire that was
+  // reset on one device drops the lessons of the other, which are from before (RESET_MARK: when)
   learned: (a, b) => {
     const x = parse<Record<string, Record<string, string>>>(a, {});
-    for (const [rep, moves] of Object.entries(parse<Record<string, Record<string, string>>>(b, {}))) x[rep] = { ...moves, ...x[rep] };
+    const resetAt = (moves?: Record<string, string>) => Number(moves?.[RESET_MARK] ?? 0);
+    for (const [rep, moves] of Object.entries(parse<Record<string, Record<string, string>>>(b, {}))) {
+      const mine = resetAt(x[rep]);
+      const theirs = resetAt(moves);
+      if (theirs > mine) x[rep] = moves;
+      else if (theirs === mine) x[rep] = { ...moves, ...x[rep] };
+    }
     return JSON.stringify(x);
   },
 };

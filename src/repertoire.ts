@@ -1859,24 +1859,43 @@ export const REPERTOIRES: Repertoire[] = [
   },
 ];
 
+const SAN = String.raw`(?:\d+\.{1,3}|\.{3})?(?:O-O(?:-O)?|[KQRBN]?[a-h]?[1-8]?x?[a-h][1-8](?:=[QRBN])?)[+#]?(?![A-Za-z0-9])`;
+const MOVES = new RegExp(`${SAN}(?:[ /-]{1,3}${SAN})*`, 'g');
+
+/**
+ * Moves inside a Hebrew text, isolated as left-to-right: otherwise the neutral characters at their ends jump to the
+ * other side ("1.e4" shows as "e4.1", "...d5" as "d5...", "Qa4+" as "+Qa4").
+ */
+export const isolateMoves = (he: string) => he.replace(MOVES, (m) => (/[.+#]/.test(m) ? `\u2066${m}\u2069` : m));
+
 /** The repertoire's name in the current language. */
-// moves like "1.e4" inside a Hebrew name are isolated as left-to-right text, or they show as "e4.1"
-export const repName = (r: Repertoire) => (getLang() !== 'he' && EN[r.id]?.name) || r.name.replace(/\d+\.\S+/g, (m) => `⁦${m}⁩`);
+export const repName = (r: Repertoire) => (getLang() !== 'he' && EN[r.id]?.name) || isolateMoves(r.name);
 
 /** A line's name, idea and notes: Hebrew in Hebrew, English in every other language (hasExplanations in i18n.ts). */
 export function lineText(r: Repertoire, l: Line) {
   if (l.custom) {
     return {
-      name: tr(`★ מול ${l.custom}`, msg`★ Vs ${l.custom}`),
+      name: tr(isolateMoves(`★ מול ${l.custom}`), msg`★ Vs ${l.custom}`),
       idea: tr(
-        `ענף שהוספת מהמשחקים שלך: יריבים שיחקו נגדך ${l.custom}, וזו התשובה של Stockfish.`,
+        isolateMoves(`ענף שהוספת מהמשחקים שלך: יריבים שיחקו נגדך ${l.custom}, וזו התשובה של Stockfish.`),
         msg`A branch you added from your games: opponents played ${l.custom} against you, and this is Stockfish's answer.`,
       ),
       notes: {} as Record<string, string>,
     };
   }
   const en = getLang() !== 'he' ? EN[r.id]?.lines[l.name] : undefined;
-  return { name: en?.name ?? l.name, idea: en?.idea ?? l.idea, notes: en?.notes ?? l.notes ?? {} };
+  return en ?? hebrewText(l);
+}
+
+type LineText = { name: string; idea: string; notes: Record<string, string> };
+const hebrewCache = new WeakMap<Line, LineText>();
+function hebrewText(l: Line): LineText {
+  let t = hebrewCache.get(l);
+  if (!t) {
+    const notes = Object.fromEntries(Object.entries(l.notes ?? {}).map(([k, v]) => [k, isolateMoves(v)]));
+    hebrewCache.set(l, (t = { name: isolateMoves(l.name), idea: isolateMoves(l.idea ?? ''), notes }));
+  }
+  return t;
 }
 
 /** Shown in languages that have only the interface translated. */

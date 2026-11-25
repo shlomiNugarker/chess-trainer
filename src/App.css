@@ -547,7 +547,8 @@ aside {
 
 .learn-move { display: flex; flex-direction: column; gap: 6px; min-height: 112px; }
 .learn-move-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.learn-move-head strong { font-size: 18px; font-family: var(--mono); direction: ltr; }
+.learn-move-head strong { font-size: 18px; }
+.learn-move-head .move-label { font-family: var(--mono); direction: ltr; }
 .learn-move p { color: var(--text); font-size: 15px; }
 .learn-move p.muted { color: var(--text-3); font-size: 13px; }
 
@@ -1329,3 +1330,5 @@ button.progress-pill { border: none; cursor: pointer; font: inherit; }
 }
 
 .lang-note { font-size: 12px; line-height: 1.5; }
+
+button.link.danger { color: var(--error); }

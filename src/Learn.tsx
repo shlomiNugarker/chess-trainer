@@ -20,7 +20,7 @@ import { useHiddenRepertoires } from './hiddenReps';
 const START = new Chess().fen();
 
 /** In "test me" mode: what happened on the user's last try. */
-type QuizState = { wrong?: { san: string; correctUci: string }; mistakes: number };
+type QuizState = { wrong?: { san: string; to: string; correctUci: string }; mistakes: number };
 
 /**
  * Study a repertoire line move by move on a board, with the idea of the line and a note on key moves.
@@ -140,7 +140,7 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
     }
     saveMistake({ fen, played: san, correct: next.san, source: 'book', repertoire: rep.id });
     playSound('error');
-    setQuiz({ ...quiz, mistakes: quiz.mistakes + 1, wrong: { san, correctUci: next.from + next.to + (next.promotion ?? '') } });
+    setQuiz({ ...quiz, mistakes: quiz.mistakes + 1, wrong: { san, to, correctUci: next.from + next.to + (next.promotion ?? '') } });
     return false; // the piece goes back; the right move is shown
   };
 
@@ -168,7 +168,7 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
     squareStyles[current.from] = { background: LAST_MOVE };
     squareStyles[current.to] = { background: LAST_MOVE };
   }
-  if (quiz?.wrong && next) squareStyles[next.from] = { background: WRONG_MOVE };
+  if (quiz?.wrong) squareStyles[quiz.wrong.to] = { background: WRONG_MOVE };
 
   const lastPly = ply - 1;
   const whose = (i: number) => (i % 2 === 0 ? 'w' : 'b') === rep.userColor;
@@ -402,7 +402,7 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
           ) : (
             <div className="card learn-move">
               <div className="learn-move-head">
-                <strong>{current ? `${moveLabel(ply - 1, current.san)}` : tr('עמדת הפתיחה', 'Starting position')}</strong>
+                {current ? <strong className="move-label">{moveLabel(ply - 1, current.san)}</strong> : <strong>{tr('עמדת הפתיחה', 'Starting position')}</strong>}
                 {current && <span className="pill">{whose(ply - 1) ? tr('המהלך שלך', 'Your move') : tr('היריב', 'Opponent')}</span>}
               </div>
               <p>{note ?? (current ? '' : text.idea)}</p>

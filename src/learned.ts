@@ -3,13 +3,14 @@
 // so the repertoire grows by itself from the user's own games.
 
 import { posKey } from './repertoire';
+import { RESET_MARK } from './syncMerge';
 
 /** Learn (and play a strong opponent) up to this full-move number. */
 export const LEARN_UNTIL = 15;
 
 const KEY = 'chess-trainer:learned';
 
-type Store = Record<string, Record<string, string>>; // repertoireId -> posKey -> SAN
+type Store = Record<string, Record<string, string>>; // repertoireId -> posKey -> SAN (and RESET_MARK -> time)
 
 function read(): Store {
   try {
@@ -29,7 +30,8 @@ function write(s: Store) {
 
 /** posKey -> SAN of every learned move for this repertoire. */
 export function loadLearned(repertoireId: string): Record<string, string> {
-  return read()[repertoireId] ?? {};
+  const { [RESET_MARK]: _reset, ...moves } = read()[repertoireId] ?? {};
+  return moves;
 }
 
 /** Remember `san` as the move to play in `fen`. Never overwrites: the first lesson stays. Returns true if new. */
@@ -43,8 +45,9 @@ export function learnMove(repertoireId: string, fen: string, san: string): boole
   return true;
 }
 
+/** Forgets them all; the mark keeps syncing from bringing them back from another device. */
 export function clearLearned(repertoireId: string) {
   const s = read();
-  delete s[repertoireId];
+  s[repertoireId] = { [RESET_MARK]: String(Date.now()) };
   write(s);
 }

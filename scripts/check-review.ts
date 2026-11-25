@@ -240,10 +240,29 @@ assert.deepEqual([dv.mine[0].repId, dv.mine[0].played, dv.mine[0].expected, dv.m
   assert.equal(await load(), 8);
   online = false;
   await assert.rejects(load());
+  // a name that cannot exist is "no such user" without asking (the answer would look like a connection error)
+  for (const bad of ['a/b', 'שלומי', 'two words', '']) await assert.rejects(fetchGames(bad, () => {}), /לא נמצא משתמש/);
+  await assert.rejects(fetchGames(' Some_Name-1 ', () => {}), /אין חיבור/);
 
   Date.now = real.now;
   globalThis.fetch = real.fetch;
   (globalThis as { caches?: unknown }).caches = real.caches;
+}
+
+// moves inside Hebrew texts
+{
+  const { isolateMoves } = await import('../src/repertoire.ts');
+  const show = (t: string) => isolateMoves(t).replace(/\u2066/g, '<').replace(/\u2069/g, '>');
+  assert.equal(show('ראשי מול ...d5 ו-...c5'), 'ראשי מול <...d5> ו-<...c5>');
+  assert.equal(show('פתיחה איטלקית ו-1.e4 (לבן)'), 'פתיחה איטלקית ו-<1.e4> (לבן)');
+  assert.equal(show('★ מול 2...a6'), '★ מול <2...a6>');
+  assert.equal(show('עם Qa4+ ואז O-O.'), 'עם <Qa4+> ואז O-O.');
+  assert.equal(show('אחרי 1.e4 c5 2.Nf3 הסיציליאנית'), 'אחרי <1.e4 c5 2.Nf3> הסיציליאנית');
+  assert.equal(show('רגלים ב-d4, c3 ו-e3'), 'רגלים ב-d4, c3 ו-e3'); // nothing to fix
+  for (const r of REPERTOIRES)
+    for (const l of r.lines)
+      for (const t of [l.name, l.idea ?? '', ...Object.values(l.notes ?? {})])
+        assert.ok(!/(^|[^\u2066\w.])(\.{3}|\d+\.{1,3})[KQRBNOa-h]/.test(isolateMoves(t).replace(/\u2066[^\u2069]*\u2069/g, '')), `not isolated: ${t}`);
 }
 
 console.log('check-review: all good');

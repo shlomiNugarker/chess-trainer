@@ -42,6 +42,7 @@ const API = 'https://api.chess.com/pub/player';
 const DRAW_CODES = new Set(['agreed', 'repetition', 'stalemate', 'insufficient', '50move', 'timevsinsufficient']);
 
 export class ChessComError extends Error {}
+const noSuchUser = () => new ChessComError(tr('לא נמצא משתמש בשם הזה ב-Chess.com.', 'No Chess.com user with this name.'));
 
 async function getJson<T>(url: string): Promise<T> {
   for (let attempt = 0; ; attempt++) {
@@ -55,7 +56,7 @@ async function getJson<T>(url: string): Promise<T> {
       await new Promise((r) => setTimeout(r, 1000 * (attempt + 1))); // rate limited — back off
       continue;
     }
-    if (res.status === 404) throw new ChessComError(tr('לא נמצא משתמש בשם הזה ב-Chess.com.', 'No Chess.com user with this name.'));
+    if (res.status === 404) throw noSuchUser();
     if (!res.ok) throw new ChessComError(tr(`Chess.com החזיר שגיאה (${res.status}). נסה שוב בעוד רגע.`, msg`Chess.com returned an error (${res.status}). Try again in a moment.`));
     return res.json() as Promise<T>;
   }
@@ -167,7 +168,8 @@ export async function fetchGames(
   onProgress: (fraction: number, games: number) => void,
   signal?: { cancelled: boolean },
 ): Promise<{ games: GameSummary[]; partial: boolean }> {
-  const user = encodeURIComponent(username.trim().toLowerCase());
+  const user = username.trim().toLowerCase();
+  if (!/^[a-z0-9_-]+$/.test(user)) throw noSuchUser(); // asking would look like a connection error (no CORS on the answer)
   const { archives } = await getJson<{ archives: string[] }>(`${API}/${user}/games/archives`);
   const perMonth: GameSummary[][] = new Array(archives.length);
   let next = archives.length - 1; // newest first

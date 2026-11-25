@@ -13,6 +13,7 @@ import {
 import { BOARD_THEME, GREEN_ARROW, ltr, pvToSan, uciToArrow } from './chessUtils';
 import { useFitBoard } from './useFitBoard';
 import { useSidePanel } from './useSidePanel';
+import { useScrollToMove } from './useScrollToMove';
 import { formatDate, msg, tr, useLang } from './i18n';
 
 const CLASS_LABEL: Record<MoveClass, [string, string]> = {
@@ -92,6 +93,7 @@ export default function GameReview({ game, username, active, onClose, onLearn, o
     return n && loadReview(game.url)?.length !== n ? { done: 0, total: n } : null;
   });
   const [ply, setPly] = useState(0); // moves shown on the board (0 = the start)
+  const movesRef = useScrollToMove<HTMLOListElement>(ply);
   const [saved, setSaved] = useState<Set<number>>(() => new Set()); // plies sent to "My mistakes"
   const boardRef = useFitBoard<HTMLDivElement>();
   const panelRef = useSidePanel<HTMLElement>();
@@ -329,7 +331,7 @@ export default function GameReview({ game, username, active, onClose, onLearn, o
             )}
           </section>
 
-          <ol className="moves review-moves" dir="ltr">
+          <ol className="moves review-moves" dir="ltr" ref={movesRef}>
             {Array.from({ length: Math.ceil(total / 2) }, (_, r) => (
               <li key={r}>
                 <span className="move-no">{r + 1}.</span>

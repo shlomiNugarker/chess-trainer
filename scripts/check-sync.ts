@@ -57,6 +57,19 @@ m = mergeSides(
 );
 assert.deepEqual(JSON.parse(m.data[P + 'learned']), { london: { p1: 'Nf3', p2: 'c3' } });
 
+// learned: a reset stays, in both directions; what is learned after it is merged as usual; others are not touched
+const lessons = { london: { p1: 'e3', p2: 'c3' }, caro: { q: 'c6' } };
+const afterReset = { london: { '@reset': '50', p9: 'h3' }, caro: { q: 'c6' } };
+for (const [x, y] of [[lessons, afterReset], [afterReset, lessons]]) {
+  m = mergeSides({ data: { [P + 'learned']: j(x) }, stamps: {} }, { data: { [P + 'learned']: j(y) }, stamps: {} });
+  assert.deepEqual(JSON.parse(m.data[P + 'learned']), afterReset);
+}
+m = mergeSides(
+  { data: { [P + 'learned']: j({ london: { '@reset': '50', a: 'd4' } }) }, stamps: {} },
+  { data: { [P + 'learned']: j({ london: { '@reset': '50', b: 'e4' } }) }, stamps: {} },
+);
+assert.deepEqual(JSON.parse(m.data[P + 'learned']), { london: { '@reset': '50', a: 'd4', b: 'e4' } });
+
 // custom-lines: every branch from both devices, once
 m = mergeSides(
   { data: { [P + 'custom-lines']: j({ london: [{ moves: 'a', dev: 'x', at: 1 }] }) }, stamps: {} },

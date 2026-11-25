@@ -71,6 +71,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
   const { hidden: hiddenReps } = useHiddenRepertoires(); // hidden ones leave the picker (the current one stays)
   const book = useMemo(() => buildBook(rep), [rep]);
   const [learnedVersion, setLearnedVersion] = useState(0); // bump to re-read the learned store
+  const [resetAsked, setResetAsked] = useState<string | null>(null); // the repertoire whose reset waits for a "yes"
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const learned = useMemo(() => loadLearned(repId), [repId, learnedVersion]);
 
@@ -722,17 +723,25 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
             <div className="stats">
               <span className="chip-stat" title={tr('מהלכים שלמדת בפתיחה הזו, מעבר לספר', 'Moves you learned in this opening, beyond the book')}>
                 {tr('נלמדו', 'Learned')} <b>{learnedCount}</b>
-                {learnedCount > 0 && (
-                  <button
-                    className="link"
-                    onClick={() => {
-                      clearLearned(repId);
-                      setLearnedVersion((v) => v + 1);
-                    }}
-                  >
-                    {tr('אפס', 'Reset')}
-                  </button>
-                )}
+                {learnedCount > 0 &&
+                  (resetAsked === repId ? (
+                    <>
+                      {' '}
+                      <button
+                        className="link danger"
+                        onClick={() => {
+                          clearLearned(repId);
+                          setLearnedVersion((v) => v + 1);
+                          setResetAsked(null);
+                        }}
+                      >
+                        {tr(`כן, לאפס (${learnedCount})`, msg`Yes, reset (${learnedCount})`)}
+                      </button>{' '}
+                      <button className="link" onClick={() => setResetAsked(null)}>{tr('ביטול', 'Cancel')}</button>
+                    </>
+                  ) : (
+                    <button className="link" onClick={() => setResetAsked(repId)}>{tr('אפס', 'Reset')}</button>
+                  ))}
               </span>
               <span className="chip-stat" title={tr('טעויות שנשמרו לחזרה', 'Mistakes saved for review')}>
                 {tr('לחזרה', 'To review')} <b>{mistakeCount}</b>
