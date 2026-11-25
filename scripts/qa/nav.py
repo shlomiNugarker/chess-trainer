@@ -1,13 +1,14 @@
 """QA: the Back button, a game that survives a reload, the daily goal, the keyboard in dialogs, and the engine
 when it is slow or cannot load (English, ~3 min).
 
-    python scripts/qa/nav.py [--url URL] [--only back,reload,ends,goal,keys,engine]
+    python scripts/qa/nav.py [--url URL] [--only back,reload,ends,computer,goal,keys,engine]
 """
 import json, subprocess, time
 from playwright.sync_api import sync_playwright
 from common import ROOT, Report, args
 
-a = args('Back button and reload QA', lambda p: p.add_argument('--chesscom', default='shlomin1231', help='Chess.com username for the review'))
+a = args('Back button and reload QA', lambda p: (p.add_argument('--chesscom', default='shlomin1231', help='Chess.com username for the review'),
+                                                     p.add_argument('--channel', default='', help="'chrome': the installed Chrome instead of Playwright's Chromium")))
 r = Report('nav')
 
 
@@ -32,7 +33,7 @@ def settings(*pairs):
 
 
 with sync_playwright() as p:
-    b = p.chromium.launch()
+    b = p.chromium.launch(channel=a.channel or None)
     ctx = b.new_context(locale='en-US', viewport={'width': 390, 'height': 844})
     pg = ctx.new_page()
     r.watch(pg, 'nav')
@@ -133,7 +134,51 @@ with sync_playwright() as p:
                 pg.click('.trainer button:has-text("Take back")'); wait(900)
                 piece = pg.evaluate("s => document.querySelector(`.trainer [data-square=${s}] [data-piece]`)?.dataset.piece", c['play'][0])
                 r.check(len(moves()) == n and piece == c['color'] + 'P', f'{name}: take back gives the pawn back', str(piece))
+        pg.evaluate('g => localStorage.setItem("chess-trainer:game", g)', json.dumps({'mode': 'play', 'repertoire': 'italian', 'color': 'w', 'phase': 'free', 'moves': 'e4 e5 Qh5 Nc6 Bc4 Nf6'.split(), 'at': pg.evaluate('Date.now()')}))
+        reload(); turn(); pg.click('.trainer [data-square="h5"]'); wait(250); pg.click('.trainer [data-square="f7"]'); wait(1800)
+        bar = pg.evaluate("[...document.querySelectorAll('.trainer .evalbar-label')].map(e => e.innerText.match(/\\d+/)?.[0])")
+        r.check('You won' in ' '.join(pg.locator('.trainer .notice').all_inner_texts()) and bar == ['0', '100'], 'checkmate by the user: won, and the bar is full', f"{pg.locator('.trainer .notice').all_inner_texts()} {bar}")
         pg.evaluate("localStorage.removeItem('chess-trainer:game')"); reload(); turn()
+
+    if not a.only or 'computer' in a.only:
+        # the computer makes the last move: in computer-ends.json it is the computer's turn, and every legal move of it
+        # ends the game that way (found by random play); for the stalemate, which is too rare, its answer is given
+        cases = json.loads((ROOT / 'scripts/qa/computer-ends.json').read_text(encoding='utf-8'))
+        for name, c in cases.items():
+            c6 = b.new_context(locale='en-US', viewport={'width': 1280, 'height': 900}, service_workers='block'); pg = c6.new_page(); r.watch(pg, 'computer')
+            if 'engine' in c:
+                pg.add_init_script("{ const post = Worker.prototype.postMessage; Worker.prototype.postMessage = function (m, ...x) { if (m === 'go movetime 400') setTimeout(() => this.onmessage({ data: 'bestmove %s' }), 100); else post.call(this, m, ...x); }; }" % c['engine'])
+            pg.goto(a.url); pg.wait_for_selector('.tabs')
+            n = len(c['moves'].split())
+            pg.evaluate('g => { localStorage.setItem("chess-trainer:screen", JSON.stringify("play")); localStorage.setItem("chess-trainer:skill", "20"); localStorage.setItem("chess-trainer:game", g); }',
+                        json.dumps({'mode': 'play', 'repertoire': 'italian', 'color': c['color'], 'phase': 'free', 'moves': c['moves'].split(), 'at': pg.evaluate('Date.now()')}))
+            reload()
+            for _ in range(80):
+                if len(moves()) > n: break
+                wait(250)
+            wait(1500)
+            last = moves()[n] if len(moves()) > n else ''
+            state, notice = pg.inner_text('.trainer .status-text'), ' '.join(pg.locator('.trainer .notice').all_inner_texts())
+            if 'promotion' in name:
+                q = last[last.find('=') - 2:last.find('=')] if '=' in last else ''
+                piece = pg.evaluate("s => s && document.querySelector(`.trainer [data-square=${s}] [data-piece]`)?.dataset.piece", q)
+                r.check(q and piece == ('b' if c['color'] == 'w' else 'w') + last[last.find('=') + 1] and state == 'Your move', f'the computer, {name}: {last}', f'{piece} {state}')
+                own = [x for x in pg.evaluate("c => [...document.querySelectorAll('.trainer [data-square] [data-piece]')].filter(e => e.dataset.piece[0] === c).map(e => e.closest('[data-square]').dataset.square)", c['color'])]
+                for sq in own:
+                    pg.click(f'.trainer [data-square="{sq}"]'); dots = pg.evaluate("[...document.querySelectorAll('.trainer [data-square]')].filter(e => e.outerHTML.includes('radial-gradient')).map(e => e.dataset.square)")
+                    if dots: pg.click(f'.trainer [data-square="{dots[0]}"]'); break
+                    pg.click(f'.trainer [data-square="{sq}"]')
+                wait(700); turn()
+                r.check(len(moves()) >= n + 3, f'the computer, {name}: the game goes on', str(moves()[n:]))
+            else:
+                bar = pg.evaluate("[...document.querySelectorAll('.trainer .evalbar-label')].map(e => e.innerText.match(/\\d+/)?.[0])")
+                view = pg.evaluate("(() => { const l = document.querySelector('.trainer .moves'), x = l.querySelector('.move.last').getBoundingClientRect(), y = l.getBoundingClientRect(); return x.top >= y.top - 1 && x.bottom <= y.bottom + 1; })()")
+                why = {'stalemate': 'stalemate', 'threefold repetition': 'three times', 'the 50-move rule': '50 moves', 'not enough material': 'not enough', 'checkmate': 'You lost'}[name]
+                r.check(state == 'Game over' and why in notice and bar == (['100', '0'] if name == 'checkmate' else ['50', '50']) and view, f'the computer, {name}: {last} ends the game', f'{state} | {notice} | {bar} | last move in view {view}')
+                pg.click('.trainer button:has-text("Take back")'); wait(1000)
+                r.check(pg.inner_text('.trainer .status-text') == 'Your move' and len(moves()) == n - 1 and not pg.locator('.trainer .notice').count(), f'the computer, {name}: take back goes on from your move', f"{pg.inner_text('.trainer .status-text')} {len(moves())} of {n}")
+            c6.close()
+        pg = ctx.pages[0]
 
     if not a.only or 'goal' in a.only:
         tab(3); pg.wait_for_selector('.daily-pill'); wait(2500)

@@ -19,7 +19,7 @@ npx vite preview --port 4173          # in a second terminal
 python scripts/qa/learn_lines.py      # "Test me" on every line of every repertoire (~15 min)
 python scripts/qa/play.py             # Play: training in every repertoire, leaving the line, a regular game, hints and games that must not leak (~4 min)
 python scripts/qa/screens.py          # Learn extras, puzzles (solved to the end), my mistakes, review, account, phone, offline (~4 min)
-python scripts/qa/nav.py              # the Back button, reload, promotion and draws, daily goal, keyboard in dialogs, a slow or missing engine (~3 min)
+python scripts/qa/nav.py              # the Back button, reload, promotion and every way a game ends (by you and by the computer), daily goal, keyboard in dialogs, a slow or missing engine (~3 min)
 ```
 
 On Windows you can start and stop the preview server from PowerShell:
