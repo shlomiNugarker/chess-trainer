@@ -115,7 +115,7 @@
 - [x] The board's height follows the room left on the screen (no scrolling, at least 320px)
 - [x] Learn on a phone: the board is sized by the room left below its top (so the first-visit guide counts), and the step buttons never sit under the tab bar; the line picker has a row of its own (checked in `screens.py --only touch`, in every language)
 - [x] Sounds: move, capture, check, mistake, "well done" (Web Audio, can be muted)
-- [x] PWA: installs to the home screen, a knight icon, works offline (including the engine and the puzzles)
+- [x] PWA: installs to the home screen, works offline (including the engine and the puzzles). The logo: a check mark on a board (`public/favicon.svg`, and PNGs for the manifest, a maskable one included); the service worker's cache name changes with them (`chess-trainer-v3`), so returning users get the new icons
 - [x] A suggestion to install (Learn, a small card — not a popup), only after real use: a line passed without a mistake, or puzzles on two days. "Not now" is for good; the account panel keeps a button. Chrome and Edge open the browser's dialog, an iPhone gets the steps
 - [x] Deployed on Vercel (a push to main publishes)
 - [x] Vercel Web Analytics: anonymous page views, no cookies, only in the build Vercel makes (`VITE_ON_VERCEL`, `vite.config.ts`); `public/sw.js` leaves `/_vercel/` to the network. No other tracking

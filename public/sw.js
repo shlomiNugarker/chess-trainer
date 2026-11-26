@@ -3,7 +3,8 @@
 // - /assets (hashed names, all of them kept: see cacheIndex), /engine, icons: cache first — their content never changes under the same name
 // - Google Fonts: cached after the first load
 // - everything else (the Chess.com API, Google sign-in, Firestore, Web Analytics) is left alone
-const CACHE = 'chess-trainer-v2';
+// a new name drops everything cached before: needed when a file changes under the same name (the icons, v3)
+const CACHE = 'chess-trainer-v3';
 const CORE = ['/', '/manifest.webmanifest', '/icon-192.png', '/engine/stockfish-19-lite-single.js', '/engine/stockfish-19-lite-single.wasm'];
 
 // the hashed js/css that a given index.html points at
