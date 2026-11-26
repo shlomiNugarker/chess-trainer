@@ -73,6 +73,7 @@ assert.equal(matchRepertoire('Nimzo Indian Defense Rubinstein Variation', 'b'), 
 assert.equal(matchRepertoire('Queens Indian Defense Fianchetto Variation', 'b'), 'nimzo');
 assert.equal(matchRepertoire('Nimzo Indian Defense', 'w'), undefined);
 assert.equal(matchRepertoire('Grunfeld Defense Exchange Variation', 'b'), 'grunfeld');
+assert.equal(matchRepertoire('Alekhine Defense Modern Variation', 'b'), 'alekhine');
 assert.equal(matchRepertoire('Benko Gambit Accepted Fully Accepted Variation', 'b'), 'benko');
 assert.equal(matchRepertoire('Sicilian Defense Najdorf Variation English Attack', 'b'), 'najdorf');
 assert.equal(matchRepertoire('Sicilian Defense Alapin Variation', 'b'), 'sicilian'); // the other Sicilians: the ...e6 repertoire
