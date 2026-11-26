@@ -17,7 +17,8 @@ import { useSidePanel } from './useSidePanel';
 import { useStored } from './storage';
 import { hasAnyMastery, hasMastered, isMastered, loadMastery, recordRun } from './mastery';
 import { InstallCard } from './InstallCard';
-import { useHiddenRepertoires } from './hiddenReps';
+import { setHidden, useHiddenRepertoires } from './hiddenReps';
+import { OpeningPicker } from './OpeningPicker';
 
 const START = new Chess().fen();
 
@@ -58,7 +59,10 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
   const stats = useMemo(() => (statsOpen ? lineStats(rep, mastery, loadMistakes()) : []), [statsOpen, rep, mastery, quiz]); // eslint-disable-line react-hooks/exhaustive-deps
   const [guideDismissed, setGuideDismissed] = useStored('guide-dismissed', false);
   const anyMastery = useMemo(hasAnyMastery, [masteryVersion]); // eslint-disable-line react-hooks/exhaustive-deps
-  const showGuide = !guideDismissed && !anyMastery;
+  // a first visit asks which openings you play (once, on every device of the account: the answer syncs)
+  const [openingsChosen, setOpeningsChosen] = useStored('openings-chosen', false);
+  const showPicker = !openingsChosen && !anyMastery && hidden.length === 0;
+  const showGuide = !guideDismissed && !anyMastery && !showPicker;
   // not before the app was of use: a line passed without a mistake, or puzzles on two days
   const offerInstall = useMemo(() => hasMastered() || daysPlayed() >= 2, [masteryVersion]); // eslint-disable-line react-hooks/exhaustive-deps
   // "today": the one or two things worth doing now, one tap each
@@ -181,6 +185,15 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
 
   return (
     <div className="learn">
+      {showPicker && (
+        <OpeningPicker
+          onDone={(next) => {
+            setHidden(next);
+            setOpeningsChosen(true);
+          }}
+        />
+      )}
+
       {showGuide && (
         <div className="card guide">
           {/* "Got it" beside the title: on a phone the board and its step buttons still fit above the tab bar */}
@@ -197,9 +210,9 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
         </div>
       )}
 
-      {!showGuide && !quiz && offerInstall && <InstallCard />}
+      {!showGuide && !showPicker && !quiz && offerInstall && <InstallCard />}
 
-      {!showGuide && !quiz && (
+      {!showGuide && !showPicker && !quiz && (
         <div className="today">
           <span className="today-title">{tr('Today')}</span>
           {streakDays > 0 && <span className="pill">🔥 {daysLabel(streakDays)}</span>}

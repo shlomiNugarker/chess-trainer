@@ -53,8 +53,12 @@ export function useHiddenRepertoires() {
   const raw = useSyncExternalStore(subscribe, read, () => '[]');
   const hidden = useMemo(() => parse(raw), [raw]);
   const visible = useMemo(() => visibleOf(hidden), [hidden]);
-  const toggle = (id: string) => {
-    const next = hidden.includes(id) ? hidden.filter((x) => x !== id) : [...hidden, id];
+  const toggle = (id: string) => setHidden(hidden.includes(id) ? hidden.filter((x) => x !== id) : [...hidden, id]);
+  return { hidden, visible, toggle, setHidden };
+}
+
+/** Hides exactly these repertoires (at least one stays shown). */
+export function setHidden(next: string[]) {
     if (REPERTOIRES.every((r) => next.includes(r.id))) return; // keep at least one shown
     try {
       localStorage.setItem(KEY, JSON.stringify(next));
@@ -63,6 +67,4 @@ export function useHiddenRepertoires() {
     }
     listeners.forEach((fn) => fn());
     window.dispatchEvent(new Event(HIDDEN_CHANGED));
-  };
-  return { hidden, visible, toggle };
 }

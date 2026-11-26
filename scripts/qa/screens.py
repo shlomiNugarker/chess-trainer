@@ -477,6 +477,25 @@ def touch(b):
         .map(([c, r]) => `${c}:${Math.round(r.top)}-${Math.round(r.bottom)}`); }"""
     PICKER = """() => { const s = document.querySelector('.learn-header select'), c = document.createElement('canvas').getContext('2d');
       c.font = getComputedStyle(s).font; return [Math.round(c.measureText(s.options[s.selectedIndex].text).width), Math.round(s.getBoundingClientRect().width)]; }"""
+    # the very first visit: which openings do you play? Only those are shown; "Show all" keeps every one
+    for locale, pick in (('en-US', True), ('he-IL', False)):
+        ctx = b.new_context(locale=locale, viewport={'width': 375, 'height': 812}, is_mobile=True, has_touch=True, first_visit=True)
+        pg = ctx.new_page(); r.watch(pg, f'picker-{locale}'); pg.goto(a.url); pg.wait_for_selector('.opening-picker')
+        all_chips = pg.locator('.opening-picker .chip').count()
+        r.check(all_chips == len(data) and pg.locator('.opening-picker button.primary').is_disabled() and hscroll(pg) <= 0 and not pg.evaluate(SMALL_JS),
+                f'first visit, {locale}: the opening picker, grouped, every opening once', f'{all_chips} of {len(data)}')
+        r.shot(pg, f'picker-{locale}')
+        if pick:
+            pg.locator('.opening-picker .chip').nth(0).click(); pg.locator('.opening-picker .chip').nth(4).click()
+            pg.click('.opening-picker button.primary'); time.sleep(0.5)
+            chips = pg.locator('.learn-header .chips button.chip:not(.manage-chip)').count()
+            r.check(pg.locator('.opening-picker').count() == 0 and chips == 2 and pg.locator('.guide').count() == 1, f'first visit, {locale}: only the two chosen openings, then the guide', str(chips))
+        else:
+            pg.click('.opening-picker button.ghost'); time.sleep(0.5)
+            r.check(pg.locator('.learn-header .chips button.chip:not(.manage-chip)').count() == len(data), f'first visit, {locale}: "Show all" keeps every opening')
+        pg.reload(); pg.wait_for_selector('.learn .stepper')
+        r.check(pg.locator('.opening-picker').count() == 0, f'first visit, {locale}: asked once')
+        ctx.close()
     for locale in ('en-US', 'he-IL', 'es-ES'):
         ctx, pg = open_page(b, f'first-{locale}', locale, 375, 812)
         pg.wait_for_selector('.learn .stepper'); time.sleep(0.8)

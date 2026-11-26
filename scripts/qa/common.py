@@ -6,6 +6,27 @@ OUT = pathlib.Path(__file__).resolve().parent / 'out'
 SHOTS = OUT / 'shots'
 LIVE = 'https://opening-trainer-app.vercel.app'
 
+# A first visit to Learn asks which openings you play (src/OpeningPicker.tsx). The checks start every browser as if that
+# was answered with "Show all", so they see the app as before; pass first_visit=True to new_context/new_page to meet it.
+from playwright.sync_api import Browser
+_CHOSEN = "try { localStorage.getItem('chess-trainer:openings-chosen') || localStorage.setItem('chess-trainer:openings-chosen', 'true'); } catch {}"
+_new_context, _new_page = Browser.new_context, Browser.new_page
+
+
+def _context(self, *a, first_visit=False, **k):
+    ctx = _new_context(self, *a, **k)
+    if not first_visit: ctx.add_init_script(_CHOSEN)
+    return ctx
+
+
+def _page(self, *a, first_visit=False, **k):
+    pg = _new_page(self, *a, **k)
+    if not first_visit: pg.add_init_script(_CHOSEN)
+    return pg
+
+
+Browser.new_context, Browser.new_page = _context, _page
+
 
 def args(description, extra=None):
     p = argparse.ArgumentParser(description=description)

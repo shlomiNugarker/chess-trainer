@@ -533,6 +533,13 @@ const he: Record<string, string> = {
   'A review of any game: every move gets a verdict, with the better move. No daily limit.': 'סקירה של כל משחק: כל מהלך מקבל ציון, עם המהלך הטוב יותר. בלי הגבלה יומית.',
   'Where your games leave your opening lines, and your big mistakes as practice positions.': 'איפה המשחקים שלך יוצאים מהקווים, והטעויות הגדולות שלך כעמדות לתרגול.',
   'Only your public games are read, and they are analyzed on this device.': 'נקראים רק המשחקים הציבוריים שלך, והניתוח נעשה במכשיר הזה.',
+
+  // OpeningPicker.tsx
+  'Which openings do you play?': 'באילו פתיחות אתם משחקים?',
+  'Only these will show. You can change it any time with ⚙.': 'רק הן יוצגו. אפשר לשנות את זה בכל רגע עם ⚙.',
+  'As Black against {0}': 'בשחור נגד {0}',
+  'Show these': 'הצג את אלה',
+  'Show all': 'הצג הכול',
 };
 
 export default he;

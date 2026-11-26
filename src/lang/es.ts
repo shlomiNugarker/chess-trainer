@@ -512,6 +512,13 @@ const es: Record<string, string> = {
   'A review of any game: every move gets a verdict, with the better move. No daily limit.': 'El análisis de cualquier partida: cada jugada recibe una valoración, con la mejor jugada. Sin límite diario.',
   'Where your games leave your opening lines, and your big mistakes as practice positions.': 'Dónde tus partidas salen de tus líneas, y tus errores graves como posiciones para practicar.',
   'Only your public games are read, and they are analyzed on this device.': 'Solo se leen tus partidas públicas, y se analizan en este dispositivo.',
+
+  // OpeningPicker.tsx
+  'Which openings do you play?': '¿Qué aperturas juegas?',
+  'Only these will show. You can change it any time with ⚙.': 'Solo se mostrarán estas. Puedes cambiarlo cuando quieras con ⚙.',
+  'As Black against {0}': 'Con negras contra {0}',
+  'Show these': 'Mostrar estas',
+  'Show all': 'Mostrar todas',
 };
 
 export default es;
