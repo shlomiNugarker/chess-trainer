@@ -476,6 +476,11 @@ const es: Record<string, string> = {
   'Install the app': 'Instalar la aplicación',
   'To install the app: tap Share, then "Add to Home Screen".': 'Para instalar la aplicación: toca Compartir y luego «Añadir a pantalla de inicio».',
   'Sign in first, and then in the installed app too, so your progress is there as well.': 'Antes inicia sesión, y después también en la aplicación instalada, para que tu progreso esté en ella.',
+
+  // Drill.tsx: removing a position
+  'Remove from practice': 'Quitar de la práctica',
+  'Position removed from practice.': 'Posición quitada de la práctica.',
+  'Undo': 'Deshacer',
 };
 
 export default es;

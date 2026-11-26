@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard, type Arrow } from 'react-chessboard';
 import { Engine, winPercent } from './engine';
-import { MAX_BOX, dueMistakes, loadMistakes, practiceMistakes, recordReview, type Mistake } from './mistakes';
+import { MAX_BOX, deleteMistake, dueMistakes, loadMistakes, practiceMistakes, recordReview, restoreMistake, type Mistake } from './mistakes';
 import { REPERTOIRES, repName } from './repertoire';
 import { formatDate, msg, tr } from './i18n';
 import { BOARD_THEME, GREEN_ARROW, sanToUci, uciToArrow } from './chessUtils';
@@ -23,6 +23,8 @@ export default function Drill() {
   const [answer, setAnswer] = useState<Answer | null>(null);
   const [checking, setChecking] = useState(false);
   const [solved, setSolved] = useState(0);
+  // the position just removed, with where it was in the round, until the next step (for "Undo")
+  const [removed, setRemoved] = useState<{ m: Mistake; queue: Mistake[]; index: number } | null>(null);
   const engine = useRef<Engine | null>(null);
 
   useEffect(() => () => engine.current?.terminate(), []);
@@ -93,8 +95,38 @@ export default function Drill() {
     const i = index + 1;
     setIndex(i);
     setAnswer(null);
+    setRemoved(null);
     setFen(queue[i]?.fen ?? new Chess().fen());
   };
+
+  /** Out of practice for good (a position saved by mistake, or one not worth practicing). */
+  const remove = () => {
+    if (!current || checking) return;
+    const same = (x: Mistake) => x.fen === current.fen && x.repertoire === current.repertoire;
+    deleteMistake(current);
+    const rest = [...queue.slice(0, index), ...queue.slice(index).filter((x) => !same(x))];
+    setRemoved({ m: current, queue, index });
+    setQueue(rest);
+    setAnswer(null);
+    setFen(rest[index]?.fen ?? new Chess().fen());
+  };
+
+  const undo = () => {
+    if (!removed) return;
+    restoreMistake(removed.m);
+    setQueue(removed.queue);
+    setIndex(removed.index);
+    setAnswer(null);
+    setFen(removed.queue[removed.index].fen);
+    setRemoved(null);
+  };
+
+  const removedNote = removed && (
+    <p className="removed-note" role="status">
+      {tr('Position removed from practice.')}{' '}
+      <button className="link" onClick={undo}>{tr('Undo')}</button>
+    </p>
+  );
 
   if (!current) {
     const all = practiceMistakes();
@@ -102,6 +134,7 @@ export default function Drill() {
     const nextDue = all.length ? Math.min(...all.map((m) => m.due)) : null;
     return (
       <div className="card drill-empty">
+        {removedNote}
         <div className="empty-mark" aria-hidden>♞</div>
         <h2>
           {solved
@@ -197,6 +230,7 @@ export default function Drill() {
           ) : (
             <button className="ghost" onClick={reveal} disabled={checking}>{tr('Show answer')}</button>
           )}
+          {removedNote || <button className="ghost remove-position" onClick={remove} disabled={checking}>{tr('Remove from practice')}</button>}
         </div>
       </aside>
     </main>

@@ -27,6 +27,16 @@ const mm = JSON.parse(m.data[P + 'mistakes']);
 assert.equal(mm.length, 3);
 assert.equal(mm.find((x: { fen: string }) => x.fen === 'B').box, 3);
 
+// a position removed on one device is removed on the other one too (the mark is newer), and comes back when it is restored
+{
+  const kept = [{ fen: 'D', repertoire: 'italian', at: 10, due: 10, box: 0 }];
+  const gone = [{ fen: 'D', repertoire: 'italian', at: 10, due: 9e12, box: 0, reviewed: 50, deleted: true }];
+  const side = (x: unknown) => ({ data: { [P + 'mistakes']: j(x) }, stamps: {} });
+  for (const [x, y] of [[kept, gone], [gone, kept]]) assert.equal(JSON.parse(mergeSides(side(x), side(y)).data[P + 'mistakes'])[0].deleted, true);
+  const back = [{ ...kept[0], reviewed: 60 }];
+  assert.equal(JSON.parse(mergeSides(side(gone), side(back)).data[P + 'mistakes'])[0].deleted, undefined);
+}
+
 // mastery: per line, the later run
 m = mergeSides(
   { data: { [P + 'mastery']: j({ london: { L1: { tries: 2, clean: 1, last: 0, at: 5 }, L2: { tries: 1, clean: 0, last: 3, at: 9 } } }) }, stamps: {} },

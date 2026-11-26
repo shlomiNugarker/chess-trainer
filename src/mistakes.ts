@@ -17,6 +17,7 @@ export type Mistake = {
   due: number; // next review time
   reviewed?: number; // last review time (lets sync between devices keep the newest state)
   misses?: number; // how many times this position was played wrong (training, tests, games)
+  deleted?: true; // removed by the user: kept as a mark, so that sync removes it on the other devices too
 };
 
 const KEY = 'chess-trainer:mistakes';
@@ -28,12 +29,18 @@ export const MAX_BOX = INTERVALS.length;
 /** Fired on window whenever the store changes, so counters elsewhere can refresh. */
 export const MISTAKES_CHANGED = 'chess-trainer:mistakes-changed';
 
-export function loadMistakes(): Mistake[] {
+/** Everything stored, the removed positions too. */
+function loadAll(): Mistake[] {
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? '[]');
   } catch {
     return [];
   }
+}
+
+/** The saved positions (not the removed ones). */
+export function loadMistakes(): Mistake[] {
+  return loadAll().filter((m) => !m.deleted);
 }
 
 function store(all: Mistake[]) {
@@ -46,10 +53,11 @@ function store(all: Mistake[]) {
 }
 
 export function saveMistake(m: Omit<Mistake, 'at' | 'box' | 'due'>) {
-  const all = loadMistakes();
+  const all = loadAll();
   const now = Date.now();
   const existing = all.find((x) => x.fen === m.fen && x.repertoire === m.repertoire);
-  if (existing) Object.assign(existing, m, { at: now, box: 0, due: now, misses: (existing.misses ?? 1) + 1 });
+  if (existing?.deleted) Object.assign(existing, m, { at: now, box: 0, due: now, misses: 1, deleted: undefined }); // a new mistake there
+  else if (existing) Object.assign(existing, m, { at: now, box: 0, due: now, misses: (existing.misses ?? 1) + 1 });
   else all.push({ ...m, at: now, box: 0, due: now, misses: 1 });
   store(all);
 }
@@ -69,9 +77,9 @@ export function dueMistakes(now = Date.now()): Mistake[] {
 
 /** Leitner step: correct -> next box and a longer wait; wrong -> back to box 0, due again now. */
 export function recordReview(m: Pick<Mistake, 'fen' | 'repertoire'>, correct: boolean, now = Date.now()) {
-  const all = loadMistakes();
+  const all = loadAll();
   const x = all.find((y) => y.fen === m.fen && y.repertoire === m.repertoire);
-  if (!x) return;
+  if (!x || x.deleted) return;
   if (correct) {
     x.box = Math.min(x.box + 1, MAX_BOX);
     x.due = now + INTERVALS[x.box - 1] * DAY;
@@ -80,6 +88,30 @@ export function recordReview(m: Pick<Mistake, 'fen' | 'repertoire'>, correct: bo
     x.due = now;
   }
   x.reviewed = now;
+  store(all);
+}
+
+/**
+ * Removes a position from practice, on every device: what is left is a mark, newer than the position, which sync
+ * keeps over it (the newest state of a position wins). Its `due` is far away, so an older version of the app does not
+ * show it either.
+ */
+export function deleteMistake(m: Pick<Mistake, 'fen' | 'repertoire'>, now = Date.now()) {
+  const all = loadAll();
+  const i = all.findIndex((y) => y.fen === m.fen && y.repertoire === m.repertoire);
+  if (i < 0) return;
+  const x = all[i];
+  all[i] = { fen: x.fen, repertoire: x.repertoire, played: x.played, correct: x.correct, source: x.source, at: x.at, box: x.box, due: now + 100 * 365 * DAY, reviewed: now, deleted: true };
+  store(all);
+}
+
+/** Undoes deleteMistake: the position as it was, newer than the mark. */
+export function restoreMistake(m: Mistake, now = Date.now()) {
+  const all = loadAll();
+  const i = all.findIndex((y) => y.fen === m.fen && y.repertoire === m.repertoire);
+  const back = { ...m, reviewed: now, deleted: undefined };
+  if (i < 0) all.push(back);
+  else all[i] = back;
   store(all);
 }
 

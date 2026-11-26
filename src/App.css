@@ -1342,6 +1342,10 @@ button.link.danger { color: var(--error); }
 .install-card p { margin: 2px 0 0; font-size: 13px; line-height: 1.45; }
 .install-card .buttons { display: flex; gap: 8px; }
 .install-row p { margin: 0; font-size: 13px; line-height: 1.5; }
+.remove-position { margin-inline-start: auto; color: var(--text-3); }
+.removed-note { margin: 0; font-size: 13px; color: var(--text-2); }
+.buttons .removed-note { margin-inline-start: auto; align-self: center; }
+.buttons .removed-note .link { min-height: 44px; padding: 0 6px; }
 
 .tabs-only { display: contents; }
 

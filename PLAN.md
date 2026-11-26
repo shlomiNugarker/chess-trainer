@@ -48,6 +48,7 @@
 - [x] "My mistakes" (in the Practice tab): takes a position from `mistakes` and asks for the right move
 - [x] Leitner boxes: correct → box+1, and the next review in 1, 3, 7, 14 or 30 days. Wrong → back to box 0, and the position returns at the end of the round
 - [x] A "due today" count on the tab
+- [x] "Remove from practice" on every position, with "Undo". The removed position stays as a mark that is newer than it, so sync removes it on the other devices too; a new mistake in the same place brings it back
 - [x] For mistakes found by the engine, an alternative move that loses less than 10% win chance is accepted too
 - [x] Sources: training, "Test me", the analysis of Chess.com games, and puzzles
 

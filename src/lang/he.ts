@@ -497,6 +497,11 @@ const he: Record<string, string> = {
   'Install the app': 'התקן את האפליקציה',
   'To install the app: tap Share, then "Add to Home Screen".': 'כדי להתקין את האפליקציה: שיתוף, ואז "הוספה למסך הבית".',
   'Sign in first, and then in the installed app too, so your progress is there as well.': 'כדאי להתחבר לפני כן, ואחר כך גם באפליקציה המותקנת, כדי שההתקדמות תהיה גם בה.',
+
+  // Drill.tsx: removing a position
+  'Remove from practice': 'הסר מהתרגול',
+  'Position removed from practice.': 'העמדה הוסרה מהתרגול.',
+  'Undo': 'ביטול',
 };
 
 export default he;

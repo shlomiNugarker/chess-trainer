@@ -215,6 +215,19 @@ def mistakes(pg):
     pg.locator('button:visible:has-text("Next")').first.click(); time.sleep(1)
     pg.click('[data-square="c7"]:visible'); pg.click('[data-square="c5"]:visible'); time.sleep(1.5)
     r.check('Correct!' in pg.locator('body').inner_text(), 'the position comes back, and the right answer is "Correct!"')
+    # removing a position: gone from practice, back with "Undo", and gone for good after "Remove" again
+    count = lambda: pg.evaluate("JSON.parse(localStorage.getItem('chess-trainer:mistakes')).filter(m => !m.deleted).length")
+    pg.evaluate("""() => { const l = JSON.parse(localStorage.getItem('chess-trainer:mistakes'));
+      l.push({ fen: 'r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3', played: 'a3', correct: 'Bc4', source: 'book', repertoire: 'italian', at: 1, box: 0, due: 1 });
+      localStorage.setItem('chess-trainer:mistakes', JSON.stringify(l)); }""")
+    tab(pg, 0); tab(pg, 3); pg.click('.segmented button:has-text("My mistakes")'); time.sleep(1)
+    n = count()
+    pg.click('button:visible:has-text("Remove from practice")'); time.sleep(0.5)
+    r.check(count() == n - 1 and 'removed' in text(pg, '.removed-note'), 'a position can be removed from practice', f'{n} -> {count()}')
+    pg.click('.removed-note button:has-text("Undo")'); time.sleep(0.5)
+    r.check(count() == n and pg.locator('.removed-note').count() == 0 and pg.locator('[data-square] [data-piece]:visible').count() > 0, '"Undo" brings it back, on the board')
+    pg.click('button:visible:has-text("Remove from practice")'); time.sleep(0.5); pg.reload(); pg.wait_for_selector('.tabs')
+    r.check(count() == n - 1, 'removed for good after a reload')
 
 
 @section('review')
