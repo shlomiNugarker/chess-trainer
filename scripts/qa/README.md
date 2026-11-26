@@ -49,7 +49,7 @@ Each script prints every check, ends with a summary, and exits non-zero if a che
 |---|---|---|
 | `--url URL` | all | the app to test (default `http://localhost:4173`; the live site works too, except for `sync`) |
 | `--only a,b` | all but `sync` | a subset: repertoire ids (`london,qga`) for `learn_lines`/`play` (`play` also takes `regular` and `states`), or sections (`learn,puzzles,mistakes,review,account,phone,touch,lang,offline`) for `screens` |
-| `--chesscom USER` | `screens`, `nav` | the Chess.com account the review loads (real API calls) |
+| `--chesscom USER` | `screens`, `nav` | the Chess.com account the review loads (real API calls); or the `CHESSCOM_USER` environment variable. Needed by the review sections; an account with games reviewed on Chess.com shows the most |
 | `--account-url URL` | `screens` | a build with Firebase configured, for the account panel (default: the live site, since a local build without `.env.local` has no account panel) |
 
 ## Notes

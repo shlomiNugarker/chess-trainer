@@ -6,17 +6,20 @@
 The review section loads real games from Chess.com; the account panel needs a build with Firebase configured,
 so by default it is checked on the live site.
 """
-import json, pathlib, re, time
+import json, os, pathlib, re, sys, time
 from playwright.sync_api import sync_playwright
 from common import LIVE, SHOTS, Report, args, hscroll, lines, puzzles_by_board, wait_until
 
 
 def extra(p):
-    p.add_argument('--chesscom', default='shlomin1231', help='Chess.com username for the review')
+    p.add_argument('--chesscom', default=os.environ.get('CHESSCOM_USER', ''), help='Chess.com username for the review (or CHESSCOM_USER)')
     p.add_argument('--account-url', default=LIVE, help='a build with Firebase configured, for the account panel')
 
 
 a = args('Screens QA', extra)
+# the Chess.com account the review loads: given by whoever runs the checks, never written in the repository
+if not a.chesscom and (not a.only or {'review', 'touch', 'lang'} & set(a.only)):
+    sys.exit('Set the Chess.com username for the review: --chesscom USER, or the CHESSCOM_USER environment variable.')
 r = Report('screens')
 data = lines()
 SICILIAN = next(x for x in data if x['id'] == 'sicilian')

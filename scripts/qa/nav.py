@@ -3,12 +3,15 @@ when it is slow or cannot load (English, ~3 min).
 
     python scripts/qa/nav.py [--url URL] [--only back,reload,ends,computer,drag,history,goal,keys,engine]
 """
-import json, subprocess, time
+import json, os, subprocess, sys, time
 from playwright.sync_api import sync_playwright
 from common import ROOT, Report, args
 
-a = args('Back button and reload QA', lambda p: (p.add_argument('--chesscom', default='shlomin1231', help='Chess.com username for the review'),
+a = args('Back button and reload QA', lambda p: (p.add_argument('--chesscom', default=os.environ.get('CHESSCOM_USER', ''), help='Chess.com username for the review (or CHESSCOM_USER)'),
                                                      p.add_argument('--channel', default='', help="'chrome': the installed Chrome instead of Playwright's Chromium")))
+# the Chess.com account the review loads: given by whoever runs the checks, never written in the repository
+if not a.chesscom and (not a.only or {'back'} & set(a.only)):
+    sys.exit('Set the Chess.com username for the review: --chesscom USER, or the CHESSCOM_USER environment variable.')
 r = Report('nav')
 
 
