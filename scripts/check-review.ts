@@ -63,6 +63,8 @@ assert.equal(matchRepertoire('French Defense Advance Variation', 'w'), 'italian'
 assert.equal(matchRepertoire('Kings Indian Defense Classical Variation', 'b'), 'kid');
 assert.equal(matchRepertoire('Kings Indian Attack', 'b'), undefined); // the French repertoire answers 2.d3, by its own name
 assert.equal(matchRepertoire('English Opening Kings English Variation', 'b'), 'flank');
+assert.equal(matchRepertoire('English Opening Kings English Variation', 'w'), 'english'); // as White, the English repertoire
+assert.equal(matchRepertoire('English Opening Anglo Indian Defense', 'w'), 'english');
 assert.equal(matchRepertoire('Reti Opening', 'b'), 'flank');
 assert.equal(matchRepertoire('Queens Gambit Declined Orthodox Defense', 'b'), 'qgd');
 assert.equal(matchRepertoire('Queens Gambit Declined Slav', 'b'), 'slav');
