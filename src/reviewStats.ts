@@ -92,6 +92,7 @@ export function matchRepertoire(openingFull: string, color: 'w' | 'b'): string |
   if (color === 'w' && /^(Ruy Lopez|Petrovs Defense|Russian Game|Latvian Opening|Latvian Gambit)/.test(openingFull)) return 'ruy';
   if (color === 'w' && /^Scotch Game/.test(openingFull)) return 'scotch';
   if (color === 'w' && /^Kings Gambit/.test(openingFull)) return 'kingsgambit';
+  if (color === 'w' && /^Vienna Game/.test(openingFull)) return 'vienna';
   // the 1.e4 repertoire also answers the Scandinavian, the Sicilian (Alapin), the French and Caro-Kann (Advance), the Modern,
   // the Pirc, the Philidor, the Owen and the Nimzowitsch
   if (color === 'w' && /^(Scandinavian Defense|Sicilian Defense Alapin|French Defense Advance|Caro Kann Defense Advance|Modern Defense|Pirc Defense|Philidor Defense|Owens Defense|Nimzowitsch Defense)/.test(openingFull)) return 'italian';
