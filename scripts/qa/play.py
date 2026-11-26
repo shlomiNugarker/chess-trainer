@@ -190,7 +190,7 @@ with sync_playwright() as p:
             r.check(placement(pg2) == before, 'hiding an opening does not restart a regular game', f'{before} -> {placement(pg2)}')
 
             # the "To review" count follows changes made elsewhere
-            count = lambda: int(re.search(r'To review\s*(\d+)', pg2.locator('.trainer').inner_text()).group(1))
+            count = lambda: int(re.search(r'Positions to review\s*(\d+)', pg2.locator('.trainer').inner_text()).group(1))
             settings(pg2, mode='train'); pg2.wait_for_timeout(1500)
             was = count()
             pg2.evaluate("""() => { const k = 'chess-trainer:mistakes', l = JSON.parse(localStorage.getItem(k) || '[]');

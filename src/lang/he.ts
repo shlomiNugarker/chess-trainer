@@ -476,12 +476,13 @@ const he: Record<string, string> = {
   'Take back': 'החזר מהלך',
   'New game': 'משחק חדש',
   'Moves you learned in this opening, beyond the book': 'מהלכים שלמדת בפתיחה הזו, מעבר לספר',
-  'Learned': 'נלמדו',
+  'Moves learned': 'מהלכים שנלמדו',
+  'Change': 'שנה',
   'Yes, reset ({0})': 'כן, לאפס ({0})',
   'Cancel': 'ביטול',
   'Reset': 'אפס',
   'Mistakes saved for review': 'טעויות שנשמרו לחזרה',
-  'To review': 'לחזרה',
+  'Positions to review': 'עמדות לחזרה',
 
   // InstallCard.tsx
   'Keep it one tap away': 'האפליקציה במרחק נגיעה',

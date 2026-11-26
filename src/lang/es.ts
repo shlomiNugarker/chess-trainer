@@ -455,12 +455,13 @@ const es: Record<string, string> = {
   'Take back': 'Deshacer',
   'New game': 'Nueva partida',
   'Moves you learned in this opening, beyond the book': 'Jugadas que aprendiste en esta apertura, más allá del libro',
-  'Learned': 'Aprendidas',
+  'Moves learned': 'Jugadas aprendidas',
+  'Change': 'Cambiar',
   'Reset': 'Reiniciar',
   'Yes, reset ({0})': 'Sí, reiniciar ({0})',
   'Cancel': 'Cancelar',
   'Mistakes saved for review': 'Errores guardados para repasar',
-  'To review': 'Por repasar',
+  'Positions to review': 'Posiciones por repasar',
 
   // InstallCard.tsx
   'Keep it one tap away': 'A un toque de distancia',

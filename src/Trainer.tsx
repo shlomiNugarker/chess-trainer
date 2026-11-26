@@ -608,7 +608,9 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
     <div className="trainer">
       <header className="trainer-header">
         <button className="settings-toggle" onClick={() => setSettingsOpen(true)} aria-expanded={settingsOpen}>
-          <span aria-hidden>⚙</span> {mode === 'play' ? tr('Regular game') : repName(rep)} · {tr('Level')} {skill}
+          <span aria-hidden>♟</span>
+          <span className="settings-what">{mode === 'play' ? tr('Regular game') : repName(rep)} · {tr('Level')} {skill}</span>
+          <span className="settings-edit">✎ {tr('Change')}</span>
         </button>
         {settingsOpen && <div className="settings-backdrop" onClick={() => setSettingsOpen(false)} />}
         <div
@@ -790,6 +792,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
 
           {/* looking back and forward: a row above the list; on a phone ‹ and › at the ends of the one-line list. Left to right
               in every language, like the list itself: back is to the left of it, as the earlier moves are */}
+          {history.length > 0 && (
           <div className="moves-bar" dir="ltr">
             <div className="moves-nav">
               <button className="nav-start" onClick={() => showPly(0)} disabled={shownPly === 0} aria-label={tr('To the start')}><span aria-hidden="true">⏮</span></button>
@@ -798,7 +801,6 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
               <button className="nav-end" onClick={toGame} disabled={!viewing} aria-label={tr('To the end')}><span aria-hidden="true">⏭</span></button>
             </div>
             <ol className="moves" dir="ltr" ref={movesRef}>
-              {history.length === 0 && <li className="moves-empty">—</li>}
               {history.map((m, i) =>
                 i % 2 === 0 ? (
                   <li key={i}>
@@ -814,11 +816,12 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
               )}
             </ol>
           </div>
+          )}
 
           {mode === 'train' && (
             <div className="stats">
               <span className="chip-stat" title={tr('Moves you learned in this opening, beyond the book')}>
-                {tr('Learned')} <b>{learnedCount}</b>
+                {tr('Moves learned')} <b>{learnedCount}</b>
                 {learnedCount > 0 &&
                   (resetAsked === repId ? (
                     <>
@@ -840,7 +843,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
                   ))}
               </span>
               <span className="chip-stat" title={tr('Mistakes saved for review')}>
-                {tr('To review')} <b>{mistakeCount}</b>
+                {tr('Positions to review')} <b>{mistakeCount}</b>
               </span>
             </div>
           )}

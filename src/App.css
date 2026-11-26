@@ -434,7 +434,6 @@ aside {
 .move-no { color: var(--text-3); }
 .move { padding: 1px 6px; border-radius: 4px; }
 .move.last { background: rgba(95, 179, 107, 0.22); color: var(--text); font-weight: 700; }
-.moves-empty { color: var(--text-3); }
 
 /* the game: looking back and forward through the moves played */
 .moves-bar { display: flex; flex-direction: column; gap: 6px; }
@@ -1085,6 +1084,8 @@ aside {
     font-size: 13px;
     text-align: start;
   }
+  .settings-what { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .settings-edit { flex: none; color: var(--accent); font-weight: 600; }
 
   .controls { display: none; }
 
