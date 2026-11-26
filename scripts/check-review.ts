@@ -41,7 +41,7 @@ assert.equal(matchRepertoire('Sicilian Defense Alapin Variation', 'b'), 'sicilia
 assert.equal(matchRepertoire('Sicilian Defense Alapin Variation', 'w'), 'italian');
 assert.equal(matchRepertoire('Queens Gambit Accepted Old Variation', 'b'), 'qga');
 assert.equal(matchRepertoire('Caro Kann Defense Two Knights Attack', 'w'), undefined); // not the Italian
-assert.equal(matchRepertoire('English Opening Caro Kann Defensive System', 'b'), undefined); // not the Caro-Kann
+assert.equal(matchRepertoire('English Opening Caro Kann Defensive System', 'b'), 'flank'); // not the Caro-Kann: the answer to 1.c4
 assert.equal(matchRepertoire('Indian Game London System', 'w'), 'london');
 assert.equal(matchRepertoire('Owens Defense', 'w'), 'italian');
 // the Queen's Gambit as White
@@ -54,6 +54,8 @@ assert.equal(matchRepertoire('French Defense Advance Variation', 'b'), 'french')
 assert.equal(matchRepertoire('French Defense Advance Variation', 'w'), 'italian');
 assert.equal(matchRepertoire('Kings Indian Defense Classical Variation', 'b'), 'kid');
 assert.equal(matchRepertoire('Kings Indian Attack', 'b'), undefined); // the French repertoire answers 2.d3, by its own name
+assert.equal(matchRepertoire('English Opening Kings English Variation', 'b'), 'flank');
+assert.equal(matchRepertoire('Reti Opening', 'b'), 'flank');
 // 1...e5 as Black: its openings, not the Two Knights or the Petrov
 assert.equal(matchRepertoire('Ruy Lopez Opening Morphy Defense', 'b'), 'e5');
 assert.equal(matchRepertoire('Italian Game Giuoco Pianissimo', 'b'), 'e5');
