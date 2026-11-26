@@ -101,6 +101,8 @@ export function matchRepertoire(openingFull: string, color: 'w' | 'b'): string |
   if (color === 'b' && /^Queens Gambit Accepted/.test(openingFull)) return 'qga';
   // the Slav repertoire also has lines against the London and the Colle
   if (color === 'b' && /^(Slav Defense|Queens Gambit Declined Slav)|London System|Colle System/.test(openingFull)) return 'slav';
+  // after the Slav (its Chess.com names start with "Queens Gambit Declined Slav")
+  if (color === 'b' && /^(Queens Gambit Declined|Catalan Opening)/.test(openingFull)) return 'qgd';
   return undefined;
 }
 

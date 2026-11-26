@@ -56,6 +56,9 @@ assert.equal(matchRepertoire('Kings Indian Defense Classical Variation', 'b'), '
 assert.equal(matchRepertoire('Kings Indian Attack', 'b'), undefined); // the French repertoire answers 2.d3, by its own name
 assert.equal(matchRepertoire('English Opening Kings English Variation', 'b'), 'flank');
 assert.equal(matchRepertoire('Reti Opening', 'b'), 'flank');
+assert.equal(matchRepertoire('Queens Gambit Declined Orthodox Defense', 'b'), 'qgd');
+assert.equal(matchRepertoire('Queens Gambit Declined Slav', 'b'), 'slav');
+assert.equal(matchRepertoire('Catalan Opening', 'b'), 'qgd');
 // 1...e5 as Black: its openings, not the Two Knights or the Petrov
 assert.equal(matchRepertoire('Ruy Lopez Opening Morphy Defense', 'b'), 'e5');
 assert.equal(matchRepertoire('Italian Game Giuoco Pianissimo', 'b'), 'e5');
