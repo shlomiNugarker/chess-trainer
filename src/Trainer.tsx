@@ -713,7 +713,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
               <div className="line-info-head">
                 <span aria-hidden>📖</span>
                 <strong>{info.name}</strong>
-                {info.others > 0 && <span className="muted">{info.others === 1 ? tr('(+1 more line from here)') : tr(msg`(${'+' + info.others} more lines from here)`)}</span>}
+                {info.others > 0 && <span className="muted">{info.others === 1 ? tr('(1 more line from here)') : tr(msg`(${info.others} more lines from here)`)}</span>}
               </div>
               {info.notes.map((n) => (
                 <p key={n.label}>

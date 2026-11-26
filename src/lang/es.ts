@@ -336,11 +336,11 @@ const es: Record<string, string> = {
   'As Black': 'Con negras',
   'Your strengths': 'Tus puntos fuertes',
   '{0} — {1} in {2} games (your average {3}: {4}).': '{0}: {1} en {2} partidas (tu media {3}: {4}).',
-  'No opening stands out above your average yet ({0}; it takes {1} games in an opening).':
-    'Ninguna apertura destaca todavía sobre tu media ({0}; hacen falta {1} partidas o más con una apertura).',
+  'No opening stands out above your average yet ({0}; it takes at least {1} games in an opening).':
+    'Ninguna apertura destaca todavía sobre tu media ({0}; hacen falta al menos {1} partidas con una apertura).',
   'No games.': 'No hay partidas.',
   'Train': 'Entrenar',
-  'Score % · number of games. In green: the 3 strongest ({0} games, above your average of {1}). In red: the 3 weakest ({2} games).':
+  'Score % · number of games. In green: the 3 strongest (at least {0} games, above your average of {1}). In red: the 3 weakest (at least {2} games).':
     '% de rendimiento · número de partidas. En verde: las 3 más fuertes (desde {0} partidas, por encima de tu media de {1}). En rojo: las 3 más débiles (desde {2} partidas).',
   'per game': 'por partida',
   'Where the mistakes and blunders are': 'Dónde están los errores y los errores graves',
@@ -451,7 +451,7 @@ const es: Record<string, string> = {
   'Loading engine…': 'Cargando el motor…',
   'In the line': 'En la línea',
   'Free play': 'Juego libre',
-  '(+1 more line from here)': '(+1 línea más desde aquí)',
+  '(1 more line from here)': '(1 línea más desde aquí)',
   '({0} more lines from here)': '({0} líneas más desde aquí)',
   'Why:': 'Por qué:',
   'The green arrow shows the right move.': 'La flecha verde muestra la jugada correcta.',

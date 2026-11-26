@@ -120,8 +120,13 @@ export const msg = (parts: TemplateStringsArray, ...values: (string | number)[])
 /** Marks a text of a table that is shown later: { fork: trKey('Fork') } and tr(TABLE[x]). */
 export const trKey = (en: string) => en;
 
-// a value stands by itself in a right-to-left text, in its own direction: "Qa4+" and "41%" are not turned around
-const apart = (v: string | number) => (info(lang).dir === 'rtl' ? `\u2068${v}\u2069` : String(v));
+// a value stands by itself in a right-to-left text: "Qa4+", "10+" and "41%" left to right (a browser shows a value with
+// no letters in it, like "10+", in the direction around it), a name in its own direction
+const RTL_LETTER = /[\u0590-\u08ff\ufb1d-\ufdff\ufe70-\ufeff]/;
+const apart = (v: string | number) => {
+  if (info(lang).dir !== 'rtl') return String(v);
+  return RTL_LETTER.test(String(v)) ? `\u2068${v}\u2069` : `\u2066${v}\u2069`;
+};
 
 /** The text in the current language. `context`: for an English text that other languages say in more than one way. */
 export function tr(en: string | Msg, context?: string): string {

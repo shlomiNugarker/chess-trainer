@@ -350,12 +350,12 @@ const he: Record<string, string> = {
   'As Black': 'בשחור',
   'Your strengths': 'החוזקות שלך',
   '{0} — {1} in {2} games (your average {3}: {4}).': '{0} — {1} ב-{2} משחקים (הממוצע שלך {3}: {4}).',
-  'No opening stands out above your average yet ({0}; it takes {1} games in an opening).':
+  'No opening stands out above your average yet ({0}; it takes at least {1} games in an opening).':
     'עוד אין פתיחה שבולטת מעל הממוצע שלך ({0}, צריך לפחות {1} משחקים בפתיחה).',
   'No games.': 'אין משחקים.',
   'Train': 'תאמן',
-  'Score % · number of games. In green: the 3 strongest ({0} games, above your average of {1}). In red: the 3 weakest ({2} games).':
-    'ניקוד % · מספר משחקים. בירוק: 3 החזקות (מ-{0} משחקים, מעל הממוצע שלך: {1}). באדום: 3 החלשות (מ-{2} משחקים).',
+  'Score % · number of games. In green: the 3 strongest (at least {0} games, above your average of {1}). In red: the 3 weakest (at least {2} games).':
+    'ניקוד % · מספר משחקים. בירוק: 3 החזקות (לפחות {0} משחקים, מעל הממוצע שלך: {1}). באדום: 3 החלשות (לפחות {2} משחקים).',
   'per game': 'למשחק',
   'Where the mistakes and blunders are': 'איפה הטעויות והבלאנדרים',
   'The biggest mistakes': 'הטעויות הגדולות',
@@ -475,7 +475,7 @@ const he: Record<string, string> = {
   'The green arrow shows the right move.': 'החץ הירוק מראה את המהלך הנכון.',
   'Try again|go back': 'חזור ונסה',
   'Continue anyway': 'המשך בכל זאת',
-  '(+1 more line from here)': '(ועוד קו אחד מכאן)',
+  '(1 more line from here)': '(ועוד קו אחד מכאן)',
   '({0} more lines from here)': '(ועוד {0} קווים מכאן)',
   'Go back and play': 'חזור ונסה את',
   'Take back': 'החזר מהלך',

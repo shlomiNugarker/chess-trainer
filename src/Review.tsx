@@ -420,7 +420,7 @@ function Progress({ value }: { value: number }) {
 function Bar({ label, value, text }: { label: string; value: number; text: string }) {
   return (
     <div className="bar-row" title={`${label}: ${text}`}>
-      <span className="bar-label">{label}</span>
+      <span className="bar-label" dir="auto">{label}</span>
       <span className="bar">
         <span className="bar-fill" style={{ width: `${Math.max(2, value * 100)}%` }} />
       </span>
@@ -455,7 +455,7 @@ function Strengths({ overview }: { overview: ReturnType<typeof buildOverview> })
             <strong>{label}:</strong>{' '}
             {best
               ? tr(msg`${best.name} — ${pct(best.score)} in ${best.games} games (your average ${label.toLowerCase()}: ${pct(avg)}).`)
-              : tr(msg`No opening stands out above your average yet (${pct(avg)}; it takes ${MIN_STRONG_GAMES + '+'} games in an opening).`)}
+              : tr(msg`No opening stands out above your average yet (${pct(avg)}; it takes at least ${MIN_STRONG_GAMES} games in an opening).`)}
           </li>
         ))}
       </ul>
@@ -482,7 +482,7 @@ function OpeningTable({ title, rows, average, onTrain }: { title: string; rows: 
         </div>
       ))}
       <p className="muted">
-        {tr(msg`Score % · number of games. In green: the 3 strongest (${MIN_STRONG_GAMES + '+'} games, above your average of ${pct(average)}). In red: the 3 weakest (${MIN_OPENING_GAMES + '+'} games).`)}
+        {tr(msg`Score % · number of games. In green: the 3 strongest (at least ${MIN_STRONG_GAMES} games, above your average of ${pct(average)}). In red: the 3 weakest (at least ${MIN_OPENING_GAMES} games).`)}
       </p>
     </section>
   );

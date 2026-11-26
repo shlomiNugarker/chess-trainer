@@ -682,7 +682,9 @@ aside {
   font-size: 13px;
 }
 
-.bar-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: start; }
+/* an English name in a right-to-left page: cut at its end, and still on the right */
+[dir='rtl'] .bar-label[dir='auto'] { text-align: right; }
 
 .bar {
   height: 8px;
