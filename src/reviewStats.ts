@@ -88,6 +88,8 @@ export function matchRepertoire(openingFull: string, color: 'w' | 'b'): string |
   // the 1.e4 repertoire also answers the Scandinavian, the Sicilian (Alapin), the French and Caro-Kann (Advance), the Modern,
   // the Pirc, the Philidor, the Owen and the Nimzowitsch
   if (color === 'w' && /^(Scandinavian Defense|Sicilian Defense Alapin|French Defense Advance|Caro Kann Defense Advance|Modern Defense|Pirc Defense|Philidor Defense|Owens Defense|Nimzowitsch Defense)/.test(openingFull)) return 'italian';
+  // 1...e5 with 2...Nc6 and 3...Bc5: not the Two Knights (3...Nf6), the Petrov or the Philidor
+  if (color === 'b' && !/Two Knights Defense/.test(openingFull) && /^(Italian Game|Giuoco|Evans Gambit|Ruy Lopez|Scotch Game|Four Knights Game|Ponziani Opening|Vienna Game|Bishops Opening|Kings Gambit|Center Game|Kings Pawn Opening Wayward Queen)/.test(openingFull)) return 'e5';
   if (color === 'b' && /^Caro Kann Defense/.test(openingFull)) return 'caro';
   if (color === 'b' && /^Sicilian Defense/.test(openingFull)) return 'sicilian';
   if (color === 'b' && /^Queens Gambit Accepted/.test(openingFull)) return 'qga';

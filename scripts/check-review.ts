@@ -35,7 +35,7 @@ assert.equal(summarize(api('Opp', 'agreed', 'me', 'agreed'), 'me')!.result, 'dra
 assert.equal(summarize({ ...api('me', 'win', 'x', 'resigned'), rules: 'chess960' }, 'me'), null);
 
 assert.equal(matchRepertoire('Italian Game Two Knights Defense', 'w'), 'italian');
-assert.equal(matchRepertoire('Italian Game', 'b'), undefined);
+assert.equal(matchRepertoire('Italian Game', 'b'), 'e5'); // the 1...e5 repertoire
 assert.equal(matchRepertoire('Caro Kann Defense', 'b'), 'caro');
 assert.equal(matchRepertoire('Sicilian Defense Alapin Variation', 'b'), 'sicilian');
 assert.equal(matchRepertoire('Sicilian Defense Alapin Variation', 'w'), 'italian');
@@ -44,6 +44,13 @@ assert.equal(matchRepertoire('Caro Kann Defense Two Knights Attack', 'w'), undef
 assert.equal(matchRepertoire('English Opening Caro Kann Defensive System', 'b'), undefined); // not the Caro-Kann
 assert.equal(matchRepertoire('Indian Game London System', 'w'), 'london');
 assert.equal(matchRepertoire('Owens Defense', 'w'), 'italian');
+// 1...e5 as Black: its openings, not the Two Knights or the Petrov
+assert.equal(matchRepertoire('Ruy Lopez Opening Morphy Defense', 'b'), 'e5');
+assert.equal(matchRepertoire('Italian Game Giuoco Pianissimo', 'b'), 'e5');
+assert.equal(matchRepertoire('Scotch Game', 'b'), 'e5');
+assert.equal(matchRepertoire('Two Knights Defense', 'b'), undefined);
+assert.equal(matchRepertoire('Italian Game Two Knights Defense', 'b'), undefined);
+assert.equal(matchRepertoire('Petrovs Defense', 'b'), undefined);
 assert.equal(matchRepertoire('Pirc Defense', 'b'), undefined);
 
 assert.equal(phaseOf(new Chess().fen(), 5), 'opening');
