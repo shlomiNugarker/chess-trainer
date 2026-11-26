@@ -102,6 +102,7 @@ export function matchRepertoire(openingFull: string, color: 'w' | 'b'): string |
   if (color === 'b' && !/Two Knights Defense/.test(openingFull) && /^(Italian Game|Giuoco|Evans Gambit|Ruy Lopez|Scotch Game|Four Knights Game|Ponziani Opening|Vienna Game|Bishops Opening|Kings Gambit|Center Game|Kings Pawn Opening Wayward Queen)/.test(openingFull)) return 'e5';
   if (color === 'b' && /^Scandinavian Defense/.test(openingFull)) return 'scandinavian';
   if (color === 'b' && /^Alekhine Defense/.test(openingFull)) return 'alekhine';
+  if (color === 'b' && /^(Petrovs Defense|Russian Game)/.test(openingFull)) return 'petrov';
   if (color === 'b' && /^French Defense/.test(openingFull)) return 'french';
   if (color === 'b' && /^Kings Indian Defense/.test(openingFull)) return 'kid';
   if (color === 'b' && /^(English Opening|Reti Opening|Zukertort Opening)/.test(openingFull)) return 'flank';

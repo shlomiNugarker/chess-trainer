@@ -91,7 +91,7 @@ assert.equal(matchRepertoire('Vienna Game Stanley Variation', 'w'), 'vienna');
 assert.equal(matchRepertoire('Queens Pawn Opening Colle System', 'b'), 'slav'); // as Black, the Slav answers it
 assert.equal(matchRepertoire('Two Knights Defense', 'b'), undefined);
 assert.equal(matchRepertoire('Italian Game Two Knights Defense', 'b'), undefined);
-assert.equal(matchRepertoire('Petrovs Defense', 'b'), undefined);
+assert.equal(matchRepertoire('Petrovs Defense', 'b'), 'petrov');
 assert.equal(matchRepertoire('Pirc Defense', 'b'), 'pirc'); // its own repertoire now
 
 assert.equal(phaseOf(new Chess().fen(), 5), 'opening');
