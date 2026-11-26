@@ -72,6 +72,7 @@ assert.equal(matchRepertoire('Catalan Opening', 'b'), 'qgd');
 assert.equal(matchRepertoire('Nimzo Indian Defense Rubinstein Variation', 'b'), 'nimzo');
 assert.equal(matchRepertoire('Queens Indian Defense Fianchetto Variation', 'b'), 'nimzo');
 assert.equal(matchRepertoire('Nimzo Indian Defense', 'w'), undefined);
+assert.equal(matchRepertoire('Grunfeld Defense Exchange Variation', 'b'), 'grunfeld');
 assert.equal(matchRepertoire('Dutch Defense Leningrad Variation', 'b'), 'dutch');
 assert.equal(matchRepertoire('Pirc Defense Austrian Attack', 'b'), 'pirc');
 assert.equal(matchRepertoire('Pirc Defense', 'w'), 'italian'); // as White it is still the 1.e4 repertoire
