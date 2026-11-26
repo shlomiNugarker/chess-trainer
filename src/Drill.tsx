@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard, type Arrow } from 'react-chessboard';
 import { Engine, winPercent } from './engine';
-import { MAX_BOX, deleteMistake, dueMistakes, loadMistakes, practiceMistakes, recordReview, restoreMistake, type Mistake } from './mistakes';
+import { DAILY_REVIEWS, MAX_BOX, deleteMistake, dueMistakes, loadMistakes, practiceMistakes, recordReview, restoreMistake, todaysMistakes, type Mistake } from './mistakes';
 import { REPERTOIRES, repName } from './repertoire';
 import { formatDate, msg, tr } from './i18n';
 import { BOARD_THEME, GREEN_ARROW, sanToUci, uciToArrow } from './chessUtils';
@@ -17,7 +17,7 @@ const ALT_TOLERANCE = 10;
 type Answer = { ok: boolean; text: string };
 
 export default function Drill() {
-  const [queue, setQueue] = useState<Mistake[]>(() => dueMistakes());
+  const [queue, setQueue] = useState<Mistake[]>(() => todaysMistakes());
   const [index, setIndex] = useState(0);
   const [fen, setFen] = useState(queue[0]?.fen ?? new Chess().fen());
   const [answer, setAnswer] = useState<Answer | null>(null);
@@ -132,6 +132,15 @@ export default function Drill() {
     const all = practiceMistakes();
     const inHidden = loadMistakes().length - all.length;
     const nextDue = all.length ? Math.min(...all.map((m) => m.due)) : null;
+    const waiting = dueMistakes().length; // due, but past today's practice
+    const keepGoing = () => {
+      const more = todaysMistakes(DAILY_REVIEWS * 100).slice(0, DAILY_REVIEWS);
+      setQueue(more);
+      setIndex(0);
+      setAnswer(null);
+      setRemoved(null);
+      setFen(more[0].fen);
+    };
     return (
       <div className="card drill-empty">
         {removedNote}
@@ -141,7 +150,15 @@ export default function Drill() {
             ? tr(msg`Well done! You solved ${solved} exercises.`)
             : tr('Nothing to review today 🎉')}
         </h2>
-        {(all.length > 0 || !inHidden) && <p className="muted">
+        {waiting > 0 && (
+          <>
+            <p className="muted">
+              {tr(msg`That's today's practice. ${waiting} more positions are waiting: a few each day is what makes them stick.`)}
+            </p>
+            <button onClick={keepGoing}>{tr(msg`Keep going (${Math.min(waiting, DAILY_REVIEWS)} more)`)}</button>
+          </>
+        )}
+        {waiting === 0 && (all.length > 0 || !inHidden) && <p className="muted">
           {all.length
             ? tr(msg`You have ${all.length} positions saved. Next review: ${formatDate(nextDue!)}.`)
             : tr('No saved mistakes yet. Train an opening or run an engine analysis in My review — every mistake ends up here.')}

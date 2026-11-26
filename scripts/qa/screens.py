@@ -228,6 +228,15 @@ def mistakes(pg):
     r.check(count() == n and pg.locator('.removed-note').count() == 0 and pg.locator('[data-square] [data-piece]:visible').count() > 0, '"Undo" brings it back, on the board')
     pg.click('button:visible:has-text("Remove from practice")'); time.sleep(0.5); pg.reload(); pg.wait_for_selector('.tabs')
     r.check(count() == n - 1, 'removed for good after a reload')
+    # the daily practice: 20 positions practiced today, 5 more due -> done for today, "Keep going" brings the 5
+    pg.evaluate("""() => { const now = Date.now(), l = [];
+      for (let i = 0; i < 25; i++) l.push({ fen: `r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - ${i} 3`, played: 'a3', correct: 'Bc4', source: 'book',
+        repertoire: 'italian', at: 1, box: i < 20 ? 1 : 0, due: i < 20 ? now + 864e5 : 1, reviewed: i < 20 ? now : undefined });
+      localStorage.setItem('chess-trainer:mistakes', JSON.stringify(l)); }""")
+    pg.reload(); pg.wait_for_selector('.tabs'); tab(pg, 3); pg.click('.segmented button:has-text("My mistakes")'); time.sleep(1)
+    r.check(pg.locator('.tabs .badge').count() == 0 and '5 more positions are waiting' in text(pg, '.drill-empty'), 'after 20 positions today the practice is done for the day', text(pg, '.drill-empty'))
+    pg.click('.drill-empty button:has-text("Keep going")'); time.sleep(0.8)
+    r.check('5 left' in text(pg, '.status:visible'), '"Keep going" brings the ones that wait', text(pg, '.status:visible'))
 
 
 @section('review')
@@ -437,7 +446,7 @@ def touch(b):
         ctx, pg = open_page(b, tag, locale, w, h)
         pg.evaluate(SEED_JS, 235); pg.reload(); pg.wait_for_selector('.tabs')
         badge = lambda: int(pg.locator('.tabs .badge').inner_text()) if pg.locator('.tabs .badge').count() else 0
-        r.check(badge() == 235, f'{tag}: 235 positions to review', str(badge()))
+        r.check(badge() == 20, f'{tag}: 235 positions are due, the badge shows today\'s 20', str(badge()))
         o = pg.evaluate(BADGE_JS)
         r.check(o['icon'] < 0.2 and o['label'] == 0 and o['inside'], f'{tag}: the badge does not hide the icon', str(o))
         for i, name in [(0, 'Play'), (1, 'Learn'), (3, 'Practice')]:
@@ -457,12 +466,11 @@ def touch(b):
         small = pg.evaluate(SMALL_JS)
         r.check(not small, f'{tag}: the list of openings has no row too small for a finger', f'{len(small)}: {sorted(set(small))[:6]}')
         box.uncheck(); time.sleep(0.5)
-        r.check(badge() == 220, f'{tag}: hiding an opening takes its positions out at once', str(badge()))
-        r.check('220' in pg.locator('.today').inner_text(), f'{tag}: also in "today"', pg.locator('.today').inner_text()[:60].replace('\n', ' '))
+        r.check(pg.evaluate("document.querySelector('.today').innerText.includes('20')"), f'{tag}: also in "today"', pg.locator('.today').inner_text()[:60].replace('\n', ' '))
         tab(pg, 0); time.sleep(0.5)
         r.check(re.search(r'220', pg.locator('.trainer aside').inner_text()) is not None, f'{tag}: and in Play')
         tab(pg, 3); pg.locator('.segmented button').nth(1).click(); time.sleep(0.8)
-        r.check('220' in pg.locator('.status').last.inner_text() and 'London' not in pg.locator('main').last.inner_text() and '\u05dc\u05d5\u05e0\u05d3\u05d5\u05df' not in pg.locator('main').last.inner_text(),
+        r.check('20' in pg.locator('.status').last.inner_text() and 'London' not in pg.locator('main').last.inner_text() and '\u05dc\u05d5\u05e0\u05d3\u05d5\u05df' not in pg.locator('main').last.inner_text(),
                 f'{tag}: the practice starts with an opening that is shown', pg.locator('main').last.inner_text()[-120:].replace('\n', ' '))
         stored = pg.evaluate("JSON.parse(localStorage.getItem('chess-trainer:mistakes')).length")
         r.check(stored == 235, f'{tag}: nothing was deleted', str(stored))
@@ -497,7 +505,8 @@ def touch(b):
           return { coach: t('.game-review .coach').bottom, bar: t('.tabs').top, board: t('.game-review .review-board').width, head: t('.game-review-head').height, scroll: scrollY }; }""")
         r.check(box['coach'] <= box['bar'] and box['scroll'] == 0, f'{tag}: game review shows the whole coach card without scrolling', str(box))
         info = pg.locator('.game-review-info').inner_text()
-        r.check(not re.search(r'\d{4}', info) and pg.evaluate("(() => { const e = document.querySelector('.game-review-info'); return e.scrollWidth <= e.clientWidth + 1; })()"), f'{tag}: the opponent is not cut', info)
+        r.check(not re.search(r'\d+[./]\d+[./]\d{2,4}', info) and  # no date (a name may have digits)
+                pg.evaluate("(() => { const e = document.querySelector('.game-review-info'); return e.scrollWidth <= e.clientWidth + 1; })()"), f'{tag}: the opponent is not cut', info)
         r.check(box['board'] >= 260, f'{tag}: and the board is still big', str(box['board']))
         small = pg.evaluate(SMALL_JS)
         r.check(not small, f'{tag}: game review has no button too small for a finger', f'{len(small)}: {sorted(set(small))[:6]}')

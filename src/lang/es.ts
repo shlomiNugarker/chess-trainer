@@ -481,6 +481,10 @@ const es: Record<string, string> = {
   'Remove from practice': 'Quitar de la práctica',
   'Position removed from practice.': 'Posición quitada de la práctica.',
   'Undo': 'Deshacer',
+
+  // Drill.tsx: the daily practice
+  "That's today's practice. {0} more positions are waiting: a few each day is what makes them stick.": 'Esa es la práctica de hoy. Quedan {0} posiciones más: unas pocas cada día es lo que hace que se queden.',
+  'Keep going ({0} more)': 'Seguir ({0} más)',
 };
 
 export default es;

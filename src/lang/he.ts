@@ -502,6 +502,10 @@ const he: Record<string, string> = {
   'Remove from practice': 'הסר מהתרגול',
   'Position removed from practice.': 'העמדה הוסרה מהתרגול.',
   'Undo': 'ביטול',
+
+  // Drill.tsx: the daily practice
+  "That's today's practice. {0} more positions are waiting: a few each day is what makes them stick.": 'זה התרגול של היום. עוד {0} עמדות מחכות: כמה בכל יום, וכך הן נשארות בזיכרון.',
+  'Keep going ({0} more)': 'להמשיך (עוד {0})',
 };
 
 export default he;

@@ -3,7 +3,7 @@ import Trainer, { type TrainRequest } from './Trainer';
 import Review from './Review';
 import Practice, { type PracticeView } from './Practice';
 import Learn from './Learn';
-import { dueMistakes, useMistakeCount } from './mistakes';
+import { todaysMistakes, useMistakeCount } from './mistakes';
 import { useStored, writeStored } from './storage';
 import { LANGS, langName, dir, setLang, tr, useLang } from './i18n';
 import Account from './Account';
@@ -15,7 +15,7 @@ import { go, goTo, useNav, type Screen } from './nav';
 import './App.css';
 
 const closeAccount = () => go({ account: false });
-const dueCount = () => dueMistakes().length;
+const dueCount = () => todaysMistakes().length;
 
 export default function App() {
   const { screen, account: accountOpen } = useNav();

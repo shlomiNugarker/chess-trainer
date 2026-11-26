@@ -75,6 +75,24 @@ export function dueMistakes(now = Date.now()): Mistake[] {
     .sort((a, b) => a.due - b.due);
 }
 
+/** A day's practice: more than this at once is too much to keep coming back to. The rest waits, oldest due first. */
+export const DAILY_REVIEWS = 20;
+
+const startOfDay = (now: number) => new Date(now).setHours(0, 0, 0, 0);
+
+/**
+ * Today's practice: positions answered wrong today come back, and new ones as long as fewer than DAILY_REVIEWS (plus
+ * `extra`, after "Keep going") positions were practiced today.
+ */
+export function todaysMistakes(extra = 0, now = Date.now()): Mistake[] {
+  const today = startOfDay(now);
+  const doneToday = practiceMistakes().filter((m) => (m.reviewed ?? 0) >= today).length;
+  const due = dueMistakes(now);
+  const again = due.filter((m) => (m.reviewed ?? 0) >= today);
+  const fresh = due.filter((m) => (m.reviewed ?? 0) < today).slice(0, Math.max(0, DAILY_REVIEWS + extra - doneToday));
+  return [...again, ...fresh].sort((a, b) => a.due - b.due);
+}
+
 /** Leitner step: correct -> next box and a longer wait; wrong -> back to box 0, due again now. */
 export function recordReview(m: Pick<Mistake, 'fen' | 'repertoire'>, correct: boolean, now = Date.now()) {
   const all = loadAll();

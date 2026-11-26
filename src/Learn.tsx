@@ -4,7 +4,7 @@ import { Chessboard, type Arrow } from 'react-chessboard';
 import { explanationsNote, movesOf, REPERTOIRES, lineMoves, lineText, moveLabel, posKey, repName } from './repertoire';
 import { importPgn, removeCustomLine, useRepertoire, type ImportResult } from './customLines';
 import { hasExplanations, msg, tr, useLang } from './i18n';
-import { dueMistakes, loadMistakes, saveMistake, useMistakeCount } from './mistakes';
+import { loadMistakes, saveMistake, todaysMistakes, useMistakeCount } from './mistakes';
 import { dialogOpen } from './useDialog';
 import { lineStats } from './lineStats';
 import { BLUE_ARROW, BOARD_THEME, GREEN_ARROW, LAST_MOVE, WRONG_MOVE, ltr, uciToArrow } from './chessUtils';
@@ -30,7 +30,7 @@ type QuizState = { wrong?: { san: string; to: string; correctUci: string }; mist
  */
 type Props = { onTrain: (repertoireId: string) => void; onDrill: () => void; onPuzzles: () => void };
 
-const dueCount = () => dueMistakes().length;
+const dueCount = () => todaysMistakes().length;
 
 export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
   const [storedRepId, setRepId] = useStored('learn-repertoire', REPERTOIRES[0].id);
