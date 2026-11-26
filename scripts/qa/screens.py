@@ -35,8 +35,16 @@ def open_page(b, tag, locale, w, h, url=None):
     return ctx, pg
 
 
+TABS = ['play', 'learn', 'review', 'drill']  # the scripts number the tabs this way, whatever their order on screen
+
+
+def pick_lang(pg, lang):
+    """The language is chosen in the account / settings panel (the last item of the tab bar)."""
+    pg.click('.account-tab'); pg.click(f'.account-panel .chip[lang={lang}]'); pg.keyboard.press('Escape'); time.sleep(0.3)
+
+
 def tab(pg, i):
-    pg.locator('.tabs .tab:not(.lang-switch):not(.account-tab)').nth(i).click(); time.sleep(0.6)
+    pg.locator(f'.tabs [data-tab={TABS[i]}]').click(); time.sleep(0.6)
 
 
 def text(pg, sel):
@@ -244,7 +252,7 @@ def mistakes(pg):
 
 @section('review')
 def review(pg):
-    pg.click('.tabs .tab:has-text("My review")')
+    pg.click('.tabs .tab:has-text("My games")')
     r.check('What you get from your games' in text(pg, '.review-intro'), 'before any games: what My review gives', text(pg, '.review-intro')[:80])
     pg.fill('.review input', a.chesscom); pg.click('.review button:has-text("Load games")')
     pg.wait_for_selector('.recent-game', timeout=180000)
@@ -278,7 +286,7 @@ def review(pg):
         r.check('Branch added' in added, 'add a branch (Stockfish answer)', added[:120])
         pg.locator('.branch-added button, .branch-added a').first.click(); time.sleep(1)
         r.check('★' in text(pg, 'select[aria-label="Line"] option:checked'), '"Learn it" opens the new branch in Learn')
-        pg.click('.tabs .tab:has-text("My review")')
+        pg.click('.tabs .tab:has-text("My games")')
     pr = pg.locator('.branches-card button:has-text("Practice")')
     if pr.count():
         pr.first.click(); time.sleep(1)
@@ -342,7 +350,7 @@ def review(pg):
     pg.locator('.recent-game').first.click()
     r.check(pg.wait_for_selector('.review-summary', timeout=5000) is not None and not pg.locator('.review-progress').count(), 'game review: a reviewed game opens at once')
     pg.click('.game-review-head button')
-    pg.reload(); pg.click('.tabs .tab:has-text("My review")')
+    pg.reload(); pg.click('.tabs .tab:has-text("My games")')
     r.check(wait_until(lambda: pg.locator('.review .tile-value').count() > 0, 60), 'the review reloads by itself after a page reload')
 
 
@@ -625,12 +633,12 @@ def languages(b):
     pg.on('request', lambda q: asked.append(q.url) if '/assets/es-' in q.url else None)
     pg.reload(); pg.wait_for_selector('.tabs'); pg.wait_for_timeout(500)
     r.check(not asked and pg.evaluate('document.documentElement.lang') == 'en', 'English does not download the Spanish texts', str(len(asked)))
-    pg.click('.lang-switch'); pg.wait_for_function("document.documentElement.lang === 'es'")
+    pick_lang(pg, 'es'); pg.wait_for_function("document.documentElement.lang === 'es'")
     r.check('Aprender' in pg.inner_text('.tabs'), 'switching to Spanish')
     pg.reload(); pg.wait_for_selector('.tabs')
     r.check('Aprender' in pg.inner_text('.tabs'), 'Spanish is kept after a reload')
-    pg.click('.lang-switch'); pg.wait_for_function("document.documentElement.dir === 'rtl'")
-    pg.click('.lang-switch'); pg.wait_for_function("document.documentElement.lang === 'en'")
+    pick_lang(pg, 'he'); pg.wait_for_function("document.documentElement.dir === 'rtl'")
+    pick_lang(pg, 'en'); pg.wait_for_function("document.documentElement.lang === 'en'")
     r.check('Learn' in pg.inner_text('.tabs'), 'and back through Hebrew to English')
     ctx.close()
 

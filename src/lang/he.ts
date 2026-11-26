@@ -29,7 +29,8 @@ const he: Record<string, string> = {
   // App.tsx
   'Play': 'שחק',
   'Learn': 'למד',
-  'My review': 'הסקירה שלי',
+  'My games': 'המשחקים שלי',
+  'Settings': 'הגדרות',
   'Practice': 'תרגול',
   'The chess engine did not load. Check your internet connection and try again.': 'מנוע השחמט לא נטען. בדוק את החיבור לאינטרנט ונסה שוב.',
   'Try again': 'נסה שוב',
@@ -87,8 +88,8 @@ const he: Record<string, string> = {
   'Well done! You solved {0} exercises.': 'כל הכבוד! פתרת {0} תרגילים.',
   'Nothing to review today 🎉': 'אין מה לחזור היום 🎉',
   'You have {0} positions saved. Next review: {1}.': 'יש לך {0} עמדות במאגר. החזרה הבאה: {1}.',
-  'No saved mistakes yet. Train an opening or run an engine analysis in My review — every mistake ends up here.':
-    'עוד אין טעויות שמורות. שחק באימון הפתיחות או הרץ ניתוח מנוע בסקירה — כל טעות תגיע לכאן.',
+  'No saved mistakes yet. Train an opening or run an engine analysis in My games — every mistake ends up here.':
+    'עוד אין טעויות שמורות. שחק באימון הפתיחות או הרץ ניתוח מנוע ב"המשחקים שלי" — כל טעות תגיע לכאן.',
   '{0} positions are saved in openings you have hidden. They come back when you show the opening in Learn.':
     '{0} עמדות שמורות בפתיחות שהסתרת. הן יחזרו כשתציג את הפתיחה ב"למד".',
   'White': 'לבן',

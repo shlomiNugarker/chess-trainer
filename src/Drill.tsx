@@ -161,7 +161,7 @@ export default function Drill() {
         {waiting === 0 && (all.length > 0 || !inHidden) && <p className="muted">
           {all.length
             ? tr(msg`You have ${all.length} positions saved. Next review: ${formatDate(nextDue!)}.`)
-            : tr('No saved mistakes yet. Train an opening or run an engine analysis in My review — every mistake ends up here.')}
+            : tr('No saved mistakes yet. Train an opening or run an engine analysis in My games — every mistake ends up here.')}
         </p>}
         {inHidden > 0 && (
           <p className="muted">

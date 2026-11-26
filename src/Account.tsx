@@ -10,6 +10,7 @@ import { LANGS, hasExplanations, langName, locale, setLang, msg, tr, useLang } f
 export default function Account({ onClose }: { onClose: () => void }) {
   const cloud = useCloud();
   const lang = useLang();
+  const title = cloud.enabled ? tr('Account') : tr('Settings');
 
   useEffect(preloadCloud, []);
 
@@ -31,10 +32,10 @@ export default function Account({ onClose }: { onClose: () => void }) {
   return (
     <>
       <div className="account-backdrop" onClick={onClose} />
-      <div ref={panel} className="account-panel card" role="dialog" aria-modal="true" aria-label={tr('Account')}>
+      <div ref={panel} className="account-panel card" role="dialog" aria-modal="true" aria-label={title}>
         <div className="sheet-handle" aria-hidden />
         <div className="account-head">
-          <h2>{tr('Account')}</h2>
+          <h2>{title}</h2>
           <button className="ghost icon-btn" onClick={onClose} aria-label={tr('Close')}>✕</button>
         </div>
 

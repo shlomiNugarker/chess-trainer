@@ -5,7 +5,7 @@ import Practice, { type PracticeView } from './Practice';
 import Learn from './Learn';
 import { todaysMistakes, useMistakeCount } from './mistakes';
 import { useStored, writeStored } from './storage';
-import { LANGS, langName, dir, setLang, tr, useLang } from './i18n';
+import { dir, tr, useLang } from './i18n';
 import Account from './Account';
 import Privacy from './Privacy';
 import { useCloud } from './cloud';
@@ -31,8 +31,7 @@ export default function App() {
     goTo('drill');
   };
   const due = useMistakeCount(dueCount);
-  const lang = useLang(); // re-renders the whole app when the language changes
-  const nextLang = LANGS[(LANGS.findIndex((l) => l.id === lang) + 1) % LANGS.length];
+  useLang(); // re-renders the whole app when the language changes
   const cloud = useCloud();
 
   const [engineFailed, setEngineFailed] = useState(false);
@@ -43,10 +42,11 @@ export default function App() {
   }, []);
 
   const tabs: { id: Screen; label: string; icon: string; badge?: number }[] = [
-    { id: 'play', label: tr('Play'), icon: '♟' },
+    // Learn is the home screen, so it comes first
     { id: 'learn', label: tr('Learn'), icon: '📖' },
-    { id: 'review', label: tr('My review'), icon: '▦' },
+    { id: 'play', label: tr('Play'), icon: '♟' },
     { id: 'drill', label: tr('Practice'), icon: '🧩', badge: due },
+    { id: 'review', label: tr('My games'), icon: '▦' },
   ];
 
   return (
@@ -64,6 +64,7 @@ export default function App() {
             <button
               key={t.id}
               role="tab"
+              data-tab={t.id}
               aria-selected={t.id === screen}
               className={t.id === screen ? 'tab active' : 'tab'}
               onClick={() => goTo(t.id)}
@@ -74,21 +75,13 @@ export default function App() {
             </button>
           ))}
           </div>
-          {cloud.enabled ? (
-            // account (Google sign-in, sync) and language, in one panel (a fifth item in the phone tab bar)
-            <button className="tab lang-switch account-tab" onClick={() => go({ account: true })} aria-haspopup="dialog">
-              <span className="tab-icon" aria-hidden>
-                {cloud.user?.photo ? <img className="avatar avatar-sm" src={cloud.user.photo} alt="" referrerPolicy="no-referrer" /> : '👤'}
-              </span>
-              <span className="tab-label">{tr('Account')}</span>
-            </button>
-          ) : (
-            // no cloud configured: the next language, always one tap away
-            <button className="tab lang-switch" onClick={() => setLang(nextLang.id)} lang={nextLang.id}>
-              <span className="tab-icon" aria-hidden>🌐</span>
-              <span className="tab-label">{langName(nextLang.id)}</span>
-            </button>
-          )}
+          {/* account (Google sign-in, sync), language and install, in one panel (a fifth item in the phone tab bar) */}
+          <button className="tab lang-switch account-tab" onClick={() => go({ account: true })} aria-haspopup="dialog">
+            <span className="tab-icon" aria-hidden>
+              {cloud.user?.photo ? <img className="avatar avatar-sm" src={cloud.user.photo} alt="" referrerPolicy="no-referrer" /> : '👤'}
+            </span>
+            <span className="tab-label">{cloud.enabled ? tr('Account') : tr('Settings')}</span>
+          </button>
         </div>
       </nav>
 

@@ -5,7 +5,8 @@ const es: Record<string, string> = {
   // navigation, account
   'Play': 'Jugar',
   'Learn': 'Aprender',
-  'My review': 'Mi análisis',
+  'My games': 'Mis partidas',
+  'Settings': 'Ajustes',
   'Practice': 'Practicar',
   'Chess Trainer': 'Entrenador de ajedrez',
   'Account': 'Cuenta',
@@ -92,8 +93,8 @@ const es: Record<string, string> = {
   'Well done! You solved {0} exercises.': '¡Bien hecho! Ejercicios resueltos: {0}.',
   'Nothing to review today 🎉': 'Nada que repasar hoy 🎉',
   'You have {0} positions saved. Next review: {1}.': 'Posiciones guardadas: {0}. Próximo repaso: {1}.',
-  'No saved mistakes yet. Train an opening or run an engine analysis in My review — every mistake ends up here.':
-    'Aún no hay errores guardados. Entrena una apertura o analiza tus partidas con el motor en Mi análisis: cada error llega aquí.',
+  'No saved mistakes yet. Train an opening or run an engine analysis in My games — every mistake ends up here.':
+    'Aún no hay errores guardados. Entrena una apertura o analiza tus partidas con el motor en Mis partidas: cada error llega aquí.',
   '{0} positions are saved in openings you have hidden. They come back when you show the opening in Learn.':
     'Posiciones guardadas en aperturas que ocultaste: {0}. Volverán cuando muestres la apertura en Aprender.',
   'Checking…': 'Comprobando…',

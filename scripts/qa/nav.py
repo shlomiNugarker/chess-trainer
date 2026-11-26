@@ -17,7 +17,8 @@ r = Report('nav')
 
 def wait(ms): pg.wait_for_timeout(ms)
 def cur(): return pg.evaluate("document.querySelector('.tabs [aria-selected=true] .tab-label').innerText")
-def tab(i): pg.locator('.tabs [role=tab]').nth(i).click(); wait(250)
+TABS = ['play', 'learn', 'review', 'drill']  # numbered this way, whatever their order on screen
+def tab(i): pg.locator(f'.tabs [data-tab={TABS[i]}]').click(); wait(250)
 def back(): pg.go_back(); wait(500)
 def moves(): return [x for x in pg.locator('.trainer .moves .move').all_inner_texts() if x]
 def turn(): pg.wait_for_function("document.querySelector('.trainer .status-text').innerText === 'Your move'", timeout=20000); wait(600)
@@ -52,7 +53,7 @@ with sync_playwright() as p:
         wait(400)
         grown = pg.evaluate('history.length') - size
         r.check(grown <= 3 and cur() == 'Learn', 'going back and forth between two tabs does not grow the history', f'+{grown}')
-        pg.evaluate("() => { const t = document.querySelectorAll('.tabs [role=tab]'); [0, 1, 3, 2, 0].forEach((i) => t[i].click()); }")
+        pg.evaluate("() => { ['play', 'learn', 'drill', 'review', 'play'].forEach((id) => document.querySelector(`.tabs [data-tab=${id}]`).click()); }")
         wait(800)
         r.check(cur() == 'Play', 'five taps at once end on the last', cur())
         pg.click('.settings-toggle'); wait(300); back()
@@ -62,16 +63,16 @@ with sync_playwright() as p:
         tab(2); pg.fill('.review input', a.chesscom); pg.locator('.review button.primary').first.click()
         pg.wait_for_selector('.recent-game', timeout=180000)
         pg.locator('.recent-game').first.click(); pg.wait_for_selector('.game-review'); wait(300); back()
-        r.check(pg.locator('.recent-game').count() > 0 and cur() == 'My review', 'Back leaves a game review to the list')
+        r.check(pg.locator('.recent-game').count() > 0 and cur() == 'My games', 'Back leaves a game review to the list')
         pg.go_forward(); wait(600)
         r.check(pg.locator('.game-review').count() == 1, 'Forward opens it again')
         tab(1); back()
-        r.check(cur() == 'My review' and pg.locator('.game-review').count() == 1, 'from another tab, Back returns to the game review')
+        r.check(cur() == 'My games' and pg.locator('.game-review').count() == 1, 'from another tab, Back returns to the game review')
         pg.locator('.game-review-head button').click(); wait(500)
         r.check(pg.locator('.recent-game').count() > 0, 'the review has its own way back')
         pg.locator('.recent-game').nth(1).click(); pg.wait_for_selector('.game-review')
         pg.reload(); pg.wait_for_selector('.tabs'); wait(800)
-        r.check(cur() == 'My review' and pg.locator('.game-review').count() == 0, 'reload in a review: the tab stays', cur())
+        r.check(cur() == 'My games' and pg.locator('.game-review').count() == 0, 'reload in a review: the tab stays', cur())
         back()
         r.check(pg.locator('.tabs').count() == 1, 'Back after a reload stays in the app', cur())
 
