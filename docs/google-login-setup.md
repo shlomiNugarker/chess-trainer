@@ -126,4 +126,6 @@ The app is served at `opening-trainer-app.vercel.app` and, as before, at `chess-
 2. **Google Cloud → APIs & Services → Credentials → Browser key (auto created by Firebase) → Website restrictions:** add `https://<host>/*`. Without it every Firebase call from the new address fails with "Requests from referer … are blocked".
 3. **Google Cloud → Credentials → Web client (auto created by Google Service):** add `https://<host>` to Authorized JavaScript origins and `https://<host>/__/auth/handler` to Authorized redirect URIs.
 
+A domain of your own (not `*.vercel.app`, e.g. `openingtrainer.app`): `src/cloudConfig.ts` runs sign-in on the page's own host only on `*.vercel.app`, so add the new host there as well, then the same three places.
+
 Check: from the new address, Account → Sign in with Google opens the Google window with no error. Progress is saved per address in the browser, so on a new address sign in once to load it from the cloud.
