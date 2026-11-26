@@ -84,6 +84,8 @@ export function matchRepertoire(openingFull: string, color: 'w' | 'b'): string |
   // match the opening's own name (its start), not a sub-variation: "Caro Kann Defense Two Knights Attack" is not the
   // Italian, "English Opening Caro Kann Defensive System" is not the Caro-Kann
   if (color === 'w' && /London System/.test(openingFull)) return 'london';
+  // 1.d4 d5 2.c4: the Queen's Gambit and the defenses it answers
+  if (color === 'w' && /^(Queens Gambit|Slav Defense|Semi Slav Defense|Tarrasch Defense|Albin Countergambit|Chigorin Defense|Baltic Defense|Marshall Defense)/.test(openingFull)) return 'qg';
   if (color === 'w' && /^(Italian Game|Giuoco|Two Knights Defense|Bishops Opening)/.test(openingFull)) return 'italian';
   // the 1.e4 repertoire also answers the Scandinavian, the Sicilian (Alapin), the French and Caro-Kann (Advance), the Modern,
   // the Pirc, the Philidor, the Owen and the Nimzowitsch

@@ -1,6 +1,6 @@
 # Opening trainer — work plan
 
-**Goal:** learn an opening repertoire in depth and improve. Seven openings: as White the London and 1.e4 (Bishop's Opening / Italian and more); as Black against 1.e4 1...e5, the Caro-Kann or the Sicilian with ...e6, and against 1.d4 the Slav or the Queen's Gambit Accepted. Openings you don't play can be hidden. You practice by playing against the computer: at every mistake the game stops, shows the right move and lets you choose **go back and play** or **continue anyway**. Beside it there are puzzles, a review of your mistakes, and a review of your Chess.com games.
+**Goal:** learn an opening repertoire in depth and improve. Eight openings: as White the London, the Queen's Gambit and 1.e4 (Bishop's Opening / Italian and more); as Black against 1.e4 1...e5, the Caro-Kann or the Sicilian with ...e6, and against 1.d4 the Slav or the Queen's Gambit Accepted. Openings you don't play can be hidden. You practice by playing against the computer: at every mistake the game stops, shows the right move and lets you choose **go back and play** or **continue anyway**. Beside it there are puzzles, a review of your mistakes, and a review of your Chess.com games.
 
 **Working rule:** every stage ends with something you play. No moving to the next stage before playing at least 3 games in the current one.
 
@@ -88,7 +88,7 @@
 
 ## Puzzles ✅ (in the Practice tab)
 - [x] 3,900 puzzles from the Lichess database (CC0, `public/puzzles-v3.json`; the name changes when the content does, because the service worker caches by name; built by `scripts/build-puzzles.py`, checked in `check-puzzles`)
-- [x] A personal rating (Elo), modes: for my level / from my openings (900 puzzles: 150 from each of the first six openings; none yet for 1...e5) / mates
+- [x] A personal rating (Elo), modes: for my level / from my openings (900 puzzles: 150 from each of the first six openings; none yet for 1...e5 and the Queen's Gambit) / mates
 - [x] Hint (a puzzle solved with a hint counts half a point, like a draw), show solution, skip; the name of the tactic at the end ("fork", "pin"…); a puzzle you failed goes to "My mistakes"
 - [x] A daily goal: 5 puzzles, and a day streak 🔥
 
@@ -137,6 +137,7 @@
 - [x] 6 more lines against the London as Black: 3.Nf3 and 4.c3 go into the main line; 4.Bd3 ...Qb6 (b2 is not defended, Black takes a pawn); 4.dxc5 e6; 4.Nf3 Nc6 5.Bb5 Qa5+; 5.Bd3 Bg4. Every move checked at depth 20.
 - [x] New repertoire: the Queen's Gambit Accepted (Black), 7 lines — 2...dxc4 against 2.c4, beside the Slav (2...c6); the review gives every game to the repertoire it followed furthest. Against 3.e4 (e5: 4.Nf3 / 4.d5 / 4.dxe5), 3.e3, 3.Nc3 (10...Bxb5! — ...a6 loses 7.5%), 3.Nf3, 3.Qa4+. 2...dxc4 itself loses less than 1%. Every move checked at depth 20
 - [x] New repertoire: 1...e5 (Black), 19 lines, for players who answer 1.e4 with 1...e5 (26 Nov 2026, so the app is open to more players): the Italian with 3...Bc5 (Giuoco Pianissimo, c3 and d4, early castling, Four Knights), the Evans Gambit, the Ruy Lopez (Closed, d3, Exchange), the Scotch (Mieses, Four Knights, Gambit), the Spanish Four Knights, the Ponziani, the Vienna (f4, Bc4), the Bishop's Opening, the King's Gambit (3...d5), the Center Game and 2.Qh5. Every Black move checked at depth 18: none gives up 3% of the win chance or more (most less than 2%; 3...d5 in the King's Gambit 2.4%). My review's "Train" button finds it for Black's games in these openings (not the Two Knights, which is 3...Nf6)
+- [x] New repertoire: the Queen's Gambit (White), 17 lines after 1.d4 d5 2.c4: the Declined with the Exchange (4.cxd5 — against 5...c6, 5...Be7 and the 5...Nbd7 trap), against 3...Be7 (5.Bf4), the Tarrasch (g3 and Bg2 against the isolated pawn) and 3...Bb4; the Slav (5.a4, e3, Bxc4 and e4), the Semi-Slav, 4...a6 (c5) and an early 3...dxc4; the Accepted with 3.e4 (against ...e5, ...Nf6 and ...c5); the Albin, the Chigorin, the Baltic and the Marshall (which meet in one position). Every White move checked at depth 18: none gives up more than 2.1%, and in every position all lines play the same move. My review's "Train" button finds it for White's games in these openings
 - [x] 150 puzzles from the Queen's Gambit Accepted in "from my openings" (`public/puzzles-v3.json`, 3,900 puzzles)
 - [x] Hiding openings (Learn → ⚙): a hidden opening leaves the pickers in Learn and in training, without deleting progress; at least one always stays; synced between devices (`src/hiddenReps.ts`)
 
