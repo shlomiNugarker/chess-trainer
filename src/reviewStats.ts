@@ -114,6 +114,7 @@ export function matchRepertoire(openingFull: string, color: 'w' | 'b'): string |
   if (color === 'b' && /^(Queens Gambit Declined|Catalan Opening)/.test(openingFull)) return 'qgd';
   if (color === 'b' && /^(Nimzo Indian Defense|Queens Indian Defense|Bogo Indian Defense)/.test(openingFull)) return 'nimzo';
   if (color === 'b' && /^Grunfeld Defense/.test(openingFull)) return 'grunfeld';
+  if (color === 'b' && /^(Benko Gambit|Benoni Defense)/.test(openingFull)) return 'benko';
   return undefined;
 }
 
