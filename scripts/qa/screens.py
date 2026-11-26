@@ -379,6 +379,23 @@ def install(b):
         ctx.close()
 
 
+@section('privacy')
+def privacy(b):
+    # /privacy: the app with the privacy page on top; Back closes it and stays in the app. On a phone, in every language
+    for locale in ('en-US', 'he-IL', 'es-ES'):
+        ctx, pg = open_page(b, f'privacy-{locale}', locale, 375, 812, a.url.rstrip('/') + '/privacy?utm_source=x')
+        pg.wait_for_selector('.privacy-panel'); time.sleep(0.5)  # the sheet slides up
+        body = pg.locator('.privacy-panel').inner_text()
+        r.check(pg.evaluate('location.pathname + location.search') == '/?utm_source=x' and 'Vercel Web Analytics' in body and 'Firestore' in body and 'Chess.com' in body,
+                f'/privacy, {locale}: the page, over the app at /', pg.evaluate('location.pathname'))
+        r.check(pg.evaluate("(() => { const p = document.querySelector('.privacy-panel').getBoundingClientRect(); return p.top >= 0 && p.bottom <= innerHeight + 1; })()") and hscroll(pg) <= 0,
+                f'/privacy, {locale}: it fits on the screen (its text scrolls inside)')
+        r.shot(pg, f'privacy-{locale}')
+        pg.go_back(); time.sleep(0.5)
+        r.check(pg.locator('.privacy-panel').count() == 0 and pg.locator('.tabs').count() == 1, f'/privacy, {locale}: Back closes it, in the app')
+        ctx.close()
+
+
 @section('account')
 def account(b):
     ctx, pg = open_page(b, 'account', 'en-US', 1280, 900, a.account_url)
@@ -394,6 +411,11 @@ def account(b):
     r.check(pg.locator('.install-row').count() == 0, 'account panel: no install button where the browser does not offer it')
     pg.evaluate(OFFER_INSTALL); time.sleep(0.3)
     r.check(text(pg, '.install-row button') == 'Install the app', 'account panel: the install button', text(pg, '.install-row'))
+    pg.click('.account-foot button:has-text("Privacy")'); pg.wait_for_selector('.privacy-panel')
+    r.check('Vercel Web Analytics' in pg.locator('.privacy-panel').inner_text(), 'account panel: the privacy page')
+    pg.go_back(); time.sleep(0.5)
+    r.check(pg.locator('.privacy-panel').count() == 0, 'Back closes the privacy page')
+    if not pg.locator('.account-panel').count(): pg.click('.tabs .account-tab'); pg.wait_for_selector('.account-panel')
     pg.click('.account-panel button[aria-label="Close"]'); time.sleep(0.3)
     r.check(pg.locator('.account-panel').count() == 0, 'account panel closes')
     ctx.close()
@@ -634,6 +656,6 @@ with sync_playwright() as p:
     if not a.only: tour(pg, 'desktop-en')
     learn(pg); mistakes(pg); puzzles(pg); review(pg)  # mistakes first: the puzzle section adds its own
     ctx.close()
-    install(b); account(b); phone(b); touch(b); languages(b); offline(b)
+    install(b); privacy(b); account(b); phone(b); touch(b); languages(b); offline(b)
     b.close()
 r.done()

@@ -511,6 +511,21 @@ const he: Record<string, string> = {
   'Viewing {0}': 'מציג את {0}',
   'Viewing the start': 'מציג את עמדת הפתיחה',
   'Back to the game': 'חזרה למשחק',
+
+  // Privacy.tsx
+  'Privacy': 'פרטיות',
+  'Chess Trainer needs no account and shows no ads. This is everything it keeps, and where.': 'מאמן שחמט לא דורש חשבון ולא מציג פרסומות. זה כל מה שהוא שומר, ואיפה.',
+  'Without signing in': 'בלי התחברות',
+  'Your progress (lines, puzzles, rating, mistakes, settings) stays in this browser, on this device. None of it is sent anywhere.': 'ההתקדמות שלך (קווים, פאזלים, דירוג, טעויות, הגדרות) נשמרת בדפדפן הזה, במכשיר הזה. שום דבר ממנה לא נשלח לשום מקום.',
+  'With Google sign-in': 'עם התחברות עם Google',
+  'Only to keep your devices in sync, your progress is stored in Google Firebase (Cloud Firestore) under your Google user id, in users/{uid}, which only you can read. To sign you in, Firebase Authentication keeps your Google account (name and email). Nothing is shared with anyone.': 'רק כדי לסנכרן בין המכשירים שלך, ההתקדמות נשמרת ב-Google Firebase (Cloud Firestore) תחת מזהה המשתמש שלך ב-Google, ב-users/{uid}, שרק לך יש גישה אליו. כדי לחבר אותך, Firebase Authentication שומר את חשבון ה-Google שלך (שם ואימייל). שום דבר לא מועבר לאף אחד.',
+  'When you load your games, the username you type is sent to the public Chess.com API to get your public games. They are analyzed in your browser.': 'כשטוענים משחקים, שם המשתמש שהקלדת נשלח ל-API הציבורי של Chess.com כדי לקבל את המשחקים הציבוריים שלך. הניתוח שלהם נעשה בדפדפן שלך.',
+  'Usage counts': 'ספירת שימוש',
+  'We count page views with Vercel Web Analytics: anonymous, without cookies, and not across other sites. There is no other tracking.': 'אנחנו סופרים צפיות בדפים עם Vercel Web Analytics: באופן אנונימי, בלי עוגיות ובלי מעקב באתרים אחרים. אין שום מעקב אחר.',
+  'Deleting your data': 'מחיקת הנתונים שלך',
+  'On a device: sign out, then clear this site’s data in the browser settings. In the cloud: ask us in a GitHub issue, and we will delete your account and your progress.': 'במכשיר: להתנתק, ואז למחוק את נתוני האתר בהגדרות הדפדפן. בענן: לבקש מאיתנו ב-GitHub issue, ונמחק את החשבון ואת ההתקדמות שלך.',
+  'GitHub issues': 'GitHub issues',
+  'Last updated: November 2026': 'עודכן לאחרונה: נובמבר 2026',
 };
 
 export default he;

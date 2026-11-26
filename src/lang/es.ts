@@ -490,6 +490,21 @@ const es: Record<string, string> = {
   'Viewing {0}': 'Viendo {0}',
   'Viewing the start': 'Viendo el inicio',
   'Back to the game': 'Volver a la partida',
+
+  // Privacy.tsx
+  'Privacy': 'Privacidad',
+  'Chess Trainer needs no account and shows no ads. This is everything it keeps, and where.': 'Entrenador de ajedrez no necesita cuenta ni muestra anuncios. Esto es todo lo que guarda, y dónde.',
+  'Without signing in': 'Sin iniciar sesión',
+  'Your progress (lines, puzzles, rating, mistakes, settings) stays in this browser, on this device. None of it is sent anywhere.': 'Tu progreso (líneas, problemas, puntuación, errores, ajustes) se queda en este navegador, en este dispositivo. Nada se envía a ningún sitio.',
+  'With Google sign-in': 'Con inicio de sesión de Google',
+  'Only to keep your devices in sync, your progress is stored in Google Firebase (Cloud Firestore) under your Google user id, in users/{uid}, which only you can read. To sign you in, Firebase Authentication keeps your Google account (name and email). Nothing is shared with anyone.': 'Solo para sincronizar tus dispositivos, tu progreso se guarda en Google Firebase (Cloud Firestore) con tu identificador de usuario de Google, en users/{uid}, que solo tú puedes leer. Para iniciar tu sesión, Firebase Authentication guarda tu cuenta de Google (nombre y correo). No se comparte nada con nadie.',
+  'When you load your games, the username you type is sent to the public Chess.com API to get your public games. They are analyzed in your browser.': 'Cuando cargas tus partidas, el nombre de usuario que escribes se envía a la API pública de Chess.com para obtener tus partidas públicas. Se analizan en tu navegador.',
+  'Usage counts': 'Recuento de uso',
+  'We count page views with Vercel Web Analytics: anonymous, without cookies, and not across other sites. There is no other tracking.': 'Contamos las visitas con Vercel Web Analytics: de forma anónima, sin cookies y sin seguimiento en otros sitios. No hay ningún otro seguimiento.',
+  'Deleting your data': 'Borrar tus datos',
+  'On a device: sign out, then clear this site’s data in the browser settings. In the cloud: ask us in a GitHub issue, and we will delete your account and your progress.': 'En un dispositivo: cierra la sesión y borra los datos de este sitio en los ajustes del navegador. En la nube: pídenoslo en un issue de GitHub y borraremos tu cuenta y tu progreso.',
+  'GitHub issues': 'Issues de GitHub',
+  'Last updated: November 2026': 'Última actualización: noviembre de 2026',
 };
 
 export default es;

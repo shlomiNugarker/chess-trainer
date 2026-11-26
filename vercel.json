@@ -4,6 +4,10 @@
     {
       "source": "/__/auth/:path*",
       "destination": "https://chess-trainer-18bd8.firebaseapp.com/__/auth/:path*"
+    },
+    {
+      "source": "/privacy",
+      "destination": "/"
     }
   ],
   "headers": [

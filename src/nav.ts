@@ -12,16 +12,18 @@ export type Nav = {
   screen: Screen;
   review: string | null; // the game under review (its url)
   account: boolean; // the account panel
+  privacy: boolean; // the privacy page (also at /privacy)
   sheet: boolean; // the settings sheet of Play (phones)
 };
 type Entry = { nav: Nav; prev: Nav | null };
 
 const SCREENS: Screen[] = ['play', 'learn', 'review', 'drill'];
 const isEntry = (x: unknown): x is Entry => SCREENS.includes((x as Entry | null)?.nav?.screen as Screen);
-const same = (a: Nav, b: Nav) => a.screen === b.screen && a.review === b.review && a.account === b.account && a.sheet === b.sheet;
+const same = (a: Nav, b: Nav) =>
+  a.screen === b.screen && a.review === b.review && a.account === b.account && a.sheet === b.sheet && a.privacy === b.privacy;
 
 const stored = readStored<Screen>('screen', 'learn'); // first visit starts at Learn; then the last tab
-let shown: Nav = { screen: SCREENS.includes(stored) ? stored : 'learn', review: null, account: false, sheet: false };
+let shown: Nav = { screen: SCREENS.includes(stored) ? stored : 'learn', review: null, account: false, sheet: false, privacy: false };
 let entry: Entry = { nav: shown, prev: null }; // the current history entry
 let backing = false; // history.back() was called and has not arrived yet
 const listeners = new Set<() => void>();
@@ -40,7 +42,9 @@ function settle() {
   }
 }
 
-history.replaceState(entry, '');
+// /privacy (a link to the privacy page): the app at /, with the page open on top, so Back closes it
+const atPrivacy = location.pathname === '/privacy';
+history.replaceState(entry, '', atPrivacy ? `/${location.search}${location.hash}` : undefined);
 window.addEventListener('popstate', (e) => {
   entry = isEntry(e.state) ? e.state : { nav: shown, prev: null };
   if (backing) {
@@ -60,7 +64,9 @@ export function go(to: Partial<Nav>) {
   settle();
 }
 
-export const goTo = (screen: Screen) => go({ screen, account: false, sheet: false });
+export const goTo = (screen: Screen) => go({ screen, account: false, sheet: false, privacy: false });
+
+if (atPrivacy) go({ privacy: true });
 
 export function useNav(): Nav {
   return useSyncExternalStore(

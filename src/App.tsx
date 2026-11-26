@@ -7,6 +7,7 @@ import { todaysMistakes, useMistakeCount } from './mistakes';
 import { useStored, writeStored } from './storage';
 import { LANGS, langName, dir, setLang, tr, useLang } from './i18n';
 import Account from './Account';
+import Privacy from './Privacy';
 import { useCloud } from './cloud';
 import { REPERTOIRES } from './repertoire';
 import { withCustom } from './customLines';
@@ -15,10 +16,11 @@ import { go, goTo, useNav, type Screen } from './nav';
 import './App.css';
 
 const closeAccount = () => go({ account: false });
+const closePrivacy = () => go({ privacy: false });
 const dueCount = () => todaysMistakes().length;
 
 export default function App() {
-  const { screen, account: accountOpen } = useNav();
+  const { screen, account: accountOpen, privacy: privacyOpen } = useNav();
   const [, saveScreen] = useStored<Screen>('screen', 'learn');
   useEffect(() => saveScreen(screen), [screen, saveScreen]);
   const [trainRequest, setTrainRequest] = useState<TrainRequest | null>(null);
@@ -129,7 +131,8 @@ export default function App() {
         />
       )}
       {screen === 'drill' && <Practice view={practiceView} onView={setPracticeView} due={due} />}
-      {accountOpen && <Account onClose={closeAccount} />}
+      {accountOpen && !privacyOpen && <Account onClose={closeAccount} />}
+      {privacyOpen && <Privacy onClose={closePrivacy} />}
     </div>
   );
 }

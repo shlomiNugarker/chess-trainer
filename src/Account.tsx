@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useDialog } from './useDialog';
 import { preloadCloud, signIn, signOut, useCloud } from './cloud';
+import { go } from './nav';
 import { InstallRow } from './InstallCard';
 import { explanationsNote } from './repertoire';
 import { LANGS, hasExplanations, langName, locale, setLang, msg, tr, useLang } from './i18n';
@@ -78,6 +79,7 @@ export default function Account({ onClose }: { onClose: () => void }) {
 
         {/* GPL: whoever gets the app (and the Stockfish engine in it) can get the source */}
         <p className="muted account-foot">
+          <button className="link" onClick={() => go({ privacy: true })}>{tr('Privacy')}</button> ·{' '}
           {tr('Open source (GPL-3.0)')} ·{' '}
           <a href="https://github.com/shlomiNugarker/chess-trainer" target="_blank" rel="noreferrer">GitHub</a> ·{' '}
           <a href="https://github.com/shlomiNugarker/chess-trainer/blob/main/THIRD_PARTY_NOTICES.md" target="_blank" rel="noreferrer">

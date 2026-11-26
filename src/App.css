@@ -1227,6 +1227,11 @@ aside {
 
 .account-head { display: flex; align-items: center; justify-content: space-between; }
 .account-head h2 { font-size: 18px; }
+.privacy-panel { max-height: calc(100dvh - 96px); }
+.privacy-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; font-size: 14px; line-height: 1.6; color: var(--text-2); }
+.privacy-body h3 { margin: 14px 0 2px; font-size: 15px; color: var(--text); }
+.privacy-body p { margin: 0 0 6px; }
+.account-foot button.link { font-size: inherit; padding: 0; }
 .icon-btn { padding: 4px 10px; }
 
 .account-user { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; align-items: center; }
