@@ -6,7 +6,8 @@ import { msg, tr } from './i18n';
 const GROUPS: { label: () => string; of: (r: Repertoire) => boolean }[] = [
   { label: () => tr('As White'), of: (r) => r.userColor === 'w' },
   { label: () => tr(msg`As Black against ${'1.e4'}`), of: (r) => r.userColor === 'b' && r.lines[0].moves.startsWith('e4') },
-  { label: () => tr(msg`As Black against ${'1.d4'}`), of: (r) => r.userColor === 'b' && !r.lines[0].moves.startsWith('e4') },
+  { label: () => tr(msg`As Black against ${'1.d4'}`), of: (r) => r.userColor === 'b' && r.lines[0].moves.startsWith('d4') },
+  { label: () => tr('As Black against other first moves'), of: (r) => r.userColor === 'b' && !/^(e4|d4)/.test(r.lines[0].moves) },
 ];
 
 /**

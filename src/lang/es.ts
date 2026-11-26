@@ -517,6 +517,7 @@ const es: Record<string, string> = {
   'Which openings do you play?': '¿Qué aperturas juegas?',
   'Only these will show. You can change it any time with ⚙.': 'Solo se mostrarán estas. Puedes cambiarlo cuando quieras con ⚙.',
   'As Black against {0}': 'Con negras contra {0}',
+  'As Black against other first moves': 'Con negras contra otras primeras jugadas',
   'Show these': 'Mostrar estas',
   'Show all': 'Mostrar todas',
 };

@@ -538,6 +538,7 @@ const he: Record<string, string> = {
   'Which openings do you play?': 'באילו פתיחות אתם משחקים?',
   'Only these will show. You can change it any time with ⚙.': 'רק הן יוצגו. אפשר לשנות את זה בכל רגע עם ⚙.',
   'As Black against {0}': 'בשחור נגד {0}',
+  'As Black against other first moves': 'בשחור נגד מהלכי פתיחה אחרים',
   'Show these': 'הצג את אלה',
   'Show all': 'הצג הכול',
 };
