@@ -1121,11 +1121,11 @@ aside {
   .moves-bar .moves { order: 1; flex: 1; min-width: 0; }
   .moves-nav .nav-next { order: 2; }
   .moves-nav button { min-width: 44px; padding: 0; font-size: 20px; }
-  /* in a game: the moves right under the status and what needs an answer (the correction, "go back and play"), above
-     the line's explanation, so looking back never needs scrolling */
+  /* in a game: the moves and the game buttons right under the status and what needs an answer (the correction, "go
+     back and play"), above the line's explanation, so neither looking back nor a hint needs scrolling */
   .trainer aside > .status { order: -3; }
   .trainer aside > .feedback, .trainer aside > .notice.tone-warn { order: -2; }
-  .trainer aside > .moves-bar { order: -1; }
+  .trainer aside > .moves-bar, .trainer aside > .actions { order: -1; }
   .move { padding: 1px 4px; }
 
   /* learn */
