@@ -60,6 +60,8 @@ assert.equal(matchRepertoire('Queens Gambit Declined Orthodox Defense', 'b'), 'q
 assert.equal(matchRepertoire('Queens Gambit Declined Slav', 'b'), 'slav');
 assert.equal(matchRepertoire('Catalan Opening', 'b'), 'qgd');
 assert.equal(matchRepertoire('Dutch Defense Leningrad Variation', 'b'), 'dutch');
+assert.equal(matchRepertoire('Pirc Defense Austrian Attack', 'b'), 'pirc');
+assert.equal(matchRepertoire('Pirc Defense', 'w'), 'italian'); // as White it is still the 1.e4 repertoire
 // 1...e5 as Black: its openings, not the Two Knights or the Petrov
 assert.equal(matchRepertoire('Ruy Lopez Opening Morphy Defense', 'b'), 'e5');
 assert.equal(matchRepertoire('Italian Game Giuoco Pianissimo', 'b'), 'e5');
@@ -67,7 +69,7 @@ assert.equal(matchRepertoire('Scotch Game', 'b'), 'e5');
 assert.equal(matchRepertoire('Two Knights Defense', 'b'), undefined);
 assert.equal(matchRepertoire('Italian Game Two Knights Defense', 'b'), undefined);
 assert.equal(matchRepertoire('Petrovs Defense', 'b'), undefined);
-assert.equal(matchRepertoire('Pirc Defense', 'b'), undefined);
+assert.equal(matchRepertoire('Pirc Defense', 'b'), 'pirc'); // its own repertoire now
 
 assert.equal(phaseOf(new Chess().fen(), 5), 'opening');
 assert.equal(phaseOf(new Chess().fen(), 20), 'middlegame');
