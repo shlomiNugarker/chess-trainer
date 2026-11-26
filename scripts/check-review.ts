@@ -89,6 +89,7 @@ assert.equal(matchRepertoire('Kings Gambit Accepted Fischer Defense', 'w'), 'kin
 assert.equal(matchRepertoire('Queens Pawn Opening Colle System', 'w'), 'colle');
 assert.equal(matchRepertoire('Vienna Game Stanley Variation', 'w'), 'vienna');
 assert.equal(matchRepertoire('Catalan Opening Open Defense', 'w'), 'catalan');
+assert.equal(matchRepertoire('Trompowsky Attack Edge Variation', 'w'), 'trompowsky');
 assert.equal(matchRepertoire('Queens Pawn Opening Colle System', 'b'), 'slav'); // as Black, the Slav answers it
 assert.equal(matchRepertoire('Two Knights Defense', 'b'), undefined);
 assert.equal(matchRepertoire('Italian Game Two Knights Defense', 'b'), undefined);

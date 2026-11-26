@@ -86,6 +86,7 @@ export function matchRepertoire(openingFull: string, color: 'w' | 'b'): string |
   if (color === 'w' && /London System/.test(openingFull)) return 'london';
   if (color === 'w' && /Colle System/.test(openingFull)) return 'colle';
   if (color === 'w' && /^Catalan Opening/.test(openingFull)) return 'catalan';
+  if (color === 'w' && /^Trompowsky Attack/.test(openingFull)) return 'trompowsky';
   // 1.d4 d5 2.c4: the Queen's Gambit and the defenses it answers
   if (color === 'w' && /^(Queens Gambit|Slav Defense|Semi Slav Defense|Tarrasch Defense|Albin Countergambit|Chigorin Defense|Baltic Defense|Marshall Defense)/.test(openingFull)) return 'qg';
   if (color === 'w' && /^(Italian Game|Giuoco|Two Knights Defense|Bishops Opening)/.test(openingFull)) return 'italian';
