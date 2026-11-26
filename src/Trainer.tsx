@@ -666,7 +666,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
           <label>
             <span>
               {tr('Computer level')} <b>{skill}</b>
-              {mode === 'train' && <span className="muted"> · {tr(msg`from move ${LEARN_UNTIL + 1}`)}</span>}
+              {mode === 'train' && <span className="muted"> · {tr(msg`its own moves from move ${LEARN_UNTIL + 1}`)}</span>}
             </span>
             <input type="range" min={0} max={20} value={skill} onChange={(e) => setSkill(Number(e.target.value))} />
           </label>

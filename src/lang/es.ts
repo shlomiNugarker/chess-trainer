@@ -177,7 +177,6 @@ const es: Record<string, string> = {
   'Line': 'Línea',
   'moves': 'jugadas',
   'Remove this branch': 'Quitar esta rama',
-  'Import a line (PGN)': 'Importar una línea (PGN)',
   'Which openings to show': 'Qué aperturas mostrar',
   'A hidden opening doesn’t appear here, in the training opening picker or in My mistakes. Nothing is deleted — you can show it again any time.':
     'Una apertura oculta no aparece aquí, ni al elegir la apertura del entrenamiento, ni en Mis errores. No se borra nada: puedes volver a mostrarla cuando quieras.',
@@ -439,7 +438,6 @@ const es: Record<string, string> = {
   'Opening': 'Apertura',
   'Color': 'Color',
   'Computer level': 'Nivel del ordenador',
-  'from move {0}': 'desde la jugada {0}',
   'More options': 'Más opciones',
   'Correct every move up to move {0}': 'Corregir cada jugada hasta la {0}',
   'Show the line name and explanations': 'Mostrar el nombre de la línea y las explicaciones',
@@ -505,6 +503,15 @@ const es: Record<string, string> = {
   'On a device: sign out, then clear this site’s data in the browser settings. In the cloud: ask us in a GitHub issue, and we will delete your account and your progress.': 'En un dispositivo: cierra la sesión y borra los datos de este sitio en los ajustes del navegador. En la nube: pídenoslo en un issue de GitHub y borraremos tu cuenta y tu progreso.',
   'GitHub issues': 'Issues de GitHub',
   'Last updated: November 2026': 'Última actualización: noviembre de 2026',
+
+  // first impressions (a new user's walk through the app)
+  'Add your opening (PGN)': 'Añade tu apertura (PGN)',
+  'its own moves from move {0}': 'jugadas propias desde la jugada {0}',
+  'What you get from your games': 'Lo que obtienes de tus partidas',
+  'The three things most worth improving, and how you do with each color, time control and opening.': 'Las tres cosas que más conviene mejorar, y cómo te va con cada color, ritmo y apertura.',
+  'A review of any game: every move gets a verdict, with the better move. No daily limit.': 'El análisis de cualquier partida: cada jugada recibe una valoración, con la mejor jugada. Sin límite diario.',
+  'Where your games leave your opening lines, and your big mistakes as practice positions.': 'Dónde tus partidas salen de tus líneas, y tus errores graves como posiciones para practicar.',
+  'Only your public games are read, and they are analyzed on this device.': 'Solo se leen tus partidas públicas, y se analizan en este dispositivo.',
 };
 
 export default es;

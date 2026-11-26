@@ -187,7 +187,6 @@ const he: Record<string, string> = {
   'Line': 'קו',
   'moves': 'מהלכים',
   'Remove this branch': 'הסר את הענף',
-  'Import a line (PGN)': 'ייבא קו (PGN)',
   'Which openings to show': 'אילו פתיחות להציג',
   'A hidden opening doesn’t appear here, in the training opening picker or in My mistakes. Nothing is deleted — you can show it again any time.':
     'פתיחה מוסתרת לא מופיעה כאן, בבחירת הפתיחה באימון וב"הטעויות שלי". שום דבר לא נמחק — אפשר להחזיר אותה בכל רגע.',
@@ -459,7 +458,6 @@ const he: Record<string, string> = {
   'Opening training': 'אימון פתיחות',
   'Color': 'צבע',
   'Computer level': 'רמת המחשב',
-  'from move {0}': 'ממהלך {0}',
   'More options': 'עוד אפשרויות',
   'Correct every move up to move {0}': 'תיקון בכל מהלך עד מהלך {0}',
   'Show the line name and explanations': 'הצג את שם הקו והסברים',
@@ -526,6 +524,15 @@ const he: Record<string, string> = {
   'On a device: sign out, then clear this site’s data in the browser settings. In the cloud: ask us in a GitHub issue, and we will delete your account and your progress.': 'במכשיר: להתנתק, ואז למחוק את נתוני האתר בהגדרות הדפדפן. בענן: לבקש מאיתנו ב-GitHub issue, ונמחק את החשבון ואת ההתקדמות שלך.',
   'GitHub issues': 'GitHub issues',
   'Last updated: November 2026': 'עודכן לאחרונה: נובמבר 2026',
+
+  // first impressions (a new user's walk through the app)
+  'Add your opening (PGN)': 'הוסף את הפתיחה שלך (PGN)',
+  'its own moves from move {0}': 'מהלכים משלו ממהלך {0}',
+  'What you get from your games': 'מה מקבלים מהמשחקים שלך',
+  'The three things most worth improving, and how you do with each color, time control and opening.': 'שלושת הדברים שהכי כדאי לשפר, ואיך הולך לך בכל צבע, קצב ופתיחה.',
+  'A review of any game: every move gets a verdict, with the better move. No daily limit.': 'סקירה של כל משחק: כל מהלך מקבל ציון, עם המהלך הטוב יותר. בלי הגבלה יומית.',
+  'Where your games leave your opening lines, and your big mistakes as practice positions.': 'איפה המשחקים שלך יוצאים מהקווים, והטעויות הגדולות שלך כעמדות לתרגול.',
+  'Only your public games are read, and they are analyzed on this device.': 'נקראים רק המשחקים הציבוריים שלך, והניתוח נעשה במכשיר הזה.',
 };
 
 export default he;

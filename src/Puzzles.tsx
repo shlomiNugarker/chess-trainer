@@ -355,9 +355,13 @@ export default function Puzzles() {
           </div>
 
           <div className="muted puzzle-stats">
-            {tr(msg`Solved ${stats.solved} of ${stats.played}`)}
-            {stats.best > 1 && ` · ${tr(msg`Best streak: ${stats.best}`)}`}
-            {' · '}
+            {stats.played > 0 && (
+              <>
+                {tr(msg`Solved ${stats.solved} of ${stats.played}`)}
+                {stats.best > 1 && ` · ${tr(msg`Best streak: ${stats.best}`)}`}
+                {' · '}
+              </>
+            )}
             <a href={`https://lichess.org/training/${puzzle.id}`} target="_blank" rel="noreferrer">
               {tr('Puzzles: Lichess')}
             </a>

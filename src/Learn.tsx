@@ -273,7 +273,7 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
           </button>
         )}
         <button className="link import-link" aria-expanded={importOpen} onClick={() => setImportOpen((o) => !o)}>
-          ＋ {tr('Import a line (PGN)')}
+          ＋ {tr('Add your opening (PGN)')}
         </button>
       </header>
 

@@ -245,7 +245,10 @@ def mistakes(pg):
 @section('review')
 def review(pg):
     pg.click('.tabs .tab:has-text("My review")')
+    r.check('What you get from your games' in text(pg, '.review-intro'), 'before any games: what My review gives', text(pg, '.review-intro')[:80])
     pg.fill('.review input', a.chesscom); pg.click('.review button:has-text("Load games")')
+    pg.wait_for_selector('.recent-game', timeout=180000)
+    r.check(pg.locator('.review-intro').count() == 0, 'with games: the intro is gone')
     t = time.time()
     pg.wait_for_selector('.review .tile-value', timeout=180000)
     wait_until(lambda: not pg.locator('.review .progress').count(), 240, 1)

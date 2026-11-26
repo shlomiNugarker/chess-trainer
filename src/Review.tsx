@@ -221,6 +221,17 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
         </p>
       )}
       {error && <div className="notice">{error}</div>}
+      {!games && !loading && !error && (
+        <div className="card review-intro">
+          <strong>{tr('What you get from your games')}</strong>
+          <ul>
+            <li>{tr('The three things most worth improving, and how you do with each color, time control and opening.')}</li>
+            <li>{tr('A review of any game: every move gets a verdict, with the better move. No daily limit.')}</li>
+            <li>{tr('Where your games leave your opening lines, and your big mistakes as practice positions.')}</li>
+          </ul>
+          <p className="muted">{tr('Only your public games are read, and they are analyzed on this device.')}</p>
+        </div>
+      )}
       {games && !games.length && <div className="notice">{tr('No standard chess games found for this user.')}</div>}
 
       {games && games.length > 0 && <RecentGames games={games} onReview={openReview} />}
