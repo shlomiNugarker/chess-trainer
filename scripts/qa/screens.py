@@ -83,7 +83,7 @@ def learn(pg):
     pg.click('.tabs .tab:has-text("Learn")')
     if pg.locator('button:has-text("Got it")').count(): pg.click('button:has-text("Got it")')
     open_opening(pg, london)
-    r.check(pg.locator('.pick-sheet').count() == 0 and london in pg.evaluate("localStorage.getItem('chess-trainer:learn-repertoire')"), 'a row of the opening list opens it and closes the list')
+    r.check(pg.locator('.pick-sheet').count() == 0 and pg.locator('.line-btn .picker-btn-meta').inner_text().endswith(f"/{len(data[0]['lines'])}"), 'a row of the opening list opens it and closes the list')
     for _ in range(3): pg.click('.stepper button:has-text("Next")')
     r.check('2.Bf4' in text(pg, '.learn-move-head'), 'stepper: three times Next shows 2.Bf4')
     pg.click('.stepper button[aria-label="To the end"]')
@@ -250,7 +250,7 @@ def mistakes(pg):
         repertoire: 'italian', at: 1, box: i < 20 ? 1 : 0, due: i < 20 ? now + 864e5 : 1, reviewed: i < 20 ? now : undefined });
       localStorage.setItem('chess-trainer:mistakes', JSON.stringify(l)); }""")
     pg.reload(); pg.wait_for_selector('.tabs'); tab(pg, 3); pg.click('.segmented button:has-text("My mistakes")'); time.sleep(1)
-    r.check(pg.locator('.tabs .badge').count() == 0 and '5 more positions are waiting' in text(pg, '.drill-empty'), 'after 20 positions today the practice is done for the day', text(pg, '.drill-empty'))
+    r.check(pg.locator('.tabs .badge:not(.badge-dot)').count() == 0 and '5 more positions are waiting' in text(pg, '.drill-empty'), 'after 20 positions today the practice is done for the day', text(pg, '.drill-empty'))
     pg.click('.drill-empty button:has-text("Keep going")'); time.sleep(0.8)
     r.check('5 left' in text(pg, '.status:visible'), '"Keep going" brings the ones that wait', text(pg, '.status:visible'))
 
@@ -471,7 +471,7 @@ def phone(b):
 SMALL_JS = """() => [...document.querySelectorAll('button, .account-panel a, .manage-row')].filter(e => e.offsetParent !== null && !e.disabled)
   .map(e => [e, e.getBoundingClientRect().height]).filter(([, h]) => h > 0 && h < 43.5)
   .map(([e, h]) => `${e.className || e.tagName}:${Math.round(h)}`)"""
-BADGE_JS = """() => { const b = document.querySelector('.tabs .badge').getBoundingClientRect(), t = document.querySelector('.tabs .badge').closest('button');
+BADGE_JS = """() => { const b = document.querySelector('.tabs .badge:not(.badge-dot)').getBoundingClientRect(), t = document.querySelector('.tabs .badge:not(.badge-dot)').closest('button');
   const i = t.querySelector('.tab-icon').getBoundingClientRect(), l = t.querySelector('.tab-label').getBoundingClientRect(), tb = t.getBoundingClientRect();
   const over = (x) => Math.max(0, Math.min(b.right, x.right) - Math.max(b.left, x.left)) * Math.max(0, Math.min(b.bottom, x.bottom) - Math.max(b.top, x.top));
   return { icon: over(i) / (i.width * i.height), label: over(l), inside: b.left >= tb.left - 1 && b.right <= tb.right + 1 && b.top >= tb.top }; }"""
@@ -521,7 +521,7 @@ def touch(b):
     for tag, locale, w, h in [('touch-he', 'he-IL', 375, 667), ('touch-en', 'en-US', 360, 740)]:
         ctx, pg = open_page(b, tag, locale, w, h)
         pg.evaluate(SEED_JS, 235); pg.reload(); pg.wait_for_selector('.tabs')
-        badge = lambda: int(pg.locator('.tabs .badge').inner_text()) if pg.locator('.tabs .badge').count() else 0
+        badge = lambda: int(pg.locator('.tabs .badge:not(.badge-dot)').inner_text()) if pg.locator('.tabs .badge:not(.badge-dot)').count() else 0
         r.check(badge() == 20, f'{tag}: 235 positions are due, the badge shows today\'s 20', str(badge()))
         o = pg.evaluate(BADGE_JS)
         r.check(o['icon'] < 0.2 and o['label'] == 0 and o['inside'], f'{tag}: the badge does not hide the icon', str(o))

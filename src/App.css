@@ -1196,6 +1196,7 @@ aside {
   .learn-header { gap: 8px; margin-bottom: 8px; }
   /* the line picker on a row of its own: a line's name is long ("Main line vs ...d5 and ...c5") */
   .learn-header { flex-direction: column; align-items: stretch; gap: 6px; }
+  .learn-header.puzzle-header { flex-direction: row; align-items: center; } /* the rating and the goal side by side */
   .picker-btn { flex: none; padding: 8px 12px; }
   .pick-sheet {
     top: auto;
@@ -1216,6 +1217,8 @@ aside {
   .learn-move p { font-size: 14px; }
   .stepper { order: -1; } /* the step buttons right under the board, so stepping never needs scrolling */
   .learn aside > .actions { order: -1; } /* and "Test me" / "Play this opening" under them, before the note */
+  /* in a test, what to do now (and the correction) comes first, then the way out */
+  .learn aside > .status, .learn aside > .feedback, .learn aside > .notice { order: -2; }
   .badge.badge-dot { top: 6px; min-width: 8px; height: 8px; padding: 0; }
   .stepper button { min-height: 48px; }
   .actions.actions-2 button { flex-direction: row; min-height: 46px; font-size: 13px; }

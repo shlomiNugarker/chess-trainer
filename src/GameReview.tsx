@@ -3,7 +3,8 @@ import { Chessboard } from 'react-chessboard';
 import { openingName, type GameSummary } from './chesscom';
 import { DRILL_DROP, Engine } from './engine';
 import EvalBar from './EvalBar';
-import { REPERTOIRES, repName } from './repertoire';
+import { REPERTOIRES } from './repertoire';
+import { shortName } from './openingGroups';
 import { withCustom } from './customLines';
 import { saveMistake } from './mistakes';
 import {
@@ -195,7 +196,8 @@ export default function GameReview({ game, username, active, onClose, onLearn, o
     setSaved(next);
   };
   const realMistakes = myMistakes.filter((m) => m.drop >= DRILL_DROP); // like "My review"; a smaller one can be added by its own button
-  const repLabel = book ? repName(REPERTOIRES.find((r) => r.id === book.repId)!) : '';
+  // without "(White)" / "(Black)": the sentence sits inside brackets already
+  const repLabel = book ? shortName(REPERTOIRES.find((r) => r.id === book.repId)!) : '';
   const leftName = book?.left ? moveName(book.left.ply, parsed.moves[book.left.ply].san) : '';
 
   return (

@@ -188,6 +188,7 @@ export default function Learn({ onTrain, onDrill }: Props) {
           onDone={(next) => {
             setHidden(next);
             setOpeningsChosen(true);
+            window.scrollTo(0, 0); // the list was long: start the study screen at its top
           }}
         />
       </div>
@@ -207,7 +208,7 @@ export default function Learn({ onTrain, onDrill }: Props) {
             <li><b>{tr('Learn')}</b> — {tr('step through a line move by move and read why each move is played.')}</li>
             <li><b>{tr('Test me')}</b> — {tr('play the line yourself until there are no mistakes (✓).')}</li>
             <li><b>{tr('Play')}</b> — {tr('train against the computer; every step off the line is stopped and corrected.')}</li>
-            <li><b>{tr('Review')}</b> — {tr('a few minutes a day on the positions you got wrong.')}</li>
+            <li><b>{tr('Practice')}</b> — {tr('daily puzzles, and a few minutes a day on the positions you got wrong.')}</li>
           </ol>
         </div>
       )}
