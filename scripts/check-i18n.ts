@@ -79,6 +79,23 @@ const scan = (path: string) => {
 };
 for (const p of ['src', 'scripts', 'docs', '.github', 'index.html', 'public/manifest.webmanifest', 'public/sw.js', ...readdirSync('.').filter((x) => /\.(md|json)$/.test(x))]) scan(p);
 
+// the language of a link: ?lang=he wins, an unknown one is ignored, and the other parameters stay
+{
+  const { langFromSearch } = await import('../src/i18n.ts');
+  const cases: [string, string | null, string][] = [
+    ['?lang=he&utm_source=facebook', 'he', '?utm_source=facebook'],
+    ['?utm_source=facebook&lang=es', 'es', '?utm_source=facebook'],
+    ['?lang=en', 'en', ''],
+    ['?lang=fr&utm_source=x', null, '?utm_source=x'],
+    ['?utm_source=x', null, '?utm_source=x'],
+    ['', null, ''],
+  ];
+  for (const [search, lang, rest] of cases) {
+    const got = langFromSearch(search);
+    if (got.lang !== lang || got.rest !== rest) problems.push(`langFromSearch(${JSON.stringify(search)}): ${JSON.stringify(got)}, not ${JSON.stringify({ lang, rest })}`);
+  }
+}
+
 if (problems.length) {
   console.error(problems.join('\n'));
   process.exit(1);

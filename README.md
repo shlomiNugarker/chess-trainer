@@ -1,6 +1,6 @@
 # Chess Trainer
 
-Learn a chess opening repertoire step by step, train it against Stockfish until you know it by heart, solve puzzles at your level, and review your own Chess.com games — in the browser, on your phone, even offline. English, Hebrew and Spanish.
+Learn a chess opening repertoire step by step, train it against Stockfish until you know it by heart, solve puzzles at your level, and review your own Chess.com games — in the browser, on your phone, even offline. English, Hebrew and Spanish (a link can choose one: `/?lang=he`).
 
 **Live:** https://opening-trainer-app.vercel.app (also at https://chess-trainer-seven-pink.vercel.app)
 

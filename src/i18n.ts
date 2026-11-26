@@ -43,9 +43,38 @@ const KEY = 'chess-trainer:lang';
 const info = (id: Lang) => LANGS.find((l) => l.id === id)!;
 const isLang = (x: unknown): x is Lang => LANGS.some((l) => l.id === x);
 
-/** The saved language, or the browser's (English when the app does not speak it). */
+/**
+ * The language a link asks for (?lang=he), and the query without it (other parameters, such as utm_*, stay).
+ * Pure, for scripts/check-i18n.ts.
+ */
+export function langFromSearch(search: string): { lang: Lang | null; rest: string } {
+  const q = new URLSearchParams(search);
+  const asked = q.get('lang');
+  if (asked === null) return { lang: null, rest: search };
+  q.delete('lang');
+  const rest = q.toString();
+  return { lang: isLang(asked) ? asked : null, rest: rest ? `?${rest}` : '' };
+}
+
+/** A link's language wins, and is kept like a choice made in the app; the parameter leaves the address bar. */
+function fromLink(): Lang | null {
+  const { lang, rest } = langFromSearch(location.search);
+  if (rest === location.search) return null;
+  history.replaceState(history.state, '', location.pathname + rest + location.hash);
+  if (!lang) return null;
+  try {
+    localStorage.setItem(KEY, JSON.stringify(lang));
+  } catch {
+    /* storage unavailable — the language still applies now */
+  }
+  return lang;
+}
+
+/** The language of the link, the saved one, or the browser's (English when the app does not speak it). */
 function preferred(): Lang {
   if (typeof window === 'undefined') return 'en'; // Node (scripts/)
+  const linked = fromLink();
+  if (linked) return linked;
   try {
     const saved: unknown = JSON.parse(localStorage.getItem(KEY) ?? 'null');
     if (isLang(saved)) return saved;

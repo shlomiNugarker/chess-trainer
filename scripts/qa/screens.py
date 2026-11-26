@@ -537,6 +537,16 @@ def languages(b):
     # English sentences that must not show (explanations of openings stay English, so only the interface's own texts)
     english = [k for k in re.findall(r"^  '([^'{]+)':", src, re.M) if len(k.split()) >= 3]
     left = lambda pg: [k for k in english if k in pg.evaluate('document.body.innerText')]
+    # a link's language wins over the browser's, is kept, and leaves the address bar (the other parameters stay)
+    ctx, pg = open_page(b, 'lang-link', 'en-US', 1280, 900, a.url.rstrip('/') + '/?lang=he&utm_source=facebook#x')
+    time.sleep(0.5)
+    r.check(pg.evaluate('document.documentElement.lang') == 'he' and pg.evaluate('location.search + location.hash') == '?utm_source=facebook#x',
+            'a link with ?lang=he: Hebrew, and only the other parameters stay', pg.evaluate('location.href'))
+    pg.goto(a.url); pg.wait_for_selector('.tabs')
+    r.check(pg.evaluate('document.documentElement.lang') == 'he', 'the language of the link is kept')
+    pg.goto(a.url.rstrip('/') + '/?lang=xx'); pg.wait_for_selector('.tabs')
+    r.check(pg.evaluate('document.documentElement.lang') == 'he' and pg.evaluate('location.search') == '', 'an unknown ?lang= changes nothing, and is removed too')
+    ctx.close()
     for tag, w, h in [('es-desktop', 1280, 900), ('es-phone', 360, 740)]:
         ctx, pg = open_page(b, tag, 'es-MX', w, h)
         r.check(pg.evaluate('document.documentElement.lang + document.documentElement.dir') == 'esltr', f'{tag}: a Spanish browser gets Spanish')

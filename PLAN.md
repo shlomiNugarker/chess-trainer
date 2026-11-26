@@ -99,7 +99,7 @@
 - [x] Firebase `chess-trainer-18bd8` (free), security rules: every user sees only their own document. Instructions in `docs/google-login-setup.md`
 
 ## Languages ✅
-- [x] English, Hebrew and Spanish; the default follows the browser's language. Switched in the "Account" panel (or with the language button, when sync is not configured)
+- [x] English, Hebrew and Spanish; the default follows the browser's language, and a link can choose one (`?lang=he`, `en`, `es`: it wins, is kept like a choice made in the app, and leaves the address bar; other parameters such as `utm_*` stay). Switched in the "Account" panel (or with the language button, when sync is not configured)
 - [x] The code is in English (25 Nov 2026): every text is written in place, `tr('English')`, and every other language is a dictionary keyed by the English text (`src/lang/<id>.ts`), loaded only by those who chose it and kept for offline use. A text with values is written ``msg`Step ${n}` ``, so a translation can put them in another order. If a dictionary cannot load, the app is in English. `check-i18n` (in `npm run check`) fails on a missing or unused translation, or one whose values do not match
 - [x] The opening lines, with their ideas and notes, are in English in `src/repertoire.ts` and in Hebrew in `src/lang/repertoire.he.ts` (by the line's `id`; checked in `check-lines`)
 - [x] Spanish: the interface only. The explanations of the openings and the line names are in English and the moves use the English letters, with a note in Learn and in the account panel. No Spanish-speaking chess player has gone over the translation yet
