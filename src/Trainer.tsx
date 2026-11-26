@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Chess, type Move } from 'chess.js';
 import { Chessboard, type Arrow } from 'react-chessboard';
 import { DROP, Engine, whiteWinPercent, winPercent } from './engine';
-import { REPERTOIRES, buildBook, lineInfo, noteForNext, posKey, repName } from './repertoire';
+import { REPERTOIRES, buildBook, lineInfo, moveLabel, noteForNext, posKey, repName } from './repertoire';
 import { useHiddenRepertoires, visibleOf } from './hiddenReps';
 import { useRepertoire, withCustom } from './customLines';
 import { practiceMistakes, saveMistake, useMistakeCount } from './mistakes';
@@ -15,7 +15,7 @@ import { playSound, setSoundOn, useMoveSound, useSoundOn } from './sound';
 import { useScrollToMove } from './useScrollToMove';
 import { useFitBoard } from './useFitBoard';
 import { useSidePanel } from './useSidePanel';
-import { useDialog } from './useDialog';
+import { dialogOpen, useDialog } from './useDialog';
 import { msg, tr, useLang } from './i18n';
 import { go, useNav } from './nav';
 import { loadGame, saveGame } from './savedGame';
@@ -115,6 +115,9 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [notice, setNotice] = useState<string>('');
   const [hint, setHint] = useState<Arrow | null>(null);
+  // looking at an earlier position of the game (the number of moves played up to it); null: the game as it is.
+  // Only the board shows it: the game, the engines and the saved game go on as they are.
+  const [viewPly, setViewPly] = useState<number | null>(null);
   const mistakeCount = useMistakeCount(practiceCount);
   const [engineReady, setEngineReady] = useState(false);
 
@@ -458,14 +461,42 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
     return true;
   };
 
+  const viewing = viewPly !== null && viewPly < history.length;
+  const shownPly = viewing ? viewPly : history.length;
+  const shownFen = viewing ? (viewPly === 0 ? history[0].before : history[viewPly - 1].after) : fen;
+  const toGame = () => setViewPly(null);
+  const showPly = (p: number) => setViewPly(p >= history.length ? null : Math.max(0, p));
+  // a take back or a new game leaves fewer moves than the one looked at: back to the game
+  useEffect(() => {
+    if (viewPly !== null && viewPly >= history.length) setViewPly(null);
+  }, [viewPly, history.length]);
+  // arrow keys look back and forward (only on this tab, not in a dialog or a field)
+  useEffect(() => {
+    if (!active) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (dialogOpen() || (e.target as HTMLElement).closest?.('input, select, textarea')) return;
+      const n = history.length;
+      // from the latest state: keys pressed faster than a render still count one by one
+      const step = (d: number) => setViewPly((v) => { const p = Math.max(0, (v ?? n) + d); return p >= n ? null : p; });
+      if (e.key === 'ArrowLeft') step(-1);
+      else if (e.key === 'ArrowRight') step(1);
+      else if (e.key === 'Home') setViewPly(n ? 0 : null);
+      else if (e.key === 'End') setViewPly(null);
+      else return;
+      e.preventDefault();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [active, history.length]);
+
   const { onSquareClick, onDrop, clickStyles } = useClickToMove(
     fen,
-    (color) => status === 'user' && color === userColor,
+    (color) => !viewing && status === 'user' && color === userColor,
     (from, to) => onPieceDrop({ sourceSquare: from, targetSquare: to }),
   );
   const boardRef = useFitBoard<HTMLDivElement>();
   const panelRef = useSidePanel<HTMLElement>();
-  const movesRef = useScrollToMove<HTMLOListElement>(history.length);
+  const movesRef = useScrollToMove<HTMLOListElement>(shownPly);
 
   const retry = () => {
     gameRef.current.undo();
@@ -478,6 +509,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
   /** Go back to before the last (not-best) move — even if the opponent already replied — and show the better one. */
   const goBack = () => {
     if (!undoable) return;
+    toGame();
     const g = gameRef.current;
     moveOn(); // also drops an opponent reply that may still be on its way
     while (g.history().length > undoable.ply) g.undo();
@@ -490,6 +522,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
   };
 
   const continueAnyway = () => {
+    toGame();
     const wasBook = feedback?.kind === 'book';
     setFeedback(null);
     if (wasBook) setNotice(tr('You continued off the line — from here the coach checks you with the engine.'));
@@ -501,6 +534,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
   const takeBack = () => {
     // undo the last full move pair (opponent + user)
     if (status !== 'user' && status !== 'over') return;
+    toGame();
     const g = gameRef.current;
     moveOn();
     if (g.turn() === userColor && g.history().length >= 2) { g.undo(); g.undo(); }
@@ -517,6 +551,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
 
   const showHint = async () => {
     if (status !== 'user') return;
+    toGame();
     const g = gameRef.current;
     const key = posKey(g.fen());
     const bookMoves = phase === 'book' ? book.get(key) : undefined;
@@ -532,11 +567,12 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
     if (gameId.current === id && gameRef.current.fen() === fen) setHint(uciToArrow(a.bestMove, BLUE_ARROW));
   };
 
+  // the arrows belong to the game's position, not to one looked back at
   const arrows: Arrow[] = [];
-  if (feedback) arrows.push(uciToArrow(feedback.correctUci, GREEN_ARROW));
-  if (hint) arrows.push(hint);
+  if (feedback && !viewing) arrows.push(uciToArrow(feedback.correctUci, GREEN_ARROW));
+  if (hint && !viewing) arrows.push(hint);
 
-  const last = history[history.length - 1];
+  const last = history[shownPly - 1];
   // which line you are in, and why the last moves are played (training, inside the book)
   const info = useMemo(
     () => (mode === 'train' && phase === 'book' && showNotes ? lineInfo(rep, history.map((m) => m.san)) : null),
@@ -546,7 +582,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
   const squareStyles: Record<string, React.CSSProperties> = {};
   if (last) {
     squareStyles[last.from] = { background: LAST_MOVE };
-    squareStyles[last.to] = { background: feedback ? WRONG_MOVE : LAST_MOVE };
+    squareStyles[last.to] = { background: feedback && !viewing ? WRONG_MOVE : LAST_MOVE };
   }
   Object.assign(squareStyles, clickStyles);
 
@@ -558,7 +594,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
     over: tr('Game over'),
   };
 
-  const lastPly = history.length - 1;
+  const lastPly = shownPly - 1;
   const learnedCount = Object.keys(learned).length;
   const toggle = (checked: boolean, onChange: (v: boolean) => void, label: string) => (
     <label className="toggle">
@@ -668,15 +704,15 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
               options={{
                 id: 'trainer',
                 showAnimations: active, // a hidden board has no size to animate with (react-chessboard throws)
-                position: fen,
+                position: shownFen,
                 boardOrientation: userColor === 'w' ? 'white' : 'black',
                 onPieceDrop: ({ sourceSquare, targetSquare }) => onDrop(sourceSquare, targetSquare),
-                onSquareClick,
+                onSquareClick: (x) => (viewing ? toGame() : onSquareClick(x)), // a tap while looking back: back to the game
                 arrows,
                 squareStyles,
                 ...BOARD_THEME,
                 allowDrawingArrows: false,
-                canDragPiece: ({ piece }) => status === 'user' && piece.pieceType[0] === userColor,
+                canDragPiece: ({ piece }) => !viewing && status === 'user' && piece.pieceType[0] === userColor,
               }}
             />
           </div>
@@ -686,6 +722,11 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
           <div className={`status status-${status}`}>
             <span className="status-dot" aria-hidden />
             <span className="status-text">{!engineReady ? tr('Loading engine…') : statusText[status]}</span>
+            {viewing ? (
+              <button className="small viewing" onClick={toGame}>
+                {shownPly ? tr(msg`Viewing ${moveLabel(shownPly - 1, history[shownPly - 1].san)}`) : tr('Viewing the start')} · {tr('Back to the game')}
+              </button>
+            ) : (
             <span className="pill">
               {mode === 'play'
                 ? `${tr('Regular game')} · ${userColor === 'w' ? tr('White') : tr('Black')}`
@@ -693,6 +734,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
                   ? tr('In the line')
                   : tr('Free play')}
             </span>
+            )}
           </div>
 
           {feedback && (
@@ -746,18 +788,32 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
             </button>
           </div>
 
-          <ol className="moves" dir="ltr" ref={movesRef}>
-            {history.length === 0 && <li className="moves-empty">—</li>}
-            {history.map((m, i) =>
-              i % 2 === 0 ? (
-                <li key={i}>
-                  <span className="move-no">{i / 2 + 1}.</span>
-                  <span className={i === lastPly ? 'move last' : 'move'}>{m.san}</span>
-                  <span className={i + 1 === lastPly ? 'move last' : 'move'}>{history[i + 1]?.san ?? ''}</span>
-                </li>
-              ) : null,
-            )}
-          </ol>
+          {/* looking back and forward: a row above the list; on a phone ‹ and › at the ends of the one-line list. Left to right
+              in every language, like the list itself: back is to the left of it, as the earlier moves are */}
+          <div className="moves-bar" dir="ltr">
+            <div className="moves-nav">
+              <button className="nav-start" onClick={() => showPly(0)} disabled={shownPly === 0} aria-label={tr('To the start')}><span aria-hidden="true">⏮</span></button>
+              <button className="nav-prev" onClick={() => showPly(shownPly - 1)} disabled={shownPly === 0} aria-label={tr('Previous')}>‹</button>
+              <button className="nav-next" onClick={() => showPly(shownPly + 1)} disabled={!viewing} aria-label={tr('Next')}>›</button>
+              <button className="nav-end" onClick={toGame} disabled={!viewing} aria-label={tr('To the end')}><span aria-hidden="true">⏭</span></button>
+            </div>
+            <ol className="moves" dir="ltr" ref={movesRef}>
+              {history.length === 0 && <li className="moves-empty">—</li>}
+              {history.map((m, i) =>
+                i % 2 === 0 ? (
+                  <li key={i}>
+                    <span className="move-no">{i / 2 + 1}.</span>
+                    <button className={i === lastPly ? 'move last' : 'move'} onClick={() => showPly(i + 1)}>{m.san}</button>
+                    {history[i + 1] ? (
+                      <button className={i + 1 === lastPly ? 'move last' : 'move'} onClick={() => showPly(i + 2)}>{history[i + 1].san}</button>
+                    ) : (
+                      <span />
+                    )}
+                  </li>
+                ) : null,
+              )}
+            </ol>
+          </div>
 
           {mode === 'train' && (
             <div className="stats">

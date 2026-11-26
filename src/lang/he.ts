@@ -506,6 +506,11 @@ const he: Record<string, string> = {
   // Drill.tsx: the daily practice
   "That's today's practice. {0} more positions are waiting: a few each day is what makes them stick.": 'זה התרגול של היום. עוד {0} עמדות מחכות: כמה בכל יום, וכך הן נשארות בזיכרון.',
   'Keep going ({0} more)': 'להמשיך (עוד {0})',
+
+  // Trainer.tsx: looking back through the game
+  'Viewing {0}': 'מציג את {0}',
+  'Viewing the start': 'מציג את עמדת הפתיחה',
+  'Back to the game': 'חזרה למשחק',
 };
 
 export default he;

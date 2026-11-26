@@ -32,6 +32,7 @@
 - [x] Stops when you leave the line, with a green arrow for the right move
 - [x] Stops on a mistake in free play, by the drop in win chances
 - [x] Buttons: go back and play / continue anyway / hint / take back / new game
+- [x] Looking back during a game: ⏮ ‹ › ⏭ above the move list (on a phone ‹ › at its ends), a tap on a move, or ← → Home End. Only the board shows the earlier position; the game goes on, the computer's reply still comes, and pieces move again after "Back to the game" or a tap on the board
 - [x] A slider for the computer's level, and a choice of how sensitive the stop is
 - [x] Every mistake is saved in localStorage, with fields ready for spaced repetition
 - [x] A regular game at any level and color, regardless of the repertoire

@@ -1,7 +1,7 @@
 """QA: the Back button, a game that survives a reload, the daily goal, the keyboard in dialogs, and the engine
 when it is slow or cannot load (English, ~3 min).
 
-    python scripts/qa/nav.py [--url URL] [--only back,reload,ends,computer,drag,goal,keys,engine]
+    python scripts/qa/nav.py [--url URL] [--only back,reload,ends,computer,drag,history,goal,keys,engine]
 """
 import json, subprocess, time
 from playwright.sync_api import sync_playwright
@@ -234,6 +234,52 @@ with sync_playwright() as p:
                 # the board library tries to cancel the end of a touch that is scrolling; Chrome says so and goes on
                 r.errors = [e for e in r.errors if not (e.startswith('[finger]') and 'attempt to cancel a touchend' in e)]
             c7.close()
+        pg = ctx.pages[0]
+
+    if not a.only or 'history' in a.only:
+        # looking back and forward through a game: the board shows an earlier position, the game itself does not change
+        GAME = ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4', 'Bc5']
+        for how, options in (('desktop', {'viewport': {'width': 1280, 'height': 900}}), ('phone', {'viewport': {'width': 390, 'height': 664}, 'has_touch': True, 'is_mobile': True})):
+            c8 = b.new_context(locale='en-US', service_workers='block', **options); pg = c8.new_page(); r.watch(pg, f'history-{how}')
+            pg.goto(a.url); pg.wait_for_selector('.tabs')
+            pg.evaluate('g => { localStorage.setItem("chess-trainer:screen", JSON.stringify("play")); localStorage.setItem("chess-trainer:game", g); }',
+                        json.dumps({'mode': 'play', 'repertoire': 'italian', 'color': 'w', 'phase': 'free', 'moves': GAME, 'at': pg.evaluate('Date.now()')}))
+            reload(); turn()
+            board = lambda: pg.evaluate("[...document.querySelectorAll('.trainer [data-square] [data-piece]')].map(e => e.closest('[data-square]').dataset.square + e.dataset.piece).sort().join()")
+            live = board()
+            press = (lambda k: pg.keyboard.press(k)) if how == 'desktop' else None
+            pg.click('.trainer .nav-prev'); pg.click('.trainer .nav-prev'); wait(400)
+            r.check('Nc6' in pg.inner_text('.trainer .status') and 'c4wB' not in board() and 'c5bB' not in board() and 'c6bN' in board(),
+                    f'{how}: two steps back show the position after 2...Nc6', pg.inner_text('.trainer .status'))
+            r.check(len(moves()) == 6 and pg.inner_text('.trainer .moves .move.last') == 'Nc6', f'{how}: the game is not changed, and the list marks the move looked at')
+            pg.locator('.trainer .moves button.move', has_text='Nf3').click(); wait(300)
+            r.check('Nf3' in pg.inner_text('.trainer .status') and 'f3wN' in board() and 'c6bN' not in board(), f'{how}: a tap on a move in the list shows it')
+            pg.click('.trainer [data-square="d2"]'); wait(400)
+            r.check(board() == live and pg.locator('.trainer .viewing').count() == 0, f'{how}: a tap on the board goes back to the game')
+            if how == 'desktop':
+                pg.keyboard.press('ArrowLeft'); pg.keyboard.press('ArrowLeft'); pg.keyboard.press('ArrowLeft'); wait(300)
+                r.check('2.Nf3' in pg.inner_text('.trainer .status'), 'desktop: the arrow keys step back, one move each', pg.inner_text('.trainer .status'))
+                pg.keyboard.press('Home'); wait(300)
+                r.check(pg.evaluate("document.querySelectorAll('.trainer [data-square] [data-piece]').length") == 32 and 'start' in pg.inner_text('.trainer .status'), 'desktop: Home shows the start')
+                pg.keyboard.press('End'); wait(300)
+                r.check(board() == live, 'desktop: End goes back to the game')
+                pg.keyboard.press('ArrowLeft'); wait(300)
+                pg.click('.trainer [data-square="d2"]'); pg.click('.trainer [data-square="d3"]'); wait(400)
+                r.check(len(moves()) == 6, 'desktop: no move can be played while looking back')
+                pg.keyboard.press('End'); wait(300)
+            # a move of the game, and take back while looking back
+            mine('d2d3'); turn()
+            r.check(len(moves()) == 8, f'{how}: the game goes on', str(moves()))
+            pg.click('.trainer .nav-prev'); wait(300)
+            pg.click('.trainer button:has-text("Take back")'); wait(800)
+            r.check(len(moves()) == 6 and pg.locator('.trainer .viewing').count() == 0 and board() == live, f'{how}: Take back while looking back: back to the game, one move less')
+            if how == 'phone':
+                small = pg.evaluate("[...document.querySelectorAll('.trainer button')].filter(e => e.offsetParent && !e.disabled && e.getBoundingClientRect().height < 43.5).map(e => e.className)")
+                r.check(not small and pg.evaluate('document.documentElement.scrollWidth - innerWidth') <= 0, 'phone: ‹ › and the moves are big enough for a finger, no sideways scroll', str(small))
+                nav = pg.evaluate("[...document.querySelectorAll('.trainer .moves-bar > *, .trainer .moves-nav > *')].filter(e => e.offsetParent).map(e => e.className.split(' ')[0] + ':' + Math.round(e.getBoundingClientRect().top))")
+                r.check(len({x.split(':')[1] for x in nav if x.split(':')[0] in ('nav-prev', 'moves', 'nav-next')}) == 1, 'phone: ‹ and › are in the row of the moves', str(nav))
+            r.shot(pg, f'history-{how}')
+            c8.close()
         pg = ctx.pages[0]
 
     if not a.only or 'goal' in a.only:

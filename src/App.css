@@ -434,6 +434,12 @@ aside {
 .move.last { background: rgba(95, 179, 107, 0.22); color: var(--text); font-weight: 700; }
 .moves-empty { color: var(--text-3); }
 
+/* the game: looking back and forward through the moves played */
+.moves-bar { display: flex; flex-direction: column; gap: 6px; }
+.moves-nav { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.moves-nav button { padding: 6px 8px; font-size: 15px; line-height: 1; }
+.status .viewing { margin-inline-start: auto; padding: 4px 10px; font-size: 12px; white-space: nowrap; }
+
 .stats { display: flex; flex-wrap: wrap; gap: 8px; }
 
 .chip-stat {
@@ -1107,6 +1113,14 @@ aside {
   }
   .moves::-webkit-scrollbar { display: none; }
   .moves li { display: inline-flex; gap: 4px; }
+  /* ‹ and › at the two ends of the one-line list; the start and the end are a swipe and a tap away */
+  .moves-bar { flex-direction: row; align-items: stretch; }
+  .moves-nav { display: contents; }
+  .moves-nav .nav-start, .moves-nav .nav-end { display: none; }
+  .moves-nav .nav-prev { order: 0; }
+  .moves-bar .moves { order: 1; flex: 1; min-width: 0; }
+  .moves-nav .nav-next { order: 2; }
+  .moves-nav button { min-width: 44px; padding: 0; font-size: 20px; }
   .move { padding: 1px 4px; }
 
   /* learn */

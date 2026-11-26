@@ -485,6 +485,11 @@ const es: Record<string, string> = {
   // Drill.tsx: the daily practice
   "That's today's practice. {0} more positions are waiting: a few each day is what makes them stick.": 'Esa es la práctica de hoy. Quedan {0} posiciones más: unas pocas cada día es lo que hace que se queden.',
   'Keep going ({0} more)': 'Seguir ({0} más)',
+
+  // Trainer.tsx: looking back through the game
+  'Viewing {0}': 'Viendo {0}',
+  'Viewing the start': 'Viendo el inicio',
+  'Back to the game': 'Volver a la partida',
 };
 
 export default es;
