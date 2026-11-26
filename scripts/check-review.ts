@@ -80,6 +80,7 @@ assert.equal(matchRepertoire('Pirc Defense', 'w'), 'italian'); // as White it is
 assert.equal(matchRepertoire('Ruy Lopez Opening Morphy Defense', 'b'), 'e5');
 assert.equal(matchRepertoire('Italian Game Giuoco Pianissimo', 'b'), 'e5');
 assert.equal(matchRepertoire('Scotch Game', 'b'), 'e5');
+assert.equal(matchRepertoire('Scotch Game Classical Variation', 'w'), 'scotch');
 assert.equal(matchRepertoire('Two Knights Defense', 'b'), undefined);
 assert.equal(matchRepertoire('Italian Game Two Knights Defense', 'b'), undefined);
 assert.equal(matchRepertoire('Petrovs Defense', 'b'), undefined);

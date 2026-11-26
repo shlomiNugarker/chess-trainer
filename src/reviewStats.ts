@@ -89,6 +89,7 @@ export function matchRepertoire(openingFull: string, color: 'w' | 'b'): string |
   if (color === 'w' && /^(Italian Game|Giuoco|Two Knights Defense|Bishops Opening)/.test(openingFull)) return 'italian';
   // 1.e4 e5 2.Nf3 with 3.Bb5, and Black's other second moves it answers (the Petrov, the Latvian)
   if (color === 'w' && /^(Ruy Lopez|Petrovs Defense|Russian Game|Latvian Opening|Latvian Gambit)/.test(openingFull)) return 'ruy';
+  if (color === 'w' && /^Scotch Game/.test(openingFull)) return 'scotch';
   // the 1.e4 repertoire also answers the Scandinavian, the Sicilian (Alapin), the French and Caro-Kann (Advance), the Modern,
   // the Pirc, the Philidor, the Owen and the Nimzowitsch
   if (color === 'w' && /^(Scandinavian Defense|Sicilian Defense Alapin|French Defense Advance|Caro Kann Defense Advance|Modern Defense|Pirc Defense|Philidor Defense|Owens Defense|Nimzowitsch Defense)/.test(openingFull)) return 'italian';
