@@ -87,6 +87,8 @@ export function matchRepertoire(openingFull: string, color: 'w' | 'b'): string |
   // 1.d4 d5 2.c4: the Queen's Gambit and the defenses it answers
   if (color === 'w' && /^(Queens Gambit|Slav Defense|Semi Slav Defense|Tarrasch Defense|Albin Countergambit|Chigorin Defense|Baltic Defense|Marshall Defense)/.test(openingFull)) return 'qg';
   if (color === 'w' && /^(Italian Game|Giuoco|Two Knights Defense|Bishops Opening)/.test(openingFull)) return 'italian';
+  // 1.e4 e5 2.Nf3 with 3.Bb5, and Black's other second moves it answers (the Petrov, the Latvian)
+  if (color === 'w' && /^(Ruy Lopez|Petrovs Defense|Russian Game|Latvian Opening|Latvian Gambit)/.test(openingFull)) return 'ruy';
   // the 1.e4 repertoire also answers the Scandinavian, the Sicilian (Alapin), the French and Caro-Kann (Advance), the Modern,
   // the Pirc, the Philidor, the Owen and the Nimzowitsch
   if (color === 'w' && /^(Scandinavian Defense|Sicilian Defense Alapin|French Defense Advance|Caro Kann Defense Advance|Modern Defense|Pirc Defense|Philidor Defense|Owens Defense|Nimzowitsch Defense)/.test(openingFull)) return 'italian';

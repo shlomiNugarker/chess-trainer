@@ -44,6 +44,10 @@ assert.equal(matchRepertoire('Caro Kann Defense Two Knights Attack', 'w'), undef
 assert.equal(matchRepertoire('English Opening Caro Kann Defensive System', 'b'), 'flank'); // not the Caro-Kann: the answer to 1.c4
 assert.equal(matchRepertoire('Indian Game London System', 'w'), 'london');
 assert.equal(matchRepertoire('Owens Defense', 'w'), 'italian');
+assert.equal(matchRepertoire('Ruy Lopez Opening Morphy Defense Closed Variations', 'w'), 'ruy');
+assert.equal(matchRepertoire('Ruy Lopez Opening Berlin Defense', 'w'), 'ruy');
+assert.equal(matchRepertoire('Petrovs Defense', 'w'), 'ruy');
+assert.equal(matchRepertoire('Ruy Lopez Opening', 'b'), 'e5'); // as Black it is still the 1...e5 repertoire
 // the Queen's Gambit as White
 assert.equal(matchRepertoire('Queens Gambit Declined Exchange Variation', 'w'), 'qg');
 assert.equal(matchRepertoire('Slav Defense', 'w'), 'qg');
