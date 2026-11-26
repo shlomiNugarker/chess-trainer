@@ -105,6 +105,7 @@ export function matchRepertoire(openingFull: string, color: 'w' | 'b'): string |
   if (color === 'b' && /^Dutch Defense/.test(openingFull)) return 'dutch';
   if (color === 'b' && /^Pirc Defense/.test(openingFull)) return 'pirc';
   if (color === 'b' && /^Caro Kann Defense/.test(openingFull)) return 'caro';
+  if (color === 'b' && /^Sicilian Defense.*Najdorf/.test(openingFull)) return 'najdorf';
   if (color === 'b' && /^Sicilian Defense/.test(openingFull)) return 'sicilian';
   if (color === 'b' && /^Queens Gambit Accepted/.test(openingFull)) return 'qga';
   // the Slav repertoire also has lines against the London and the Colle
