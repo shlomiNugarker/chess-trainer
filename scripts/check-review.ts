@@ -47,6 +47,10 @@ assert.equal(matchRepertoire('Owens Defense', 'w'), 'italian');
 assert.equal(matchRepertoire('Ruy Lopez Opening Morphy Defense Closed Variations', 'w'), 'ruy');
 assert.equal(matchRepertoire('Ruy Lopez Opening Berlin Defense', 'w'), 'ruy');
 assert.equal(matchRepertoire('Petrovs Defense', 'w'), 'ruy');
+assert.equal(matchRepertoire('Sicilian Defense Najdorf Variation English Attack', 'w'), 'opensic');
+assert.equal(matchRepertoire('Sicilian Defense Open Dragon Variation Yugoslav Attack', 'w'), 'opensic');
+assert.equal(matchRepertoire('Sicilian Defense Closed', 'w'), undefined); // White did not open it
+assert.equal(matchRepertoire('Sicilian Defense Alapin Variation', 'w'), 'italian'); // still the 1.e4 repertoire
 assert.equal(matchRepertoire('Ruy Lopez Opening', 'b'), 'e5'); // as Black it is still the 1...e5 repertoire
 // the Queen's Gambit as White
 assert.equal(matchRepertoire('Queens Gambit Declined Exchange Variation', 'w'), 'qg');
