@@ -110,6 +110,7 @@ export function matchRepertoire(openingFull: string, color: 'w' | 'b'): string |
   if (color === 'b' && /^(Slav Defense|Queens Gambit Declined Slav)|London System|Colle System/.test(openingFull)) return 'slav';
   // after the Slav (its Chess.com names start with "Queens Gambit Declined Slav")
   if (color === 'b' && /^(Queens Gambit Declined|Catalan Opening)/.test(openingFull)) return 'qgd';
+  if (color === 'b' && /^(Nimzo Indian Defense|Queens Indian Defense|Bogo Indian Defense)/.test(openingFull)) return 'nimzo';
   return undefined;
 }
 
