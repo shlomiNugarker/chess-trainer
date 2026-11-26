@@ -20,6 +20,10 @@ void Promise.all([langReady, migrated]).then(() =>
   ),
 )
 
+// anonymous page views, no cookies (Vercel Web Analytics; see the privacy page). Only where Vercel serves it, so a
+// local build has no failing request
+if (import.meta.env.PROD && import.meta.env.VITE_ON_VERCEL === '1') void import('@vercel/analytics').then(({ inject }) => inject())
+
 // installable app + offline (production only: the dev server must never be served from a cache)
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {

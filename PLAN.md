@@ -118,6 +118,7 @@
 - [x] PWA: installs to the home screen, a knight icon, works offline (including the engine and the puzzles)
 - [x] A suggestion to install (Learn, a small card — not a popup), only after real use: a line passed without a mistake, or puzzles on two days. "Not now" is for good; the account panel keeps a button. Chrome and Edge open the browser's dialog, an iPhone gets the steps
 - [x] Deployed on Vercel (a push to main publishes)
+- [x] Vercel Web Analytics: anonymous page views, no cookies, only in the build Vercel makes (`VITE_ON_VERCEL`, `vite.config.ts`); `public/sw.js` leaves `/_vercel/` to the network. No other tracking
 
 ## Stage 4 — a wider repertoire
 - [x] London: the 5 lines were deepened to 11 moves, and 3 new branches: against ...c5 and ...cxd4, against ...c5 and ...Qb6, and against the Dutch (...f5). Every White move checked with Stockfish (depth 20)

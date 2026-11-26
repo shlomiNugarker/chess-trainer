@@ -2,7 +2,7 @@
 // - pages: network first, so a new version arrives as soon as you are online; the cached copy offline
 // - /assets (hashed names, all of them kept: see cacheIndex), /engine, icons: cache first — their content never changes under the same name
 // - Google Fonts: cached after the first load
-// - everything else (the Chess.com API, Google sign-in, Firestore) is left alone
+// - everything else (the Chess.com API, Google sign-in, Firestore, Web Analytics) is left alone
 const CACHE = 'chess-trainer-v2';
 const CORE = ['/', '/manifest.webmanifest', '/icon-192.png', '/engine/stockfish-19-lite-single.js', '/engine/stockfish-19-lite-single.wasm'];
 
@@ -68,6 +68,8 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   // Google sign-in pages (proxied to Firebase by vercel.json) must always come from the network
   if (url.origin === location.origin && url.pathname.startsWith('/__/')) return;
+  // Web Analytics (its script and its counts): never from the cache, and never cached
+  if (url.origin === location.origin && url.pathname.startsWith('/_vercel/')) return;
 
   if (req.mode === 'navigate' && url.origin === location.origin) {
     event.respondWith(

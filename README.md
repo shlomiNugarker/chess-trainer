@@ -19,6 +19,7 @@ Learn a chess opening repertoire step by step, train it against Stockfish until 
 - **My review** — enter a Chess.com username (up to your latest 5,000 games, reloaded automatically next time): the three most useful things to improve, results by color / time control / opening, how you lose, a rating chart, your accuracy month by month (from games reviewed on Chess.com and here), and an optional Stockfish pass over recent games (its big mistakes become drills). It also shows **where your games leave your lines**: add Stockfish's answer to an opponent's unexpected move as a new branch of your repertoire, or practice the spots where you left the line yourself.
 - **Game review** — pick any recent game (or "Review my last game") and go through it move by move: every move labeled (book, best, good, inaccuracy, mistake, blunder) with the better move as a green arrow and the engine's line, both players' accuracy, a win-chance graph you can tap, "my next mistake", where the game left your repertoire, and one tap to practice a position. Stockfish runs on your device, so there is no daily limit; a reviewed game opens at once the next time.
 - **Installable, offline** — a PWA; learning, training, puzzles and the engine work without internet.
+- **Private** — no sign-in needed; anonymous page counts only (Vercel Web Analytics, no cookies).
 - **Optional Google sign-in** — syncs all progress between devices (Firebase Auth + Firestore).
 
 ## Run it

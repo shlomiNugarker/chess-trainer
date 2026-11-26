@@ -26,6 +26,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "chess.js": "^1.4.0",
     "firebase": "^13.4.0",
     "react": "^19.3.1",
