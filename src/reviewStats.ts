@@ -109,6 +109,7 @@ export function matchRepertoire(openingFull: string, color: 'w' | 'b'): string |
   if (color === 'w' && /^English Opening/.test(openingFull)) return 'english';
   if (color === 'b' && /^Dutch Defense/.test(openingFull)) return 'dutch';
   if (color === 'b' && /^Pirc Defense/.test(openingFull)) return 'pirc';
+  if (color === 'b' && /^Modern Defense/.test(openingFull)) return 'modern';
   if (color === 'b' && /^Caro Kann Defense/.test(openingFull)) return 'caro';
   if (color === 'b' && /^Sicilian Defense.*Najdorf/.test(openingFull)) return 'najdorf';
   if (color === 'b' && /^Sicilian Defense/.test(openingFull)) return 'sicilian';
