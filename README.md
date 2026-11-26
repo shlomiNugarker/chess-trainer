@@ -72,6 +72,7 @@ Without configuration the app works fully, with progress kept in the browser. To
 | `src/engine.ts` | Stockfish Web Worker wrapper, the Lichess win% formula, and what counts as an inaccuracy / mistake / blunder |
 | `src/cloud.ts`, `src/firebase.ts`, `src/syncMerge.ts`, `src/Account.tsx` | Optional sign-in and sync |
 | `src/i18n.ts`, `src/lang/` | The languages, without a library: `tr('English')` in place, and a dictionary per language. Hebrew: the interface and the opening explanations; Spanish: the interface (the explanations show in English) |
+| `index.html`, `scripts/make-og-image.py` | The link preview of social networks (static tags, and `public/og-image.png`, made from the running app) |
 | `src/install.ts`, `src/InstallCard.tsx` | Installing the app: when it can be, and the suggestion in Learn and in the account panel |
 | `public/engine/` | Stockfish 19 lite (WASM) |
 | `public/puzzles-v3.json` | Puzzle set, built by `scripts/build-puzzles.py` (a new set gets a new file name — the service worker caches by name) |

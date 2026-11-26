@@ -75,7 +75,9 @@ const scan = (path: string) => {
   if (!existsSync(path) || /(^|\/)(node_modules|dist|out|lang|__pycache__)$/.test(path)) return;
   if (statSync(path).isDirectory()) return readdirSync(path).forEach((x) => scan(`${path}/${x}`));
   if (!/\.(tsx?|css|html|md|py|json|yml|webmanifest|js)$/.test(path) || /package-lock|puzzles-v/.test(path)) return;
-  readFileSync(path, 'utf8').split('\n').forEach((l, i) => hebrew.test(l) && problems.push(`${path}:${i + 1}: Hebrew outside src/lang/`));
+  // except the link preview of index.html: the crawlers of Facebook and others read it without running the app
+  const preview = (l: string) => path === 'index.html' && /<meta (name|property)="(description|og:[a-z:_]+|twitter:[a-z]+)" content=/.test(l);
+  readFileSync(path, 'utf8').split('\n').forEach((l, i) => hebrew.test(l) && !preview(l) && problems.push(`${path}:${i + 1}: Hebrew outside src/lang/`));
 };
 for (const p of ['src', 'scripts', 'docs', '.github', 'index.html', 'public/manifest.webmanifest', 'public/sw.js', ...readdirSync('.').filter((x) => /\.(md|json)$/.test(x))]) scan(p);
 

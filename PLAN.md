@@ -118,6 +118,7 @@
 - [x] PWA: installs to the home screen, works offline (including the engine and the puzzles). The logo: a check mark on a board (`public/favicon.svg`, and PNGs for the manifest, a maskable one included); the service worker's cache name changes with them (`chess-trainer-v3`), so returning users get the new icons
 - [x] A suggestion to install (Learn, a small card — not a popup), only after real use: a line passed without a mistake, or puzzles on two days. "Not now" is for good; the account panel keeps a button. Chrome and Edge open the browser's dialog, an iPhone gets the steps
 - [x] Deployed on Vercel (a push to main publishes)
+- [x] A shared link shows a preview (Facebook, WhatsApp, X): static `og:`/`twitter:` tags in `index.html`, in Hebrew for the first posts, and `public/og-image.png` (1200×630, the logo, a Hebrew headline and the app's board), made by `scripts/make-og-image.py`. `check-i18n` allows Hebrew in those tags only
 - [x] Vercel Web Analytics: anonymous page views, no cookies, only in the build Vercel makes (`VITE_ON_VERCEL`, `vite.config.ts`); `public/sw.js` leaves `/_vercel/` to the network. No other tracking
 - [x] A privacy page (`src/Privacy.tsx`, in every language): from the account panel, and at `/privacy` (a rewrite in `vercel.json`; `src/nav.ts` opens it over the app, so Back closes it). Deleting the cloud copy is by a GitHub issue, as there is no delete button yet
 
