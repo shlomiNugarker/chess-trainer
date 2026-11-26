@@ -113,6 +113,7 @@
 - [x] Cards with a color stripe by the kind of message (blue book, amber "there is better", red mistake, green correct)
 - [x] Mobile: a bottom tab bar, settings in a bottom sheet, confirm buttons under the board without scrolling; tap-to-move in addition to dragging
 - [x] The board's height follows the room left on the screen (no scrolling, at least 320px)
+- [x] Learn on a phone: the board is sized by the room left below its top (so the first-visit guide counts), and the step buttons never sit under the tab bar; the line picker has a row of its own (checked in `screens.py --only touch`, in every language)
 - [x] Sounds: move, capture, check, mistake, "well done" (Web Audio, can be muted)
 - [x] PWA: installs to the home screen, a knight icon, works offline (including the engine and the puzzles)
 - [x] A suggestion to install (Learn, a small card — not a popup), only after real use: a line passed without a mistake, or puzzles on two days. "Not now" is for good; the account panel keeps a button. Chrome and Edge open the browser's dialog, an iPhone gets the steps

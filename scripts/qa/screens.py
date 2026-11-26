@@ -442,6 +442,21 @@ SEED_JS = """(n) => { const l = []; for (let i = 0; i < n; i++) l.push({ fen: `r
 @section('touch')
 def touch(b):
     """Phones: sizes for a finger, the badge, hidden openings in the practice, and the game review on a small screen."""
+    # a first visit (the "How to learn here" card): nothing to tap is under the tab bar, and the line picker can be read
+    UNDER_TABS = """() => { const t = document.querySelector('.tabs').getBoundingClientRect().top;
+      return [...document.querySelectorAll('.learn button, .learn select, .learn a')].filter(e => e.offsetParent)
+        .map(e => [e.className || e.tagName, e.getBoundingClientRect()]).filter(([, r]) => r.top < t - 0.5 && r.bottom > t + 0.5)
+        .map(([c, r]) => `${c}:${Math.round(r.top)}-${Math.round(r.bottom)}`); }"""
+    PICKER = """() => { const s = document.querySelector('.learn-header select'), c = document.createElement('canvas').getContext('2d');
+      c.font = getComputedStyle(s).font; return [Math.round(c.measureText(s.options[s.selectedIndex].text).width), Math.round(s.getBoundingClientRect().width)]; }"""
+    for locale in ('en-US', 'he-IL', 'es-ES'):
+        ctx, pg = open_page(b, f'first-{locale}', locale, 375, 812)
+        pg.wait_for_selector('.learn .stepper'); time.sleep(0.8)
+        r.check(pg.locator('.guide').count() == 1 and not pg.evaluate(UNDER_TABS), f'first visit, {locale}, 375x812: nothing to tap under the tab bar', str(pg.evaluate(UNDER_TABS)))
+        text, width = pg.evaluate(PICKER)
+        r.check(text + 40 <= width, f'first visit, {locale}: the line picker shows the whole name', f'{text}px of text in {width}px')
+        r.shot(pg, f'first-{locale}')
+        ctx.close()
     for tag, locale, w, h in [('touch-he', 'he-IL', 375, 667), ('touch-en', 'en-US', 360, 740)]:
         ctx, pg = open_page(b, tag, locale, w, h)
         pg.evaluate(SEED_JS, 235); pg.reload(); pg.wait_for_selector('.tabs')

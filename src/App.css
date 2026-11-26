@@ -535,6 +535,7 @@ aside {
 .today button { border-radius: 999px; padding: 7px 14px; font-size: 13px; }
 
 .guide { margin-bottom: 14px; border-color: rgba(95, 179, 107, 0.4); }
+.guide-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .guide ol { margin: 8px 0 10px; padding-inline-start: 22px; color: var(--text-2); font-size: 14px; line-height: 1.8; }
 .guide ol b { color: var(--text); }
 .guide li::marker { color: var(--accent); font-weight: 700; }
@@ -1133,9 +1134,10 @@ aside {
   .learn-header .chips { flex-wrap: nowrap; overflow-x: auto; width: 100%; scrollbar-width: none; }
   .learn-header .chips::-webkit-scrollbar { display: none; }
   .learn-header .chip { flex: none; }
-  .learn-header select { flex: 1; width: auto; min-width: 0; }
+  /* the line picker on a row of its own: a line's name is long ("Main line vs ...d5 and ...c5") */
+  .learn-header select { flex: 1 1 100%; order: 1; width: 100%; min-width: 0; text-overflow: ellipsis; }
   .guide { padding: 10px 12px; margin-bottom: 8px; }
-  .guide ol { margin: 4px 0 6px; font-size: 13px; line-height: 1.55; }
+  .guide ol { margin: 4px 0 0; font-size: 13px; line-height: 1.5; }
   .learn-move { min-height: 0; }
   .learn-move-head strong { font-size: 16px; }
   .learn-move p { font-size: 14px; }
@@ -1347,7 +1349,9 @@ button.progress-pill { border: none; cursor: pointer; font: inherit; }
   .game-review-title .game-review-info { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   /* the board gives up a little height so the whole coach card fits above the tab bar; svh: it does not change
      size when the browser's own bars come and go */
-  .learn .board-wrap { width: min(100%, max(300px, calc(100svh - 344px))); } /* the start of the explanation stays in view */
+  /* the room below the board's top (--fit-h, from useFitBoard, so a card above it such as the first-visit guide counts)
+     minus the tab bar, the step buttons and the start of the explanation: nothing to tap ends up under the tab bar */
+  .learn .board-wrap { width: min(100%, max(264px, calc(var(--fit-h, 100svh) - var(--tabbar-h) - env(safe-area-inset-bottom) - 96px))); }
   .game-review .board-wrap { width: min(100%, max(292px, calc(100svh - 334px - env(safe-area-inset-bottom)))); }
 }
 

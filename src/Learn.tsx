@@ -183,14 +183,17 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
     <div className="learn">
       {showGuide && (
         <div className="card guide">
-          <strong>{tr('How to learn here')}</strong>
+          {/* "Got it" beside the title: on a phone the board and its step buttons still fit above the tab bar */}
+          <div className="guide-head">
+            <strong>{tr('How to learn here')}</strong>
+            <button className="ghost small" onClick={() => setGuideDismissed(true)}>{tr('Got it')}</button>
+          </div>
           <ol>
             <li><b>{tr('Learn')}</b> — {tr('step through a line move by move and read why each move is played.')}</li>
             <li><b>{tr('Test me')}</b> — {tr('play the line yourself until there are no mistakes (✓).')}</li>
             <li><b>{tr('Play')}</b> — {tr('train against the computer; every step off the line is stopped and corrected.')}</li>
             <li><b>{tr('Review')}</b> — {tr('a few minutes a day on the positions you got wrong.')}</li>
           </ol>
-          <button className="ghost small" onClick={() => setGuideDismissed(true)}>{tr('Got it')}</button>
         </div>
       )}
 
