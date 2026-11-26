@@ -52,6 +52,8 @@ assert.equal(matchRepertoire('Scandinavian Defense Mieses Kotrc Variation', 'b')
 assert.equal(matchRepertoire('Scandinavian Defense', 'w'), 'italian'); // as White it is still the 1.e4 repertoire
 assert.equal(matchRepertoire('French Defense Advance Variation', 'b'), 'french');
 assert.equal(matchRepertoire('French Defense Advance Variation', 'w'), 'italian');
+assert.equal(matchRepertoire('Kings Indian Defense Classical Variation', 'b'), 'kid');
+assert.equal(matchRepertoire('Kings Indian Attack', 'b'), undefined); // the French repertoire answers 2.d3, by its own name
 // 1...e5 as Black: its openings, not the Two Knights or the Petrov
 assert.equal(matchRepertoire('Ruy Lopez Opening Morphy Defense', 'b'), 'e5');
 assert.equal(matchRepertoire('Italian Game Giuoco Pianissimo', 'b'), 'e5');
@@ -122,7 +124,7 @@ const dv = findDeviations(
     game('1. c4 e5 1-0', 'b', 5), // another first move: not a branch
     game('1. d4 d5 2. c4 c6 3. Nf3 Nf6 1-0', 'b', 6), // follows the Slav: nothing to report
     game('1. e4 e5 2. Nf3 Nc6 1-0', 'b', 7), // Black's own first move is another opening (1...e5), not leaving the Caro-Kann
-    game('1. d4 Nf6 2. c4 e6 1-0', 'b', 8), // same against 1.d4
+    game('1. d4 f5 2. c4 Nf6 1-0', 'b', 8), // same against 1.d4 (no repertoire starts with 1...f5)
   ],
   REPERTOIRES,
 );
