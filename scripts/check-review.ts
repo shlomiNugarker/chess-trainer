@@ -48,6 +48,8 @@ assert.equal(matchRepertoire('Owens Defense', 'w'), 'italian');
 assert.equal(matchRepertoire('Queens Gambit Declined Exchange Variation', 'w'), 'qg');
 assert.equal(matchRepertoire('Slav Defense', 'w'), 'qg');
 assert.equal(matchRepertoire('Queens Gambit Accepted', 'b'), 'qga'); // as Black it is still the QGA repertoire
+assert.equal(matchRepertoire('Scandinavian Defense Mieses Kotrc Variation', 'b'), 'scandinavian');
+assert.equal(matchRepertoire('Scandinavian Defense', 'w'), 'italian'); // as White it is still the 1.e4 repertoire
 // 1...e5 as Black: its openings, not the Two Knights or the Petrov
 assert.equal(matchRepertoire('Ruy Lopez Opening Morphy Defense', 'b'), 'e5');
 assert.equal(matchRepertoire('Italian Game Giuoco Pianissimo', 'b'), 'e5');
