@@ -312,7 +312,9 @@ with sync_playwright() as p:
         tab(1); pg.keyboard.press('ArrowRight'); wait(300)
         r.check('1.' in pg.inner_text('.learn-move-head'), 'arrow keys step the line when nothing is open', pg.inner_text('.learn-move-head')[:20])
         roles = pg.evaluate("[...document.querySelectorAll('[role=tablist]')].map(l => [...l.children].every(c => c.getAttribute('role') === 'tab'))")
-        r.check(all(roles) and pg.locator('.learn-header .chip[aria-pressed=true]').count() == 1, 'every tab list holds only tabs; the chosen chip says so', str(roles))
+        pg.click('.opening-btn')
+        r.check(all(roles) and pg.locator('.pick-sheet .sheet-row[aria-current=true]').count() == 1, 'every tab list holds only tabs; the opening list marks the one studied', str(roles))
+        pg.keyboard.press('Escape'); wait(300)
 
     if not a.only or 'engine' in a.only:
         # searches that are not needed any more do not hold up the next one (a coach that takes 4 seconds)

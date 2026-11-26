@@ -186,8 +186,10 @@ input[type='range'] { accent-color: var(--accent); width: 100%; direction: ltr; 
 
 .tab-icon { font-size: 15px; opacity: 0.85; }
 
-/* the language switch sits at the end of the tabs, set slightly apart */
+/* the account / settings button sits at the end of the tabs, set slightly apart */
 .lang-switch { margin-inline-start: 6px; box-shadow: inset 0 0 0 1px var(--border); }
+.tab { position: relative; }
+.badge.badge-dot { min-width: 8px; width: 8px; height: 8px; padding: 0; }
 
 .badge {
   min-width: 18px;
@@ -557,6 +559,60 @@ aside {
 }
 
 .learn-header select { min-width: 240px; padding: 9px 12px; }
+
+/* the opening and the line: a button each, the list opens in a sheet */
+.picker-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 280px;
+  padding: 9px 12px;
+  text-align: start;
+}
+.picker-btn-label { flex: none; color: var(--text-3); font-size: 12px; font-weight: 600; }
+.picker-btn-value { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.picker-btn-meta { flex: none; color: var(--text-3); font-size: 12px; font-variant-numeric: tabular-nums; }
+.picker-btn-meta.progress-pill { padding: 1px 8px; border-radius: 999px; color: var(--accent); }
+.picker-btn-arrow { flex: none; color: var(--text-3); font-size: 12px; }
+
+/* the sheets that list the openings and the lines */
+.pick-sheet {
+  position: fixed;
+  z-index: 61;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(520px, calc(100vw - 32px));
+  max-height: min(720px, calc(100dvh - 64px));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+.pick-sheet-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 14px; }
+.pick-sheet-body > p { margin: 0; font-size: 13px; }
+.sheet-group { display: flex; flex-direction: column; gap: 4px; }
+.sheet-group .picker-label { min-width: 0; margin-bottom: 2px; }
+.sheet-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  text-align: start;
+  background: var(--surface-2);
+}
+.sheet-row.active { box-shadow: inset 0 0 0 2px var(--accent); }
+.sheet-row-name { min-width: 0; font-weight: 600; }
+.sheet-row-meta { flex: none; color: var(--text-3); font-size: 13px; font-variant-numeric: tabular-nums; }
+.sheet-row-meta.all { color: var(--accent); }
+.sheet-line { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.sheet-line .hardest { font-size: 13px; padding-inline-start: 12px; }
+.sheet-foot { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
+.sheet-foot button { text-align: start; }
+.sheet-wide { width: 100%; }
 
 .learn-move { display: flex; flex-direction: column; gap: 6px; min-height: 112px; }
 .learn-move-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -1137,17 +1193,29 @@ aside {
 
   /* learn */
   .learn-header { gap: 8px; margin-bottom: 8px; }
-  .learn-header .chips { flex-wrap: nowrap; overflow-x: auto; width: 100%; scrollbar-width: none; }
-  .learn-header .chips::-webkit-scrollbar { display: none; }
-  .learn-header .chip { flex: none; }
   /* the line picker on a row of its own: a line's name is long ("Main line vs ...d5 and ...c5") */
-  .learn-header select { flex: 1 1 100%; order: 1; width: 100%; min-width: 0; text-overflow: ellipsis; }
+  .learn-header { flex-direction: column; align-items: stretch; gap: 6px; }
+  .picker-btn { flex: none; padding: 8px 12px; }
+  .pick-sheet {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transform: none;
+    width: auto;
+    max-height: 85dvh;
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    padding-bottom: calc(18px + env(safe-area-inset-bottom));
+    animation: sheet-up 0.2s ease-out;
+  }
   .guide { padding: 10px 12px; margin-bottom: 8px; }
   .guide ol { margin: 4px 0 0; font-size: 13px; line-height: 1.5; }
   .learn-move { min-height: 0; }
   .learn-move-head strong { font-size: 16px; }
   .learn-move p { font-size: 14px; }
   .stepper { order: -1; } /* the step buttons right under the board, so stepping never needs scrolling */
+  .learn aside > .actions { order: -1; } /* and "Test me" / "Play this opening" under them, before the note */
+  .badge.badge-dot { top: 6px; min-width: 8px; height: 8px; padding: 0; }
   .stepper button { min-height: 48px; }
   .actions.actions-2 button { flex-direction: row; min-height: 46px; font-size: 13px; }
   .coach { --coach-h: 172px; padding: 0; }
@@ -1300,19 +1368,10 @@ aside {
 
 /* Learn: success per line */
 button.progress-pill { border: none; cursor: pointer; font: inherit; }
-.line-stats { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
-.line-stats h3 { font-size: 15px; }
-.line-stats ul { list-style: none; display: flex; flex-direction: column; gap: 8px; padding: 0; margin: 0; }
-.line-stats li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
-.line-stats li:last-child { border-bottom: none; padding-bottom: 0; }
-.line-stats-name { background: none; border: none; padding: 0; color: var(--text); font: inherit; font-weight: 600; text-align: start; cursor: pointer; }
-.line-stats-name:hover { text-decoration: underline; }
-.line-stats .rate { font-size: 13px; font-variant-numeric: tabular-nums; }
-.line-stats .rate.good { color: var(--accent); }
-.line-stats .rate.mid { color: #e0a85f; }
-.line-stats .rate.low { color: #e06c5f; }
-.line-stats .hardest { font-size: 13px; }
-.line-stats > p { font-size: 12px; }
+.rate { font-size: 13px; font-variant-numeric: tabular-nums; }
+.rate.good { color: var(--accent); }
+.rate.mid { color: #e0a85f; }
+.rate.low { color: #e06c5f; }
 
 .account-foot { font-size: 12px; margin-top: -4px; }
 

@@ -5,7 +5,8 @@ import Practice, { type PracticeView } from './Practice';
 import Learn from './Learn';
 import { todaysMistakes, useMistakeCount } from './mistakes';
 import { useStored, writeStored } from './storage';
-import { dir, tr, useLang } from './i18n';
+import { dir, msg, tr, useLang } from './i18n';
+import { DAILY_GOAL, todayCount } from './daily';
 import Account from './Account';
 import Privacy from './Privacy';
 import { useCloud } from './cloud';
@@ -41,11 +42,14 @@ export default function App() {
     return () => window.removeEventListener(ENGINE_STATUS, onStatus);
   }, []);
 
-  const tabs: { id: Screen; label: string; icon: string; badge?: number }[] = [
+  // today's puzzles not done yet: a dot on Practice (the number there is for positions to review)
+  const puzzlesLeft = todayCount() < DAILY_GOAL;
+
+  const tabs: { id: Screen; label: string; icon: string; badge?: number; dot?: boolean }[] = [
     // Learn is the home screen, so it comes first
     { id: 'learn', label: tr('Learn'), icon: '📖' },
     { id: 'play', label: tr('Play'), icon: '♟' },
-    { id: 'drill', label: tr('Practice'), icon: '🧩', badge: due },
+    { id: 'drill', label: tr('Practice'), icon: '🧩', badge: due, dot: puzzlesLeft },
     { id: 'review', label: tr('My games'), icon: '▦' },
   ];
 
@@ -71,7 +75,7 @@ export default function App() {
             >
               <span className="tab-icon" aria-hidden>{t.icon}</span>
               <span className="tab-label">{t.label}</span>
-              {!!t.badge && <span className="badge">{t.badge}</span>}
+              {t.badge ? <span className="badge">{t.badge}</span> : t.dot && <span className="badge badge-dot" title={tr(msg`Puzzles ${`${todayCount()}/${DAILY_GOAL}`}`)} />}
             </button>
           ))}
           </div>
@@ -120,7 +124,6 @@ export default function App() {
             goTo('play');
           }}
           onDrill={() => openPractice('mistakes')}
-          onPuzzles={() => openPractice('puzzles')}
         />
       )}
       {screen === 'drill' && <Practice view={practiceView} onView={setPracticeView} due={due} />}

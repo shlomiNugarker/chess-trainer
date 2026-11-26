@@ -6,7 +6,7 @@ positions and screens (`states`).
 """
 import json, re, time
 from playwright.sync_api import sync_playwright
-from common import Report, args, lines, wait_until
+from common import Report, args, lines, manage_openings, wait_until
 
 a = args('Play screen QA')
 r = Report('play')
@@ -182,9 +182,9 @@ with sync_playwright() as p:
             # an opening hidden in Learn (the one Play had selected) does not restart a regular game
             move(pg2, 'h2h3'); before = placement(pg2)
             first = json.loads(pg2.evaluate("localStorage.getItem('chess-trainer:repertoire')") or 'null')
-            idx = [x['id'] for x in data].index(first) if first else 0
+            rid = first or data[0]['id']
             pg2.click('.tabs .tab:has-text("Learn")')
-            pg2.click('.manage-chip'); pg2.locator('.manage-row input[type="checkbox"]').nth(idx).click(); pg2.wait_for_timeout(500)
+            manage_openings(pg2); pg2.locator(f'.manage-row[data-rep="{rid}"] input').click(); pg2.wait_for_timeout(500); pg2.keyboard.press('Escape')
             r.check(len(json.loads(pg2.evaluate("localStorage.getItem('chess-trainer:hidden-repertoires')") or '[]')) == 1, 'an opening is hidden in Learn')
             pg2.click('.tabs .tab:has-text("Play")'); pg2.wait_for_timeout(1000)
             r.check(placement(pg2) == before, 'hiding an opening does not restart a regular game', f'{before} -> {placement(pg2)}')

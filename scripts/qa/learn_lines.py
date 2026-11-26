@@ -4,7 +4,7 @@
 """
 import time
 from playwright.sync_api import sync_playwright
-from common import Report, args, lines
+from common import Report, args, lines, open_opening, pick_line
 
 a = args('Test me on every repertoire line')
 r = Report('learn_lines')
@@ -22,12 +22,12 @@ with sync_playwright() as p:
 
     for ri, rep in enumerate(data):
         if a.only and rep['id'] not in a.only: continue
-        pg.locator('.learn-header .chips button.chip:not(.manage-chip)').nth(ri).click()
+        open_opening(pg, rep['id'])
         user_parity = 0 if rep['color'] == 'w' else 1
         for line in rep['lines']:
             n, detail = len(line['uci']), ''
             try:
-                pg.select_option('select[aria-label="Line"]', str(line['i']))
+                pick_line(pg, line['i'])
                 pg.locator('.actions button:has-text("Test me on this line")').click()
                 time.sleep(0.8)  # the board animates back to the start position
                 for k, u in enumerate(line['uci']):

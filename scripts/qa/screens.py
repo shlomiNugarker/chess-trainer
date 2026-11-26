@@ -8,7 +8,8 @@ so by default it is checked on the live site.
 """
 import json, os, pathlib, re, sys, time
 from playwright.sync_api import sync_playwright
-from common import LIVE, SHOTS, Report, args, hscroll, lines, puzzles_by_board, wait_until
+from common import (LIVE, SHOTS, Report, args, current_line, hscroll, line_names, lines, manage_openings, open_opening, pick_line,
+                    puzzles_by_board, shown_openings, wait_until)
 
 
 def extra(p):
@@ -78,53 +79,57 @@ def tour(pg, tag):
 
 @section('learn')
 def learn(pg):
-    chips = lambda: pg.locator('.learn-header .chips button.chip:not(.manage-chip)').count()
+    london = data[0]['id']
     pg.click('.tabs .tab:has-text("Learn")')
     if pg.locator('button:has-text("Got it")').count(): pg.click('button:has-text("Got it")')
-    pg.locator('.learn-header .chips button.chip:not(.manage-chip)').nth(0).click()
+    open_opening(pg, london)
+    r.check(pg.locator('.pick-sheet').count() == 0 and london in pg.evaluate("localStorage.getItem('chess-trainer:learn-repertoire')"), 'a row of the opening list opens it and closes the list')
     for _ in range(3): pg.click('.stepper button:has-text("Next")')
     r.check('2.Bf4' in text(pg, '.learn-move-head'), 'stepper: three times Next shows 2.Bf4')
     pg.click('.stepper button[aria-label="To the end"]')
     r.check('End of the line.' in pg.locator('.learn').inner_text(), 'stepper: to the end')
     pg.click('.stepper button[aria-label="To the start"]')
-    # per-line stats
-    pg.click('.progress-pill'); time.sleep(0.3)
-    r.check(pg.locator('.line-stats-name').count() == len(data[0]['lines']), 'line stats list every line')
-    pg.locator('.line-stats-name').nth(2).click(); time.sleep(0.3)
-    r.check(pg.locator('select[aria-label="Line"]').input_value() == '2', 'a line in the stats opens it')
-    pg.click('.progress-pill')
+    # the line list: every line with its test record; a tap opens the line
+    r.check(len(line_names(pg)) == len(data[0]['lines']), 'the line list has every line')
+    pg.click('.line-btn')
+    r.check(pg.locator('.pick-sheet .sheet-row .sheet-row-meta').count() == len(data[0]['lines']), 'and the test record of each')
+    pg.locator('.pick-sheet .sheet-row').nth(2).click(); time.sleep(0.3)
+    r.check(current_line(pg) == 2 and pg.locator('.pick-sheet').count() == 0, 'a line in the list opens it')
     # hide / show openings
-    before = chips()
-    pg.click('.manage-chip'); rows = pg.locator('.manage-row input[type="checkbox"]')
-    rows.nth(0).uncheck(); rows.nth(2).uncheck()
-    r.check(chips() == before - 2, 'hiding two openings removes their chips')
+    before = shown_openings(pg)
+    r.check(before == len(data), 'the opening list has every opening', str(before))
+    manage_openings(pg)
+    rows = lambda: pg.locator('.manage-row input[type="checkbox"]')
+    rows().nth(0).uncheck(); rows().nth(2).uncheck()
+    r.check(shown_openings(pg) == before - 2, 'hiding two openings takes them off the list')
     pg.click('.tabs .tab:has-text("Play")')
     opts = pg.locator('.controls select').nth(1).locator('option').all_inner_texts()
     r.check(len(opts) == before - 2, 'hidden openings leave the Play picker', str(opts))
     pg.click('.tabs .tab:has-text("Learn")')
-    if not pg.locator('.manage-card').count(): pg.click('.manage-chip')
-    rows = pg.locator('.manage-row input[type="checkbox"]')
-    for i in range(rows.count() - 1): rows.nth(i).uncheck()
-    r.check(chips() == 1 and rows.nth(rows.count() - 1).is_disabled(), 'the last shown opening cannot be hidden')
-    for i in range(rows.count()): rows.nth(i).check()
-    r.check(chips() == before, 'all openings shown again')
-    pg.click('.manage-chip')
-    # PGN import: a new opponent move in the London (2...a6), a contradicting one, then remove the branch
-    pg.locator('.learn-header .chips button.chip:not(.manage-chip)').nth(0).click()
-    n_lines = pg.locator('select[aria-label="Line"] option').count()
-    pg.click('.import-link'); pg.fill('.import-card textarea', '1. d4 d5 2. Bf4 a6 3. e3 Nf6 4. Nf3')
+    manage_openings(pg)
+    for i in range(rows().count() - 1): rows().nth(i).uncheck()
+    last_disabled = rows().nth(rows().count() - 1).is_disabled()
+    r.check(shown_openings(pg) == 1 and last_disabled, 'the last shown opening cannot be hidden')
+    manage_openings(pg)
+    for i in range(rows().count()): rows().nth(i).check()
+    r.check(shown_openings(pg) == before, 'all openings shown again')
+    # PGN import (from the opening list): a new opponent move in the London (2...a6), a contradicting one, then remove the branch
+    open_opening(pg, london)
+    n_lines = len(line_names(pg))
+    pg.click('.opening-btn'); pg.click('.pick-sheet .import-link')
+    pg.fill('.import-card textarea', '1. d4 d5 2. Bf4 a6 3. e3 Nf6 4. Nf3')
     pg.click('.import-card button.primary'); time.sleep(0.5)
-    opts = pg.locator('select[aria-label="Line"] option').all_inner_texts()
-    star = [i for i, o in enumerate(opts) if '★' in o]
-    r.check(len(opts) == n_lines + 1 and star, 'PGN import adds a ★ branch', text(pg, '.import-results'))
+    names = line_names(pg)
+    star = [i for i, o in enumerate(names) if '★' in o]
+    r.check(len(names) == n_lines + 1 and star, 'PGN import adds a ★ branch', text(pg, '.import-results'))
     pg.fill('.import-card textarea', '1. d4 d5 2. c4')
     pg.click('.import-card button.primary'); time.sleep(0.5)
     r.check('2.Bf4' in text(pg, '.import-results'), 'an import that contradicts the repertoire is refused', text(pg, '.import-results'))
     if star:
-        pg.select_option('select[aria-label="Line"]', index=star[0])
+        pick_line(pg, star[0])
         pg.click('.remove-branch'); time.sleep(0.5)
-        r.check(pg.locator('select[aria-label="Line"] option').count() == n_lines, 'the branch can be removed')
-    pg.click('.import-link')
+        r.check(len(line_names(pg)) == n_lines, 'the branch can be removed')
+    pg.click('.import-card button.ghost')
 
 
 @section('puzzles')
@@ -285,7 +290,7 @@ def review(pg):
         added = text(pg, '.branch-added')
         r.check('Branch added' in added, 'add a branch (Stockfish answer)', added[:120])
         pg.locator('.branch-added button, .branch-added a').first.click(); time.sleep(1)
-        r.check('★' in text(pg, 'select[aria-label="Line"] option:checked'), '"Learn it" opens the new branch in Learn')
+        r.check('★' in text(pg, '.line-btn .picker-btn-value'), '"Learn it" opens the new branch in Learn')
         pg.click('.tabs .tab:has-text("My games")')
     pr = pg.locator('.branches-card button:has-text("Practice")')
     if pr.count():
@@ -446,7 +451,7 @@ def phone(b):
         r.check(pg.locator('.controls.open').count() == 1 and hscroll(pg) <= 0, f'{tag}: Play settings sheet')
         r.shot(pg, f'{tag}-sheet')
         pg.click('.sheet-done'); time.sleep(0.3)
-        tab(pg, 1); pg.locator('.learn-header .chips button.chip:not(.manage-chip)').nth(data.index(SICILIAN)).click()
+        tab(pg, 1); open_opening(pg, SICILIAN['id'])
         pg.locator('.actions button').filter(has_text='🎯').first.click(); time.sleep(0.8)
         try:
             for k, u in enumerate(line):
@@ -483,8 +488,8 @@ def touch(b):
       return [...document.querySelectorAll('.learn button, .learn select, .learn a')].filter(e => e.offsetParent)
         .map(e => [e.className || e.tagName, e.getBoundingClientRect()]).filter(([, r]) => r.top < t - 0.5 && r.bottom > t + 0.5)
         .map(([c, r]) => `${c}:${Math.round(r.top)}-${Math.round(r.bottom)}`); }"""
-    PICKER = """() => { const s = document.querySelector('.learn-header select'), c = document.createElement('canvas').getContext('2d');
-      c.font = getComputedStyle(s).font; return [Math.round(c.measureText(s.options[s.selectedIndex].text).width), Math.round(s.getBoundingClientRect().width)]; }"""
+    # the opening and line buttons: their name is cut with an ellipsis only when it does not fit
+    PICKER = """() => [...document.querySelectorAll('.picker-btn-value')].map(e => [e.scrollWidth, e.clientWidth])"""
     # the very first visit: which openings do you play? Only those are shown; "Show all" keeps every one
     for locale, pick in (('en-US', True), ('he-IL', False)):
         ctx = b.new_context(locale=locale, viewport={'width': 375, 'height': 812}, is_mobile=True, has_touch=True, first_visit=True)
@@ -496,11 +501,12 @@ def touch(b):
         if pick:
             pg.locator('.opening-picker .chip').nth(0).click(); pg.locator('.opening-picker .chip').nth(4).click()
             pg.click('.opening-picker button.primary'); time.sleep(0.5)
-            chips = pg.locator('.learn-header .chips button.chip:not(.manage-chip)').count()
+            pg.wait_for_selector('.opening-btn'); chips = shown_openings(pg)
             r.check(pg.locator('.opening-picker').count() == 0 and chips == 2 and pg.locator('.guide').count() == 1, f'first visit, {locale}: only the two chosen openings, then the guide', str(chips))
         else:
             pg.click('.opening-picker button.ghost'); time.sleep(0.5)
-            r.check(pg.locator('.learn-header .chips button.chip:not(.manage-chip)').count() == len(data), f'first visit, {locale}: "Show all" keeps every opening')
+            pg.wait_for_selector('.opening-btn')
+            r.check(shown_openings(pg) == len(data), f'first visit, {locale}: "Show all" keeps every opening')
         pg.reload(); pg.wait_for_selector('.learn .stepper')
         r.check(pg.locator('.opening-picker').count() == 0, f'first visit, {locale}: asked once')
         ctx.close()
@@ -508,8 +514,8 @@ def touch(b):
         ctx, pg = open_page(b, f'first-{locale}', locale, 375, 812)
         pg.wait_for_selector('.learn .stepper'); time.sleep(0.8)
         r.check(pg.locator('.guide').count() == 1 and not pg.evaluate(UNDER_TABS), f'first visit, {locale}, 375x812: nothing to tap under the tab bar', str(pg.evaluate(UNDER_TABS)))
-        text, width = pg.evaluate(PICKER)
-        r.check(text + 40 <= width, f'first visit, {locale}: the line picker shows the whole name', f'{text}px of text in {width}px')
+        sizes = pg.evaluate(PICKER)
+        r.check(sizes[0][0] <= sizes[0][1], f'first visit, {locale}: the opening button shows the whole name', str(sizes))
         r.shot(pg, f'first-{locale}')
         ctx.close()
     for tag, locale, w, h in [('touch-he', 'he-IL', 375, 667), ('touch-en', 'en-US', 360, 740)]:
@@ -531,11 +537,11 @@ def touch(b):
         r.check(end + 40 <= bar, f'{tag}: Learn shows the step buttons and the start of the explanation without scrolling', f'{end:.0f} / {bar:.0f}')
 
         # hidden openings leave the practice and come back
-        pg.click('.manage-chip'); box = pg.locator('.manage-row input[type="checkbox"]').nth([x['id'] for x in data].index('london'))
+        manage_openings(pg); box = pg.locator('.manage-row[data-rep="london"] input')
         time.sleep(0.3)
         small = pg.evaluate(SMALL_JS)
         r.check(not small, f'{tag}: the list of openings has no row too small for a finger', f'{len(small)}: {sorted(set(small))[:6]}')
-        box.uncheck(); time.sleep(0.5)
+        box.uncheck(); time.sleep(0.5); pg.keyboard.press('Escape'); time.sleep(0.3)
         r.check(pg.evaluate("document.querySelector('.today').innerText.includes('20')"), f'{tag}: also in "today"', pg.locator('.today').inner_text()[:60].replace('\n', ' '))
         tab(pg, 0); time.sleep(0.5)
         r.check(re.search(r'220', pg.locator('.trainer aside').inner_text()) is not None, f'{tag}: and in Play')
@@ -550,8 +556,7 @@ def touch(b):
         r.check(pg.locator('.drill-empty').count() == 1 and '15' in pg.locator('.drill-empty').inner_text() and pg.locator('.drill-empty p').count() == 1, f'{tag}: only hidden ones left: the empty screen says so',
                 pg.locator('.drill-empty').inner_text()[:120].replace('\n', ' ') if pg.locator('.drill-empty').count() else 'not empty')
         tab(pg, 1); time.sleep(0.5)
-        if not pg.locator('.manage-card').count(): pg.click('.manage-chip')
-        pg.locator('.manage-row input[type="checkbox"]').nth([x['id'] for x in data].index('london')).check(); time.sleep(0.5)
+        manage_openings(pg); pg.locator('.manage-row[data-rep="london"] input').check(); time.sleep(0.5); pg.keyboard.press('Escape')
         r.check(badge() == 15, f'{tag}: showing the opening brings them back', str(badge()))
 
         # account panel
@@ -679,7 +684,7 @@ def offline(b):
     tab(pg, 3); pg.click('.segmented button:has-text("Puzzles")'); time.sleep(3)
     r.check(pg.locator('.puzzle-rating').count() == 1 and pg.locator('.board [data-piece]').count() > 0, 'offline: puzzles')
     tab(pg, 1)
-    r.check(pg.locator('.learn-header .chips button.chip').count() > 1, 'offline: Learn')
+    r.check(shown_openings(pg) > 1, 'offline: Learn')
     ctx.close()
 
 

@@ -4,13 +4,12 @@ import { Chessboard, type Arrow } from 'react-chessboard';
 import { explanationsNote, movesOf, REPERTOIRES, lineMoves, lineText, moveLabel, posKey, repName } from './repertoire';
 import { importPgn, removeCustomLine, useRepertoire, type ImportResult } from './customLines';
 import { hasExplanations, msg, tr, useLang } from './i18n';
-import { loadMistakes, saveMistake, todaysMistakes, useMistakeCount } from './mistakes';
+import { saveMistake, todaysMistakes, useMistakeCount } from './mistakes';
 import { dialogOpen } from './useDialog';
-import { lineStats } from './lineStats';
 import { BLUE_ARROW, BOARD_THEME, GREEN_ARROW, LAST_MOVE, WRONG_MOVE, ltr, uciToArrow } from './chessUtils';
 import { useClickToMove } from './useClickToMove';
 import { playSound, useMoveSound } from './sound';
-import { DAILY_GOAL, dayStreak, daysPlayed, todayCount, daysLabel } from './daily';
+import { dayStreak, daysPlayed, daysLabel } from './daily';
 import { useScrollToMove } from './useScrollToMove';
 import { useFitBoard } from './useFitBoard';
 import { useSidePanel } from './useSidePanel';
@@ -19,6 +18,7 @@ import { hasAnyMastery, hasMastered, isMastered, loadMastery, recordRun } from '
 import { InstallCard } from './InstallCard';
 import { setHidden, useHiddenRepertoires } from './hiddenReps';
 import { OpeningPicker } from './OpeningPicker';
+import { LineSheet, OpeningSheet } from './LearnSheets';
 
 const START = new Chess().fen();
 
@@ -29,14 +29,14 @@ type QuizState = { wrong?: { san: string; to: string; correctUci: string }; mist
  * Study a repertoire line move by move on a board, with the idea of the line and a note on key moves.
  * "Test me" replays the line: the user plays their side, the app plays the other.
  */
-type Props = { onTrain: (repertoireId: string) => void; onDrill: () => void; onPuzzles: () => void };
+type Props = { onTrain: (repertoireId: string) => void; onDrill: () => void };
 
 const dueCount = () => todaysMistakes().length;
 
-export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
+export default function Learn({ onTrain, onDrill }: Props) {
   const [storedRepId, setRepId] = useStored('learn-repertoire', REPERTOIRES[0].id);
   const { hidden, visible, toggle: toggleHidden } = useHiddenRepertoires();
-  const [manageOpen, setManageOpen] = useState(false);
+  const [sheet, setSheet] = useState<'opening' | 'line' | null>(null); // the opening or the line picker
   // a hidden repertoire is not studied here: fall back to the first one shown
   const repId = visible.some((r) => r.id === storedRepId) ? storedRepId : visible[0].id;
   const rep = useRepertoire(repId); // includes the branches added from your games
@@ -51,12 +51,9 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const mastery = useMemo(() => loadMastery(rep.id), [rep.id, masteryVersion]);
   const masteredCount = rep.lines.filter((l) => isMastered(mastery[l.id])).length;
-  const [statsOpen, setStatsOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [pgnText, setPgnText] = useState('');
   const [imported, setImported] = useState<ImportResult[]>([]);
-  // re-read after every test try too (each wrong move is saved as a mistake)
-  const stats = useMemo(() => (statsOpen ? lineStats(rep, mastery, loadMistakes()) : []), [statsOpen, rep, mastery, quiz]); // eslint-disable-line react-hooks/exhaustive-deps
   const [guideDismissed, setGuideDismissed] = useStored('guide-dismissed', false);
   const anyMastery = useMemo(hasAnyMastery, [masteryVersion]); // eslint-disable-line react-hooks/exhaustive-deps
   // a first visit asks which openings you play (once, on every device of the account: the answer syncs)
@@ -65,10 +62,9 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
   const showGuide = !guideDismissed && !anyMastery && !showPicker;
   // not before the app was of use: a line passed without a mistake, or puzzles on two days
   const offerInstall = useMemo(() => hasMastered() || daysPlayed() >= 2, [masteryVersion]); // eslint-disable-line react-hooks/exhaustive-deps
-  // "today": the one or two things worth doing now, one tap each
+  // "today": the streak and the positions to review, when there are any (the daily puzzles are on the Practice tab)
   const due = useMistakeCount(dueCount);
-  const [puzzlesToday, streakDays] = useMemo(() => [todayCount(), dayStreak()], []); // they change on another screen
-  const firstToLearn = rep.lines.findIndex((l) => !isMastered(mastery[l.id]));
+  const streakDays = useMemo(dayStreak, []); // it changes on another screen
   const nextToLearn = [...rep.lines.keys()]
     .map((k) => (lineIdx + 1 + k) % rep.lines.length)
     .find((i) => i !== lineIdx && !isMastered(mastery[rep.lines[i].id]));
@@ -87,6 +83,7 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
     setLineIdx(idx);
     setPly(atPly);
     setQuiz(null);
+    setSheet(null);
   };
 
   // arrow keys step through the line (not while testing)
@@ -183,16 +180,21 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
   const lastPly = ply - 1;
   const whose = (i: number) => (i % 2 === 0 ? 'w' : 'b') === rep.userColor;
 
-  return (
-    <div className="learn">
-      {showPicker && (
+  // the first visit: which openings do you play — the whole screen, before the board
+  if (showPicker)
+    return (
+      <div className="learn">
         <OpeningPicker
           onDone={(next) => {
             setHidden(next);
             setOpeningsChosen(true);
           }}
         />
-      )}
+      </div>
+    );
+
+  return (
+    <div className="learn">
 
       {showGuide && (
         <div className="card guide">
@@ -210,70 +212,37 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
         </div>
       )}
 
-      {!showGuide && !showPicker && !quiz && offerInstall && <InstallCard />}
+      {!showGuide && !quiz && offerInstall && <InstallCard />}
 
-      {!showGuide && !showPicker && !quiz && (
+      {!showGuide && !quiz && (streakDays > 0 || due > 0) && (
         <div className="today">
           <span className="today-title">{tr('Today')}</span>
           {streakDays > 0 && <span className="pill">🔥 {daysLabel(streakDays)}</span>}
           {due > 0 && (
             <button onClick={onDrill}>↻ {due === 1 ? tr('Review 1 position') : tr(msg`Review ${due} positions`)}</button>
           )}
-          <button onClick={onPuzzles} className={puzzlesToday >= DAILY_GOAL ? 'daily-btn done' : 'daily-btn'}>
-            🧩 {puzzlesToday >= DAILY_GOAL
-              ? tr(msg`${DAILY_GOAL} puzzles ✓`)
-              : tr(msg`Puzzles ${`${puzzlesToday}/${DAILY_GOAL}`}`)}
-          </button>
-          {firstToLearn === lineIdx ? (
-            <button className="primary" onClick={startQuiz}>🎯 {tr('Test me on this line')}</button>
-          ) : firstToLearn >= 0 ? (
-            <button className="primary" onClick={() => pickLine(rep.id, firstToLearn)}>
-              📖 {tr('Learn:')} {lineText(rep, rep.lines[firstToLearn]).name}
-            </button>
-          ) : (
-            <button className="primary" onClick={() => onTrain(rep.id)}>♟ {tr('All lines mastered — training game')}</button>
-          )}
         </div>
       )}
 
+      {/* what you study: the opening and its line, each one tap away (a list opens below) */}
       <header className="learn-header">
-        <div className="chips" role="group" aria-label={tr('Opening')}>
-          {visible.map((r) => (
-            <button
-              key={r.id}
-              className={r.id === rep.id ? 'chip active' : 'chip'}
-              aria-pressed={r.id === rep.id}
-              onClick={() => pickLine(r.id, 0)}
-            >
-              {repName(r)}
-            </button>
-          ))}
-          <button
-            className="chip manage-chip"
-            aria-expanded={manageOpen}
-            onClick={() => setManageOpen((o) => !o)}
-            title={tr('Choose which openings to show')}
-            aria-label={tr('Choose which openings to show') + (hidden.length ? ` (${tr(msg`${hidden.length} hidden`)})` : '')}
-          >
-            <span aria-hidden="true">⚙</span>{hidden.length ? ` ${tr(msg`${hidden.length} hidden`)}` : ''}
-          </button>
-        </div>
-        <button
-          className="pill progress-pill"
-          aria-expanded={statsOpen}
-          onClick={() => setStatsOpen((o) => !o)}
-          title={tr('Lines you passed in a test with no mistakes — tap for each line')}
-        >
-          {tr(msg`Mastered ${masteredCount} of ${rep.lines.length}`)} {statsOpen ? '▴' : '▾'}
+        <button className="picker-btn opening-btn" aria-haspopup="dialog" onClick={() => setSheet('opening')}>
+          <span className="picker-btn-label">{tr('Opening')}</span>
+          <span className="picker-btn-value">{repName(rep)}</span>
+          <span className="picker-btn-meta progress-pill" title={tr('Lines you passed in a test with no mistakes')}>
+            ✓ {masteredCount}/{rep.lines.length}
+          </span>
+          <span className="picker-btn-arrow" aria-hidden>▾</span>
         </button>
-        <select value={lineIdx} onChange={(e) => pickLine(rep.id, Number(e.target.value))} aria-label={tr('Line')}>
-          {rep.lines.map((l, i) => (
-            <option key={i} value={i}>
-              {isMastered(mastery[l.id]) ? '✓ ' : ''}
-              {lineText(rep, l).name} ({Math.ceil(l.moves.split(/\s+/).length / 2)} {tr('moves')})
-            </option>
-          ))}
-        </select>
+        <button className="picker-btn line-btn" aria-haspopup="dialog" onClick={() => setSheet('line')}>
+          <span className="picker-btn-label">{tr('Line')}</span>
+          <span className="picker-btn-value">
+            {isMastered(mastery[line.id]) ? '✓ ' : ''}
+            {text.name}
+          </span>
+          <span className="picker-btn-meta">{lineIdx + 1}/{rep.lines.length}</span>
+          <span className="picker-btn-arrow" aria-hidden>▾</span>
+        </button>
         {line.custom && (
           <button
             className="link remove-branch"
@@ -285,33 +254,23 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
             {tr('Remove this branch')}
           </button>
         )}
-        <button className="link import-link" aria-expanded={importOpen} onClick={() => setImportOpen((o) => !o)}>
-          ＋ {tr('Add your opening (PGN)')}
-        </button>
       </header>
 
-      {manageOpen && (
-        <section className="card manage-card">
-          <h3>{tr('Which openings to show')}</h3>
-          <p className="muted">
-            {tr('A hidden opening doesn’t appear here, in the training opening picker or in My mistakes. Nothing is deleted — you can show it again any time.')}
-          </p>
-          {REPERTOIRES.map((r) => {
-            const shown = !hidden.includes(r.id);
-            return (
-              <label key={r.id} className="manage-row">
-                <input
-                  type="checkbox"
-                  checked={shown}
-                  disabled={shown && visible.length === 1}
-                  onChange={() => toggleHidden(r.id)}
-                />
-                {repName(r)}
-              </label>
-            );
-          })}
-        </section>
+      {sheet === 'opening' && (
+        <OpeningSheet
+          current={rep.id}
+          hidden={hidden}
+          visible={visible}
+          onPick={(id) => pickLine(id, 0)}
+          onToggle={toggleHidden}
+          onImport={() => {
+            setSheet(null);
+            setImportOpen(true);
+          }}
+          onClose={() => setSheet(null)}
+        />
       )}
+      {sheet === 'line' && <LineSheet rep={rep} current={lineIdx} onPick={(i, at) => pickLine(rep.id, i, at)} onClose={() => setSheet(null)} />}
 
       {importOpen && (
         <section className="card import-card">
@@ -332,6 +291,7 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
             >
               {tr('Import')}
             </button>
+            <button className="ghost" onClick={() => setImportOpen(false)}>{tr('Close')}</button>
           </div>
           {imported.length > 0 && (
             <ul className="import-results">
@@ -340,40 +300,6 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
               ))}
             </ul>
           )}
-        </section>
-      )}
-
-      {statsOpen && (
-        <section className="card line-stats">
-          <h3>{tr('How each line is going')}</h3>
-          <ul>
-            {rep.lines.map((l, i) => {
-              const st = stats[i];
-              if (!st) return null;
-              return (
-                <li key={l.id}>
-                  <button className="line-stats-name" onClick={() => pickLine(rep.id, i)}>
-                    {isMastered(mastery[l.id]) ? '✓ ' : ''}
-                    {lineText(rep, l).name}
-                  </button>
-                  <span className={st.rate === null ? 'muted' : st.rate >= 70 ? 'rate good' : st.rate >= 40 ? 'rate mid' : 'rate low'}>
-                    {st.rate === null
-                      ? tr('Not tested yet')
-                      : tr(msg`${`${st.rate}%`} · ${st.clean} of ${st.tries} clean`)}
-                  </span>
-                  {st.hardest && (
-                    <button className="link hardest" onClick={() => pickLine(rep.id, i, st.hardest!.ply)}>
-                      {tr('Hardest:')} <span dir="ltr">{st.hardest.label}</span>{' '}
-                      {st.hardest.misses === 1 ? tr('(missed once)') : tr(msg`(missed ${st.hardest.misses} times)`)}
-                    </button>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-          <p className="muted">
-            {tr('The rate is from your tests ("Test me"). "Hardest" is the move you missed most — in training or in tests; tap it to open the line right there.')}
-          </p>
         </section>
       )}
 
@@ -461,7 +387,7 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
                   </button>
                 )}
                 {nextToLearn === undefined && !quiz.mistakes && (
-                  <button className="primary" onClick={() => onTrain(rep.id)}>♟ {tr('Practice in a game')}</button>
+                  <button className="primary" onClick={() => onTrain(rep.id)}>♟ {tr('Play this opening')}</button>
                 )}
               </div>
             </div>
@@ -473,7 +399,7 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
                 <span className="icon" aria-hidden>📖</span>{tr('Back to study')}
               </button>
               <button onClick={() => onTrain(rep.id)}>
-                <span className="icon" aria-hidden>♟</span>{tr('Practice in a game')}
+                <span className="icon" aria-hidden>♟</span>{tr('Play this opening')}
               </button>
             </div>
           ) : (
@@ -489,7 +415,7 @@ export default function Learn({ onTrain, onDrill, onPuzzles }: Props) {
                   <span className="icon" aria-hidden>🎯</span>{tr('Test me on this line')}
                 </button>
                 <button onClick={() => onTrain(rep.id)}>
-                  <span className="icon" aria-hidden>♟</span>{tr('Practice in a game')}
+                  <span className="icon" aria-hidden>♟</span>{tr('Play this opening')}
                 </button>
               </div>
             </>

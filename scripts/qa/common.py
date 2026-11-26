@@ -28,6 +28,43 @@ def _page(self, *a, first_visit=False, **k):
 Browser.new_context, Browser.new_page = _context, _page
 
 
+# Learn: the opening and the line are chosen from two buttons, each opening a list (src/LearnSheets.tsx)
+def close_sheet(pg):
+    if pg.locator('.pick-sheet').count(): pg.keyboard.press('Escape'); pg.wait_for_timeout(250)
+
+
+def open_opening(pg, rep_id):
+    """Studies this repertoire in Learn (from its row in the opening list)."""
+    close_sheet(pg); pg.click('.opening-btn'); pg.click(f'.pick-sheet .sheet-row[data-rep="{rep_id}"]'); pg.wait_for_timeout(250)
+
+
+def shown_openings(pg):
+    """How many openings the opening list offers (the ones not hidden)."""
+    close_sheet(pg); pg.click('.opening-btn'); n = pg.locator('.pick-sheet .sheet-row[data-rep]').count(); close_sheet(pg)
+    return n
+
+
+def manage_openings(pg):
+    """Opens "which openings to show"; its checkboxes are .manage-row[data-rep=<id>] input."""
+    if pg.locator('.pick-sheet .manage-row').count(): return
+    close_sheet(pg); pg.click('.opening-btn'); pg.click('.pick-sheet .manage-chip'); pg.wait_for_timeout(200)
+
+
+def line_names(pg):
+    """The names in the line list of the opening studied."""
+    close_sheet(pg); pg.click('.line-btn'); names = pg.locator('.pick-sheet .sheet-row-name').all_inner_texts(); close_sheet(pg)
+    return names
+
+
+def pick_line(pg, i):
+    close_sheet(pg); pg.click('.line-btn'); pg.locator('.pick-sheet .sheet-row').nth(i).click(); pg.wait_for_timeout(200)
+
+
+def current_line(pg):
+    """The index of the line studied (the line button shows "3/8")."""
+    return int(pg.inner_text('.line-btn .picker-btn-meta').split('/')[0]) - 1
+
+
 def args(description, extra=None):
     p = argparse.ArgumentParser(description=description)
     p.add_argument('--url', default='http://localhost:4173', help='app to test (default: local vite preview)')
