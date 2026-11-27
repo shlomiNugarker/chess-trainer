@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Chessboard } from 'react-chessboard';
+import { BoardA11y } from './BoardA11y';
 import { openingName, type GameSummary } from './chesscom';
 import { DRILL_DROP, Engine } from './engine';
 import EvalBar from './EvalBar';
@@ -230,6 +231,7 @@ export default function GameReview({ game, username, active, onClose, onLearn, o
                 allowDrawingArrows: false,
               }}
             />
+            <BoardA11y id="game-review" fen={fen} lastMove={lastMove?.san} />
             {badgeAt && current && (
               <div className="board-badge" style={badgeAt}>
                 <ClassIcon cls={current.cls} size="lg" />

@@ -1,6 +1,6 @@
 """QA: Learn extras, Practice (puzzles, my mistakes), My review, account and language, phone layouts, offline.
 
-    python scripts/qa/screens.py [--url URL] [--only learn,puzzles,mistakes,review,account,refresh,share,lichess,phone,touch,lang,offline]
+    python scripts/qa/screens.py [--url URL] [--only learn,puzzles,mistakes,review,account,refresh,share,lichess,a11y,phone,touch,lang,offline]
                                  [--chesscom USER] [--account-url URL]
 
 The review section loads real games from Chess.com; the account panel needs a build with Firebase configured,
@@ -583,14 +583,14 @@ def touch(b):
         r.check(pg.evaluate("document.querySelector('.today').innerText.includes('20')"), f'{tag}: also in "today"', pg.locator('.today').inner_text()[:60].replace('\n', ' '))
         tab(pg, 0); time.sleep(0.5)
         r.check(re.search(r'220', pg.locator('.trainer aside').inner_text()) is not None, f'{tag}: and in Play')
-        tab(pg, 3); pg.locator('.segmented button').nth(1).click(); time.sleep(0.8)
+        tab(pg, 3); pg.locator('.segmented:not(.games-site) button').nth(1).click(); time.sleep(0.8)
         r.check('20' in pg.locator('.status').last.inner_text() and 'London' not in pg.locator('main').last.inner_text() and '\u05dc\u05d5\u05e0\u05d3\u05d5\u05df' not in pg.locator('main').last.inner_text(),
                 f'{tag}: the practice starts with an opening that is shown', pg.locator('main').last.inner_text()[-120:].replace('\n', ' '))
         stored = pg.evaluate("JSON.parse(localStorage.getItem('chess-trainer:mistakes')).length")
         r.check(stored == 235, f'{tag}: nothing was deleted', str(stored))
         pg.evaluate("""() => { const l = JSON.parse(localStorage.getItem('chess-trainer:mistakes')).filter(m => m.repertoire === 'london');
           localStorage.setItem('chess-trainer:mistakes', JSON.stringify(l)); }""")
-        pg.reload(); pg.wait_for_selector('.tabs'); tab(pg, 3); pg.locator('.segmented button').nth(1).click(); time.sleep(0.8)
+        pg.reload(); pg.wait_for_selector('.tabs'); tab(pg, 3); pg.locator('.segmented:not(.games-site) button').nth(1).click(); time.sleep(0.8)
         r.check(pg.locator('.drill-empty').count() == 1 and '15' in pg.locator('.drill-empty').inner_text() and pg.locator('.drill-empty p').count() == 1, f'{tag}: only hidden ones left: the empty screen says so',
                 pg.locator('.drill-empty').inner_text()[:120].replace('\n', ' ') if pg.locator('.drill-empty').count() else 'not empty')
         tab(pg, 1); time.sleep(0.5)
@@ -657,7 +657,7 @@ def languages(b):
         r.check(not cut, f'{tag}: the tab names fit', str(cut))
         tab(pg, 1); time.sleep(0.5)
         r.check('están en inglés' in pg.locator('.learn').inner_text(), f'{tag}: Learn says the explanations are in English')
-        tab(pg, 3); pg.locator('.segmented button').nth(1).click(); time.sleep(0.5)
+        tab(pg, 3); pg.locator('.segmented:not(.games-site) button').nth(1).click(); time.sleep(0.5)
         r.check('Nada que repasar' in pg.inner_text('body') and not left(pg), f'{tag}: my mistakes', str(left(pg)[:4]))
         if tag == 'es-desktop':
             tab(pg, 2); pg.fill('.review input', a.chesscom); pg.locator('.review button.primary').first.click()
@@ -861,6 +861,53 @@ def lichess(b):
     ctx.close()
 
 
+@section('a11y')
+def a11y(b):
+    """The board for screen readers and the keyboard: every square is a named button, one Tab stop for the board (the
+    pieces' drag handles are out of the Tab order), the arrows move between squares as shown, Enter taps: a line is
+    played in "Test me" and a move against the computer, with the keyboard alone; the last move is announced."""
+    ctx = b.new_context(locale='en-US', viewport={'width': 1280, 'height': 900})
+    ctx.add_init_script("localStorage.setItem('chess-trainer:openings-chosen', 'true'); localStorage.setItem('chess-trainer:guide-dismissed', 'true')")
+    pg = ctx.new_page(); r.watch(pg, 'a11y'); pg.goto(a.url); pg.wait_for_selector('.learn-header', timeout=60000)
+    open_opening(pg, data[0]['id']); pick_line(pg, 0)
+    info = pg.evaluate("""() => { const b = document.getElementById('learn-board'), sq = [...b.querySelectorAll('[data-square]')];
+      return { role: b.getAttribute('role'), label: b.getAttribute('aria-label'), n: sq.filter(s => s.getAttribute('role') === 'button').length,
+        stops: sq.filter(s => s.tabIndex === 0).length, handles: [...b.querySelectorAll('[aria-roledescription]')].filter(h => h.tabIndex >= 0).length,
+        e1: document.querySelector('#learn-board [data-square=e1]').getAttribute('aria-label'), e4: document.querySelector('#learn-board [data-square=e4]').getAttribute('aria-label') } }""")
+    r.check(info['role'] == 'group' and info['label'] == 'Chess board' and info['n'] == 64 and info['stops'] == 1 and info['handles'] == 0,
+            'a11y: 64 named squares, one Tab stop, no drag handle in the Tab order', str(info))
+    r.check(info['e1'] == 'e1, white king' and info['e4'] == 'e4, empty', 'a11y: a square says its piece', str(info))
+    pg.click('.actions button:has-text("Test me on this line")'); time.sleep(0.8)
+    def key_move(board, frm, to):
+        pg.evaluate(f"document.querySelector('#{board}-board [data-square={frm}]').focus()"); pg.keyboard.press('Enter')
+        f, t = 'abcdefgh'.index(frm[0]) - 'abcdefgh'.index(to[0]), int(to[1]) - int(frm[1])
+        white = pg.evaluate(f"document.querySelector('#{board}-board [data-square]').dataset.square") == 'a8'
+        for _ in range(abs(f)): pg.keyboard.press(('ArrowLeft' if f > 0 else 'ArrowRight') if white else ('ArrowRight' if f > 0 else 'ArrowLeft'))
+        for _ in range(abs(t)): pg.keyboard.press(('ArrowUp' if t > 0 else 'ArrowDown') if white else ('ArrowDown' if t > 0 else 'ArrowUp'))
+        here = pg.evaluate("document.activeElement.dataset.square")
+        pg.keyboard.press('Enter')
+        return here
+    u = data[0]['lines'][0]['uci'][0]
+    here = key_move('learn', u[:2], u[2:4])
+    r.check(here == u[2:4] and wait_until(lambda: pg.locator('.pill:text-is("Test · 2/%d")' % len(data[0]['lines'][0]['uci'])).count() == 1, 5),
+            'a11y: "Test me" played with the arrows and Enter (the line goes on)', here)
+    r.check(wait_until(lambda: 'Last move:' in pg.locator('#learn-board ~ .sr-only, .learn .sr-only').first.inner_text(), 3), 'a11y: the last move is announced',
+            pg.locator('.learn .sr-only').first.inner_text())
+    # the arrows on the board do not step the line (they move between squares)
+    pg.click('.actions button:has-text("Back to study")'); time.sleep(0.4)
+    head = text(pg, '.learn-move-head')
+    pg.evaluate("document.querySelector('#learn-board [data-square=e2]').focus()"); pg.keyboard.press('ArrowRight')
+    r.check(text(pg, '.learn-move-head') == head and pg.evaluate("document.activeElement.dataset.square") == 'f2', 'a11y: on the board, an arrow moves to the next square, not to the next move')
+    # Play: a move against the computer with the keyboard
+    pg.click('[data-tab=play]'); time.sleep(1)
+    sel = pg.locator('.controls select'); sel.nth(0).select_option('play'); sel.nth(1).select_option('w'); time.sleep(1)
+    key_move('trainer', 'e2', 'e4')
+    black = "[...document.querySelectorAll('#trainer-board [data-piece]')].filter(e => e.dataset.piece[0]==='b').map(e => e.closest('[data-square]').dataset.square).sort().join()"
+    r.check(wait_until(lambda: pg.evaluate("document.querySelector('#trainer-board [data-square=e4]').getAttribute('aria-label')") == 'e4, white pawn'
+                       and pg.evaluate(black) != 'a7,a8,b7,b8,c7,c8,d7,d8,e7,e8,f7,f8,g7,g8,h7,h8', 30), 'a11y: Play: 1.e4 with the keyboard, and the computer answers')
+    ctx.close()
+
+
 @section('offline')
 def offline(b):
     ctx, pg = open_page(b, 'offline', 'en-US', 1280, 900)
@@ -894,6 +941,6 @@ with sync_playwright() as p:
     if not a.only: tour(pg, 'desktop-en')
     learn(pg); mistakes(pg); puzzles(pg); review(pg)  # mistakes first: the puzzle section adds its own
     ctx.close()
-    install(b); privacy(b); account(b); refresh(b); share(b); lichess(b); phone(b); touch(b); languages(b); fonts(b); offline(b)
+    install(b); privacy(b); account(b); refresh(b); share(b); lichess(b); a11y(b); phone(b); touch(b); languages(b); fonts(b); offline(b)
     b.close()
 r.done()

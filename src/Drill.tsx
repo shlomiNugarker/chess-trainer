@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard, type Arrow } from 'react-chessboard';
+import { BoardA11y } from './BoardA11y';
 import { Engine, winPercent } from './engine';
 import { DAILY_REVIEWS, MAX_BOX, deleteMistake, dueMistakes, loadMistakes, practiceMistakes, recordReview, restoreMistake, todaysMistakes, type Mistake } from './mistakes';
 import { REPERTOIRES, repName } from './repertoire';
@@ -195,6 +196,7 @@ export default function Drill() {
             canDragPiece: ({ piece }) => !answer && !checking && piece.pieceType[0] === toMove,
           }}
         />
+        <BoardA11y id="drill" fen={fen} />
         </div>
       </div>
       <aside ref={panelRef}>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard, type Arrow } from 'react-chessboard';
+import { BoardA11y } from './BoardA11y';
 import {
   applyUci,
   isCorrect,
@@ -295,6 +296,7 @@ export default function Puzzles() {
                 canDragPiece: ({ piece }) => status === 'solving' && piece.pieceType[0] === me,
               }}
             />
+            <BoardA11y id="puzzle" fen={fen} lastMove={lastMove ? `${lastMove.slice(0, 2)}–${lastMove.slice(2, 4)}` : undefined} />
           </div>
         </div>
         <aside ref={panelRef} data-puzzle-id={puzzle.id}>

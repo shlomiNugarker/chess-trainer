@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard, type Arrow } from 'react-chessboard';
+import { BoardA11y } from './BoardA11y';
 import { explanationsNote, movesOf, REPERTOIRES, lineMoves, lineText, moveLabel, posKey, repName } from './repertoire';
 import { importPgn, removeCustomLine, useRepertoire, withCustom, type ImportResult } from './customLines';
 import { hasExplanations, msg, tr, useLang } from './i18n';
@@ -353,6 +354,7 @@ export default function Learn({ onTrain, onDrill }: Props) {
                   !!quiz && !done && !quiz.wrong && piece.pieceType[0] === rep.userColor,
               }}
             />
+            <BoardA11y id="learn" fen={fen} lastMove={current?.san} />
           </div>
         </div>
 

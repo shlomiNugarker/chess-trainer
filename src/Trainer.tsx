@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Chess, type Move } from 'chess.js';
 import { Chessboard, type Arrow } from 'react-chessboard';
+import { BoardA11y } from './BoardA11y';
 import { DROP, Engine, whiteWinPercent, winPercent } from './engine';
 import { pickerOrder } from './openingGroups';
 import { REPERTOIRES, buildBook, lineInfo, moveLabel, noteForNext, posKey, repName } from './repertoire';
@@ -718,6 +719,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
                 canDragPiece: ({ piece }) => !viewing && status === 'user' && piece.pieceType[0] === userColor,
               }}
             />
+            <BoardA11y id="trainer" fen={shownFen} lastMove={last?.san} />
           </div>
         </div>
 
