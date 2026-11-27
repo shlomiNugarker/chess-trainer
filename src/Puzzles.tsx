@@ -13,6 +13,7 @@ import {
   type Puzzle,
   type PuzzleMode,
 } from './puzzleData';
+import { hiddenIds, visibleOf } from './hiddenReps';
 import { saveMistake } from './mistakes';
 import { DAILY_GOAL, dayStreak, recordPuzzleDay, todayCount, daysLabel } from './daily';
 import { useStored } from './storage';
@@ -30,6 +31,9 @@ import { useSidePanel } from './useSidePanel';
 type Status = 'intro' | 'solving' | 'opponent' | 'solved' | 'shown';
 
 const HINT_SQUARE = 'rgba(106, 167, 232, 0.55)';
+
+/** The repertoires the user plays (not hidden), for "from my openings". */
+const myOpenings = () => visibleOf(hiddenIds()).map((r) => r.id);
 
 export default function Puzzles() {
   const [all, setAll] = useState<Puzzle[] | null>(null);
@@ -88,7 +92,7 @@ export default function Puzzles() {
         if (!alive) return;
         setAll(list);
         const s = loadStats();
-        start(pickNext(list, mode, s.rating, s.seen));
+        start(pickNext(list, mode, s.rating, s.seen, myOpenings()));
       })
       .catch(() => alive && setLoadError(true));
     return () => {
@@ -205,7 +209,7 @@ export default function Puzzles() {
     if (puzzle && (status === 'intro' || status === 'solving') && !failed && ply <= 1) markSeen(puzzle.id); // skipped untried
     const s = loadStats();
     setStats(s);
-    start(pickNext(all, m, s.rating, s.seen, puzzle?.id));
+    start(pickNext(all, m, s.rating, s.seen, myOpenings(), puzzle?.id));
   };
 
   const changeMode = (m: PuzzleMode) => {

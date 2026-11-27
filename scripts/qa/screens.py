@@ -162,6 +162,20 @@ def puzzles(pg):
         if how == 'wrong': r.check(after < before, '  a solve after a wrong move lowers the rating')
         pg.click('button:visible:has-text("Next puzzle")'); time.sleep(1)
     r.check(solved() >= solved0 + 3, 'puzzle stats count the solves', f'{solved0} -> {solved()} ({text(pg, ".puzzle-stats")})')
+    # "from my openings" takes puzzles from the openings the user plays only: hide all but the Pirc
+    pg.evaluate("(ids) => localStorage.setItem('chess-trainer:hidden-repertoires', JSON.stringify(ids))", [x['id'] for x in data if x['id'] != 'pirc'])
+    pg.reload(); pg.wait_for_selector('.tabs')
+    pg.click('.tabs .tab:has-text("Practice")'); pg.click('.segmented button:has-text("Puzzles")')
+    pg.wait_for_selector('.puzzle-rating', timeout=20000)
+    got = []
+    for _ in range(4):
+        pg.click('.puzzle-header .chips button:has-text("From my openings")'); time.sleep(1)
+        if not wait_until(lambda: 'Find the best move' in status(pg), 15): break
+        p = PUZZLES.get(pg.evaluate(PUZZLE_BOARD_JS))
+        got.append(p['openings'] if p else None)
+        pg.click('button:visible:has-text("Skip")'); time.sleep(0.8)
+    r.check(len(got) == 4 and all(o and 'pirc' in o for o in got), '"From my openings" gives puzzles from the shown openings only', got)
+    pg.evaluate("localStorage.setItem('chess-trainer:hidden-repertoires', '[]')"); pg.reload(); pg.wait_for_selector('.tabs')
 
 
 PUZZLE_BOARD_JS = """() => {

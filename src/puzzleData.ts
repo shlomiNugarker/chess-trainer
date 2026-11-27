@@ -1,4 +1,4 @@
-// Puzzles from the Lichess puzzle database (CC0), bundled as public/puzzles-v3.json by scripts/build-puzzles.py.
+// Puzzles from the Lichess puzzle database (CC0), bundled as public/puzzles-v4.json by scripts/build-puzzles.py.
 // Lichess format: `fen` is the position BEFORE the opponent's move; moves[0] is that move, then the solver and
 // the opponent alternate. The solver plays the side to move after moves[0].
 
@@ -12,12 +12,12 @@ export type Puzzle = {
   moves: string[]; // UCI
   rating: number;
   themes: string[];
-  opening: string; // repertoire id ('london', 'caro', ...) or ''
+  openings: string[]; // the repertoires whose games reach it ('london', 'caro', ...); may be empty
 };
 
 export type PuzzleMode = 'level' | 'openings' | 'mates';
 
-export const PUZZLES_URL = `${import.meta.env.BASE_URL}puzzles-v3.json`;
+export const PUZZLES_URL = `${import.meta.env.BASE_URL}puzzles-v4.json`;
 
 let cache: Promise<Puzzle[]> | null = null;
 
@@ -28,7 +28,7 @@ export function loadPuzzles(): Promise<Puzzle[]> {
       if (!r.ok) throw new Error(String(r.status));
       return r.json() as Promise<[string, string, string, number, string, string][]>;
     })
-    .then((rows) => rows.map(([id, fen, moves, rating, themes, opening]) => ({ id, fen, moves: moves.split(' '), rating, themes: themes ? themes.split(' ') : [], opening })))
+    .then((rows) => rows.map(([id, fen, moves, rating, themes, opening]) => ({ id, fen, moves: moves.split(' '), rating, themes: themes ? themes.split(' ') : [], openings: opening ? opening.split(' ') : [] })))
     .catch((e) => {
       cache = null; // let a later visit try again
       throw e;
@@ -85,17 +85,19 @@ export function markSeen(id: string) {
 
 const isMate = (p: Puzzle) => p.themes.some((t) => t.startsWith('mate') || t.endsWith('Mate'));
 
-/** The next puzzle for this mode: unseen, as close to the solver's rating as possible, with some variety. */
-export function pickNext(all: Puzzle[], mode: PuzzleMode, rating: number, seen: string[], exclude?: string): Puzzle | undefined {
+/**
+ * The next puzzle for this mode: unseen, as close to the solver's rating as possible, with some variety.
+ * `mine` — the repertoires the user plays (not hidden): "from my openings" takes puzzles from those only.
+ */
+export function pickNext(all: Puzzle[], mode: PuzzleMode, rating: number, seen: string[], mine: string[], exclude?: string): Puzzle | undefined {
   const done = new Set(seen);
   if (exclude) done.add(exclude);
-  let pool = all.filter((p) => !done.has(p.id));
-  if (mode === 'openings') pool = pool.filter((p) => p.opening);
-  if (mode === 'mates') pool = pool.filter(isMate);
-  if (!pool.length) {
-    // everything here was seen: start the round again (but not the same puzzle twice in a row)
-    pool = all.filter((p) => p.id !== exclude && (mode === 'level' || (mode === 'openings' ? p.opening : isMate(p))));
-  }
+  const fromMine = (p: Puzzle) => p.openings.some((o) => mine.includes(o));
+  const fits = (p: Puzzle) => mode === 'level' || (mode === 'openings' ? fromMine(p) : isMate(p));
+  let pool = all.filter((p) => !done.has(p.id) && fits(p));
+  // everything here was seen: start the round again (but not the same puzzle twice in a row)
+  if (!pool.length) pool = all.filter((p) => p.id !== exclude && fits(p));
+  if (!pool.length) pool = all.filter((p) => p.id !== exclude && p.openings.length); // none of my openings has puzzles
   for (const width of [100, 200, 350]) {
     const near = pool.filter((p) => Math.abs(p.rating - rating) <= width);
     if (near.length >= 3 || (width === 350 && near.length)) return near[Math.floor(Math.random() * near.length)];

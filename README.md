@@ -15,7 +15,7 @@ Learn a chess opening repertoire step by step, train it against Stockfish until 
 - **Learn** — every line of the repertoire on a board, move by move, with the idea of the line and a one-sentence reason for each of your moves. "Test me" quizzes you on the line; per-line success rate and the move you miss most. Import your own lines from PGN — each is checked against the repertoire and added as a branch. Hide the openings you don’t play (⚙) — nothing is deleted.
 - **Play** — train the repertoire against the computer. Leave the line and the game stops, shows the right move and why, and lets you **try again** or **continue**. After the book, a full-strength coach keeps correcting you up to move 15 and remembers the best moves, so the line grows from your own games. Or play a regular game at any level.
 - **Repertoire** — London System and 1.e4 as White (the Italian Game reached through the Bishop’s Opening, 2.Bc4, plus lines against the Scandinavian, Sicilian (Alapin), French and Caro-Kann (Advance), the Modern, the Pirc, the Philidor, the Owen and the Nimzowitsch), Caro-Kann and the Sicilian with ...e6 (vs 1.e4) and the Slav or the Queen’s Gambit Accepted (vs 1.d4) as Black: 90 lines, every user move checked with Stockfish.
-- **Practice** — 3,900 puzzles from the Lichess puzzle database with a personal rating, modes *for my level* / *from my openings* (150 from each repertoire) / *mates*, a hint counts as half a point, and a daily goal with a streak. **My mistakes** brings back every position you got wrong with spaced repetition (Leitner).
+- **Practice** — about 6,000 puzzles from the Lichess puzzle database with a personal rating, modes *for my level* / *from my openings* (at least 100 from each repertoire, only from the openings you play) / *mates*, a hint counts as half a point, and a daily goal with a streak. **My mistakes** brings back every position you got wrong with spaced repetition (Leitner).
 - **My review** — enter a Chess.com username (up to your latest 5,000 games, reloaded automatically next time): the three most useful things to improve, results by color / time control / opening, how you lose, a rating chart, your accuracy month by month (from games reviewed on Chess.com and here), and an optional Stockfish pass over recent games (its big mistakes become drills). It also shows **where your games leave your lines**: add Stockfish's answer to an opponent's unexpected move as a new branch of your repertoire, or practice the spots where you left the line yourself.
 - **Game review** — pick any recent game (or "Review my last game") and go through it move by move: every move labeled (book, best, good, inaccuracy, mistake, blunder) with the better move as a green arrow and the engine's line, both players' accuracy, a win-chance graph you can tap, "my next mistake", where the game left your repertoire, and one tap to practice a position. Stockfish runs on your device, so there is no daily limit; a reviewed game opens at once the next time.
 - **Installable, offline** — a PWA; learning, training, puzzles and the engine work without internet.
@@ -41,7 +41,7 @@ npm test        # just the checks:
                 #   scripts/check-i18n.ts     every text of the interface is translated
                 #   scripts/check-lines.ts    every repertoire line is legal and fully translated
                 #   scripts/check-review.ts   Chess.com review logic and the move-by-move game review
-                #   scripts/check-puzzles.ts  every puzzle in public/puzzles-v3.json is legal
+                #   scripts/check-puzzles.ts  every puzzle in public/puzzles-v4.json is legal, and every repertoire has puzzles
                 #   scripts/check-sync.ts     merge rules for syncing between devices
 ```
 
@@ -75,7 +75,7 @@ Without configuration the app works fully, with progress kept in the browser. To
 | `index.html`, `scripts/make-og-image.py` | The link preview of social networks (static tags, and `public/og-image.png`, made from the running app) |
 | `src/install.ts`, `src/InstallCard.tsx` | Installing the app: when it can be, and the suggestion in Learn and in the account panel |
 | `public/engine/` | Stockfish 19 lite (WASM) |
-| `public/puzzles-v3.json` | Puzzle set, built by `scripts/build-puzzles.py` (a new set gets a new file name — the service worker caches by name) |
+| `public/puzzles-v4.json` | Puzzle set, built by `scripts/build-puzzles.py` (a new set gets a new file name — the service worker caches by name) |
 | `public/sw.js` | Offline cache |
 
 The roadmap is in [`PLAN.md`](PLAN.md).

@@ -88,7 +88,7 @@
 - [x] A "Today" card: day streak 🔥, puzzles X/5, review (if any), the next line to learn / "Test me", or a training game — one tap
 
 ## Puzzles ✅ (in the Practice tab)
-- [x] 3,900 puzzles from the Lichess database (CC0, `public/puzzles-v3.json`; the name changes when the content does, because the service worker caches by name; built by `scripts/build-puzzles.py`, checked in `check-puzzles`)
+- [x] About 6,000 puzzles from the Lichess database (CC0, `public/puzzles-v4.json`; the name changes when the content does, because the service worker caches by name; built by `scripts/build-puzzles.py`, checked in `check-puzzles`)
 - [x] A personal rating (Elo), modes: for my level / from my openings (900 puzzles: 150 from each of the first six openings; none yet for the openings added on 26 Nov 2026) / mates
 - [x] Hint (a puzzle solved with a hint counts half a point, like a draw), show solution, skip; the name of the tactic at the end ("fork", "pin"…); a puzzle you failed goes to "My mistakes"
 - [x] A daily goal: 5 puzzles, and a day streak 🔥
@@ -163,6 +163,7 @@
 - [x] New repertoire: the Catalan (White), 13 lines: the Open (4...dxc4) and Closed (4...Be7) Catalan, 3...Bb4+, 4...Bb4+, 3...c5, 3...b6; against 2...g6 (g3), 2...c5 and the Budapest; against 1...d5 2...e6 (into the Catalan), the Slav and the Queen's Gambit Accepted; and against the Dutch. Every White move checked at depth 18: none gives up 3% or more. My review's "Train" button finds it for White's Catalan games
 - [x] New repertoire: the Trompowsky (White), 10 lines: 2...Ne4 3.Bf4 against ...d5 and ...c5, 2...e6, 2...d5, 2...c5, 2...g6, 2...d6; against 1...d5 (2.Nf3 and 3.Bg5: 2.Bg5 at once gives up 3.8%), 1...f5 and 1...e6. Every White move checked at depth 18: none gives up 3% or more. My review's "Train" button finds it for White's Trompowsky games
 - [x] 150 puzzles from the Queen's Gambit Accepted in "from my openings" (`public/puzzles-v3.json`, 3,900 puzzles)
+- [x] "From my openings" for all 31 openings (27 Nov 2026): at least 100 puzzles from each (by Lichess's opening tags; a puzzle can belong to several, e.g. the Italian Game is in the White 1.e4 repertoire and in Black's 1...e5; a Najdorf puzzle is not the ...e6 Sicilian's), and the mode takes puzzles only from the openings the user plays (not hidden). `public/puzzles-v4.json`, 5,959 puzzles; `check-puzzles` fails when a repertoire has fewer than 50
 - [x] Hiding openings (Learn → ⚙): a hidden opening leaves the pickers in Learn and in training, without deleting progress; at least one always stays; synced between devices (`src/hiddenReps.ts`)
 
 ## Stage 5 — polish
