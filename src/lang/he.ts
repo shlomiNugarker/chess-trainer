@@ -537,6 +537,8 @@ const he: Record<string, string> = {
   'As Black against {0}': 'בשחור נגד {0}',
   'As Black against other first moves': 'בשחור נגד מהלכי פתיחה אחרים',
   'Show these': 'הצג את אלה',
+  'Not sure? Recommend for me': 'לא בטוחים? המליצו לי',
+  'A simple start: {0} as White, {1} against {2} and {3} against {4}.': 'התחלה פשוטה: {0} בלבן, {1} נגד {2} ו{3} נגד {4}.',
   'Show all': 'הצג הכול',
 };
 

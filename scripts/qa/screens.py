@@ -8,7 +8,7 @@ so by default it is checked on the live site.
 """
 import json, os, pathlib, re, sys, time
 from playwright.sync_api import sync_playwright
-from common import (LIVE, SHOTS, Report, args, current_line, hscroll, line_names, lines, manage_openings, open_opening, pick_line,
+from common import (LIVE, SHOTS, Report, args, close_sheet, current_line, hscroll, line_names, lines, manage_openings, open_opening, pick_line,
                     puzzles_by_board, shown_openings, wait_until)
 
 
@@ -524,6 +524,28 @@ def touch(b):
         pg.reload(); pg.wait_for_selector('.learn .stepper')
         r.check(pg.locator('.opening-picker').count() == 0, f'first visit, {locale}: asked once')
         ctx.close()
+    # "Not sure? Recommend for me": three openings for a beginner (White, vs 1.e4, vs 1.d4), and Learn opens on the first.
+    # Every chip is readable: nothing cut, and in a right-to-left text no "...e6" at the end (it looks like a name cut short)
+    CHIPS_JS = r"""() => [...document.querySelectorAll('.opening-picker .chip')].filter(c => c.scrollWidth > c.clientWidth + 1
+      || /^\s*\u2066?\.\.\.|\u2066\.\.\.[^\u2069]*\u2069\s*$/.test(document.dir === 'rtl' ? c.textContent : '')).map(c => c.textContent)"""
+    for locale in ('en-US', 'he-IL', 'es-ES'):
+        for w, h in ((375, 812), (1280, 860)):
+            ctx = b.new_context(locale=locale, viewport={'width': w, 'height': h}, is_mobile=w < 600, has_touch=w < 600, first_visit=True)
+            pg = ctx.new_page(); r.watch(pg, f'recommend-{locale}-{w}'); pg.goto(a.url); pg.wait_for_selector('.opening-picker')
+            rec = pg.locator('.recommend-btn')
+            r.check(rec.is_visible() and rec.bounding_box()['y'] < h * 0.5 and not pg.evaluate(CHIPS_JS) and hscroll(pg) <= 0,
+                    f'first visit, {locale}, {w}px: "recommend for me" near the top, every chip readable', str(pg.evaluate(CHIPS_JS)))
+            r.shot(pg, f'recommend-{locale}-{w}')
+            rec.click(); time.sleep(0.5); pg.wait_for_selector('.opening-btn')
+            close_sheet(pg); pg.click('.opening-btn')
+            reps = pg.eval_on_selector_all('.pick-sheet .sheet-row[data-rep]', 'e => e.map(x => x.dataset.rep)')
+            current = pg.get_attribute('.pick-sheet .sheet-row.active', 'data-rep'); close_sheet(pg)
+            r.check(reps == ['london', 'caro', 'slav'] and current == 'london' and pg.locator('.guide').count() == 1,
+                    f'first visit, {locale}, {w}px: "recommend for me" shows the London, the Caro-Kann and the Slav, and opens the London', f'{reps} {current}')
+            manage_openings(pg)
+            hidden = pg.locator('.manage-row input:not(:checked)').count()
+            r.check(hidden == len(data) - 3, f'  the other openings are hidden, not deleted ({locale}, {w}px)', str(hidden))
+            ctx.close()
     for locale in ('en-US', 'he-IL', 'es-ES'):
         ctx, pg = open_page(b, f'first-{locale}', locale, 375, 812)
         pg.wait_for_selector('.learn .stepper'); time.sleep(0.8)

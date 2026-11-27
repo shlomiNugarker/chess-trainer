@@ -516,6 +516,8 @@ const es: Record<string, string> = {
   'As Black against {0}': 'Con negras contra {0}',
   'As Black against other first moves': 'Con negras contra otras primeras jugadas',
   'Show these': 'Mostrar estas',
+  'Not sure? Recommend for me': '¿No estás seguro? Recomiéndame',
+  'A simple start: {0} as White, {1} against {2} and {3} against {4}.': 'Un comienzo sencillo: {0} con blancas, {1} contra {2} y {3} contra {4}.',
   'Show all': 'Mostrar todas',
 };
 

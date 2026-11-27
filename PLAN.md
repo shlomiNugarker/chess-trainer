@@ -84,6 +84,7 @@
 - [x] "Test me": you play the line yourself; a mistake is saved for review
 - [x] Progress: a line passed in a test without mistakes is marked ✓, "Mastered N of M", and a suggestion for the next line to learn
 - [x] The first visit asks "Which openings do you play?" (`src/OpeningPicker.tsx`), grouped as White / Black against 1.e4 / Black against 1.d4: only the chosen ones are shown (the rest are hidden, not deleted, and come back from ⚙); "Show all" keeps every one. Asked once per account (`openings-chosen` syncs), and not shown to anyone with progress or hidden openings already. The browser checks start past it (`scripts/qa/common.py`), except the ones that test it
+- [x] "Not sure? Recommend for me" at the top of the first choice (27 Nov 2026): the London System, the Caro-Kann and the Slav (`BEGINNER` in `src/openingGroups.ts`) — simple plans, few sharp lines, and the Caro-Kann and the Slav share the ...c6/...d5 structure; Learn opens on the London, the others are hidden as in a normal choice. In Hebrew a chip no longer ends with "...e6" (it looked cut). Checked in `screens.py --only touch` (he/en/es, phone and desktop)
 - [x] A "How to learn here" card for the first visit (4 steps), which opens on the Learn tab — later the app remembers the last tab
 - [x] A "Today" card: day streak 🔥, puzzles X/5, review (if any), the next line to learn / "Test me", or a training game — one tap
 
