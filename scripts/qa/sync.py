@@ -392,6 +392,48 @@ with sync_playwright() as p:
     r.check(cloud_users()[two].get('chesscom-user') == 'second-player' and 'mistakes' not in cloud_users()[two], 'full storage: and is not uploaded to the second', str(cloud_users()[two]))
     F.ctx.close()
 
+    # "Delete my cloud data": the document and the user are gone, this device keeps its progress, and a second
+    # device signed in to the same account does not bring the data back
+    def auth_users():
+        req = urllib.request.Request(f'http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/projects/{PROJECT}/accounts:batchGet?maxResults=100',
+                                     headers={'Authorization': 'Bearer owner'})
+        return [u['localId'] for u in json.load(urllib.request.urlopen(req)).get('users', [])]
+    deleter = 'deleter-' + uuid.uuid4().hex[:6]
+    G = Device(b, 'delete-1', deleter)
+    G.open(); G.set('chesscom-user', 'deleting-player'); G.set('skill', 7)
+    before = set(cloud_users())
+    r.check(G.sign_in(), 'delete: first device signed in')
+    wait_until(lambda: len(set(cloud_users()) - before) == 1, 15)
+    uid = next(iter(set(cloud_users()) - before), None)
+    H = Device(b, 'delete-2', deleter)
+    H.open()
+    r.check(H.sign_in() and H.get('chesscom-user') == 'deleting-player', 'delete: second device on the same account has the data')
+    G.account()
+    G.page.get_by_text('Delete my cloud data').click()
+    dialog = G.page.locator('.confirm-dialog[role=alertdialog]')
+    r.check(dialog.count() == 1 and 'stays' in dialog.inner_text() and G.page.locator('.account-panel').count() == 1,
+            'delete: asks first, in the app’s own dialog, and says the progress on this device stays')
+    G.page.keyboard.press('Escape')
+    r.check(dialog.count() == 0 and G.page.locator('.account-panel').count() == 1 and uid in cloud_users(),
+            'delete: Escape cancels the question only, nothing is deleted')
+    G.page.get_by_text('Delete my cloud data').click()
+    G.page.locator('.confirm-dialog button.danger').click()
+    gone = wait_until(lambda: uid not in cloud_users() and uid not in auth_users() and G.page.locator('.deleted-note').count() == 1, 20)
+    r.check(gone, 'delete: the document and the user are gone, and the panel says so', G.page.locator('.account-panel').inner_text()[:200])
+    r.check(G.get('chesscom-user') == 'deleting-player' and G.get('skill') == 7 and G.get('cloud-signed-in') is None and G.page.locator('.google-btn').count() == 1,
+            'delete: signed out, and the progress on this device stays')
+    G.set('skill', 8)  # a change after the deletion must not reach the cloud
+    time.sleep(6)
+    r.check(uid not in cloud_users() and len(cloud_users()) == len(before), 'delete: nothing is written after the deletion', str(list(cloud_users())))
+    # the second device is still open, with a sign-in that stays valid for up to an hour: a change there syncs
+    H.set('skill', 12)
+    time.sleep(8)
+    r.check(uid not in cloud_users() and len(cloud_users()) == len(before), 'delete: the second device does not bring the data back', str(list(cloud_users())))
+    H.account()
+    r.check(H.page.locator('.google-btn').count() == 1 and H.page.locator('.deleted-note').count() == 1 and H.get('chesscom-user') == 'deleting-player',
+            'delete: the second device signs out, says why, and keeps its progress', H.page.locator('.account-panel').inner_text()[:200])
+    G.ctx.close(); H.ctx.close()
+
     # the aborted download above is the point of that check, not a page error
     r.errors = [e for e in r.errors if not (e.startswith('[retry]') and 'ERR_FAILED' in e)]
     b.close()

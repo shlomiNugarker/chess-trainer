@@ -1331,6 +1331,25 @@ aside {
 
 .account-user { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; align-items: center; }
 .account-user > button { grid-column: 1 / -1; }
+.account-user > button.delete-data { justify-self: start; padding: 0; color: var(--error); font-size: 13px; }
+.deleted-note { color: var(--text-2); }
+.confirm-backdrop { z-index: 70; }
+.confirm-dialog {
+  position: fixed;
+  z-index: 71;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(420px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+.confirm-dialog h2 { margin: 0; font-size: 18px; }
+.confirm-dialog p { margin: 0; color: var(--text-2); line-height: 1.6; }
+.confirm-dialog .buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+button.danger { background: var(--error); border-color: var(--error); color: #111; font-weight: 700; }
 .account-who { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .account-who strong, .account-who .muted { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .account-who .muted { font-size: 13px; }

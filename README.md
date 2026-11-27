@@ -20,7 +20,7 @@ Learn a chess opening repertoire step by step, train it against Stockfish until 
 - **Game review** — pick any recent game (or "Review my last game") and go through it move by move: every move labeled (book, best, good, inaccuracy, mistake, blunder) with the better move as a green arrow and the engine's line, both players' accuracy, a win-chance graph you can tap, "my next mistake", where the game left your repertoire, and one tap to practice a position. Stockfish runs on your device, so there is no daily limit; a reviewed game opens at once the next time.
 - **Installable, offline** — a PWA; learning, training, puzzles and the engine work without internet.
 - **Private** — no sign-in needed; anonymous page counts only (Vercel Web Analytics, no cookies). The privacy page is in the account panel and at `/privacy`.
-- **Optional Google sign-in** — syncs all progress between devices (Firebase Auth + Firestore).
+- **Optional Google sign-in** — syncs all progress between devices (Firebase Auth + Firestore). "Delete my cloud data" in the account panel deletes the cloud copy and the sign-in; progress on the device stays.
 
 ## Run it
 

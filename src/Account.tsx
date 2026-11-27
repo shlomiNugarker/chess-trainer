@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useDialog } from './useDialog';
-import { preloadCloud, signIn, signOut, useCloud } from './cloud';
+import { deleteCloudData, preloadCloud, signIn, signOut, useCloud } from './cloud';
 import { go } from './nav';
 import { InstallRow } from './InstallCard';
 import { explanationsNote } from './repertoire';
@@ -14,8 +14,9 @@ export default function Account({ onClose }: { onClose: () => void }) {
 
   useEffect(preloadCloud, []);
 
+  const [askDelete, setAskDelete] = useState(false);
   const panel = useRef<HTMLDivElement>(null);
-  useDialog(panel, true, onClose);
+  useDialog(panel, !askDelete, onClose); // while the question is open, Escape and Tab belong to it
 
   const time = cloud.lastSync ? new Date(cloud.lastSync).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' }) : '';
   const statusText = {
@@ -27,7 +28,15 @@ export default function Account({ onClose }: { onClose: () => void }) {
     error: tr('Sync failed — will try again soon'),
     'too-big': tr('There is too much data to sync, so it is kept on this device only'),
     'no-room': tr('No room on this device to keep the previous account’s data, so this account is not syncing'),
+    deleting: tr('Deleting your cloud data…'),
+    'delete-failed': tr('Deleting did not work. Please try again.'),
+    deleted: '',
+    'deleted-elsewhere': '',
   }[cloud.status];
+  const deleted = {
+    deleted: tr('Your cloud data and your account here were deleted. Your progress on this device stays.'),
+    'deleted-elsewhere': tr('This account’s cloud data was deleted on another device, so this device signed out. Your progress here stays.'),
+  }[cloud.status as 'deleted' | 'deleted-elsewhere'];
 
   return (
     <>
@@ -50,9 +59,12 @@ export default function Account({ onClose }: { onClose: () => void }) {
               <div className="account-who">
                 <strong>{cloud.user.name || cloud.user.email}</strong>
                 {cloud.user.name && <span className="muted">{cloud.user.email}</span>}
-                <span className={['error', 'offline', 'too-big', 'no-room'].includes(cloud.status) ? 'sync-status warn' : 'sync-status'}>{statusText}</span>
+                <span className={['error', 'offline', 'too-big', 'no-room', 'delete-failed'].includes(cloud.status) ? 'sync-status warn' : 'sync-status'}>{statusText}</span>
               </div>
-              <button className="ghost" onClick={() => void signOut()}>{tr('Sign out')}</button>
+              <button className="ghost" onClick={() => void signOut()} disabled={cloud.status === 'deleting'}>{tr('Sign out')}</button>
+              <button className="link delete-data" onClick={() => setAskDelete(true)} disabled={cloud.status === 'deleting'}>
+                {tr('Delete my cloud data')}
+              </button>
             </div>
           ) : (
             <div className="account-signin">
@@ -64,6 +76,7 @@ export default function Account({ onClose }: { onClose: () => void }) {
                 {tr('Your progress (lines, puzzles, rating, mistakes and streak) syncs between phone and computer, and is kept even if the browser is cleared.')}
               </p>
               {cloud.status === 'error' && <p className="sync-status warn">{tr('Sign-in did not work. Please try again.')}</p>}
+              {deleted && <p className="sync-status deleted-note" role="status">{deleted}</p>}
             </div>
           ))}
 
@@ -87,6 +100,37 @@ export default function Account({ onClose }: { onClose: () => void }) {
             {tr('Licenses')}
           </a>
         </p>
+      </div>
+      {askDelete && (
+        <DeleteQuestion
+          onCancel={() => setAskDelete(false)}
+          onDelete={() => {
+            setAskDelete(false);
+            void deleteCloudData();
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+/** "Delete my cloud data?" — asked in a dialog of its own, above the account panel. */
+function DeleteQuestion({ onCancel, onDelete }: { onCancel: () => void; onDelete: () => void }) {
+  const box = useRef<HTMLDivElement>(null);
+  useDialog(box, true, onCancel);
+  return (
+    <>
+      <div className="account-backdrop confirm-backdrop" onClick={onCancel} />
+      <div ref={box} className="confirm-dialog card" role="alertdialog" aria-modal="true" aria-labelledby="delete-title" aria-describedby="delete-text">
+        <h2 id="delete-title">{tr('Delete your cloud data?')}</h2>
+        <p id="delete-text">
+          {tr('This deletes your synced progress from the cloud and your sign-in to this app. It cannot be undone.')}{' '}
+          {tr('Progress on this device stays, unless you also clear this site’s data in the browser.')}
+        </p>
+        <div className="buttons">
+          <button className="ghost" onClick={onCancel}>{tr('Cancel')}</button>
+          <button className="danger" onClick={onDelete}>{tr('Delete')}</button>
+        </div>
       </div>
     </>
   );

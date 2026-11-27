@@ -5,16 +5,20 @@ import { initializeApp } from 'firebase/app';
 import {
   GoogleAuthProvider,
   connectAuthEmulator,
+  deleteUser,
   getAuth,
   getRedirectResult,
   onAuthStateChanged,
+  reauthenticateWithCredential,
+  reauthenticateWithPopup,
+  reauthenticateWithRedirect,
   signInWithCredential,
   signInWithPopup,
   signInWithRedirect,
   signOut as fbSignOut,
   type User,
 } from 'firebase/auth';
-import { connectFirestoreEmulator, doc, getFirestore, runTransaction } from 'firebase/firestore/lite';
+import { connectFirestoreEmulator, deleteDoc, doc, getFirestore, runTransaction } from 'firebase/firestore/lite';
 import { firebaseConfig } from './cloudConfig';
 
 const app = initializeApp(firebaseConfig);
@@ -43,8 +47,11 @@ export function watchUser(cb: (u: CloudUser | null) => void) {
 const preferRedirect = () =>
   window.matchMedia('(display-mode: standalone)').matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
+/** Emulator tests only: a fake Google ID token the Auth emulator accepts (no Google window). */
+const emulatorUser = () => import.meta.env.VITE_USE_EMULATORS === '1' && localStorage.getItem('emulator-google-user');
+
 export async function signIn() {
-  const testUser = import.meta.env.VITE_USE_EMULATORS === '1' && localStorage.getItem('emulator-google-user');
+  const testUser = emulatorUser();
   if (testUser) {
     // emulator tests only: the Auth emulator accepts a fake Google ID token, no Google window needed
     await signInWithCredential(auth, GoogleAuthProvider.credential(testUser));
@@ -57,6 +64,43 @@ export async function signIn() {
 }
 
 export const signOut = () => fbSignOut(auth);
+
+/** Signs in again with the same Google window as signIn(). 'redirect': the page goes to Google and comes back. */
+async function signInAgain(user: User): Promise<'done' | 'redirect'> {
+  const testUser = emulatorUser();
+  const provider = new GoogleAuthProvider();
+  if (testUser) await reauthenticateWithCredential(user, GoogleAuthProvider.credential(testUser));
+  else if (preferRedirect()) {
+    await reauthenticateWithRedirect(user, provider);
+    return 'redirect';
+  } else await reauthenticateWithPopup(user, provider);
+  return 'done';
+}
+
+/** Firebase deletes a user only shortly after they signed in. */
+const RECENT_SIGN_IN = 4 * 60_000;
+
+/**
+ * Deletes the user's synced document (users/{uid}) and then the Firebase user. An old sign-in is renewed first,
+ * before anything is deleted (cancelling the Google window leaves everything as it was); if Firebase still asks for a
+ * recent sign-in, it is renewed once more. 'redirect': on a phone the page goes to Google and back, and cloud.ts
+ * continues the deletion after the reload (with `justSignedIn`).
+ */
+export async function deleteAccount(uid: string, justSignedIn: boolean): Promise<'deleted' | 'redirect'> {
+  const user = auth.currentUser;
+  if (!user || user.uid !== uid) throw new Error('not signed in as this user');
+  const last = Date.parse(user.metadata.lastSignInTime ?? '') || 0;
+  if (!justSignedIn && Date.now() - last > RECENT_SIGN_IN && (await signInAgain(user)) === 'redirect') return 'redirect';
+  await deleteDoc(doc(db, 'users', uid));
+  try {
+    await deleteUser(user);
+  } catch (e) {
+    if ((e as { code?: string }).code !== 'auth/requires-recent-login') throw e;
+    if ((await signInAgain(user)) === 'redirect') return 'redirect';
+    await deleteUser(user);
+  }
+  return 'deleted';
+}
 
 /** The user's synced data: { data: key -> JSON string, stamps: key -> last change time }. */
 export type CloudDoc = { data: Record<string, string>; stamps: Record<string, number>; updatedAt: number };

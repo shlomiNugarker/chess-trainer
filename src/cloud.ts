@@ -8,7 +8,9 @@ import { cloudEnabled } from './cloudConfig';
 import { ASIDE, PREFIX, asNewDevice, isSynced, mergeSides, type Side } from './syncMerge';
 import type { CloudUser } from './firebase';
 
-export type CloudStatus = 'idle' | 'signing-in' | 'syncing' | 'synced' | 'offline' | 'error' | 'too-big' | 'no-room';
+export type CloudStatus =
+  | 'idle' | 'signing-in' | 'syncing' | 'synced' | 'offline' | 'error' | 'too-big' | 'no-room'
+  | 'deleting' | 'delete-failed' | 'deleted' | 'deleted-elsewhere';
 export type CloudState = { enabled: boolean; user: CloudUser | null; status: CloudStatus; lastSync: number | null };
 
 const SIGNED_IN = PREFIX + 'cloud-signed-in';
@@ -16,6 +18,9 @@ const SIGNING_IN = PREFIX + 'cloud-signing-in';
 const STAMPS = PREFIX + 'sync-stamps';
 const LAST_SYNC = PREFIX + 'cloud-last-sync';
 const OWNER = PREFIX + 'cloud-owner'; // the account (uid) this device's data belongs to
+// the account (uid) whose cloud data is being deleted: nothing is uploaded for it any more (survives the trip to
+// Google's page on phones, after which the deletion continues)
+const DELETING = PREFIX + 'cloud-deleting';
 const PUSH_DELAY = 3000;
 /** Firestore refuses a document over 1 MiB; a little less, for its own overhead. */
 const MAX_DOC_BYTES = 1_000_000;
@@ -88,7 +93,7 @@ function installHook() {
     // a change is newer than the one it replaces, also when this device's clock is behind the other device's
     stamps[key] = Math.max(Date.now(), (stamps[key] ?? 0) + 1);
     set(STAMPS, JSON.stringify(stamps));
-    if (state.user) {
+    if (state.user && !deletingNow()) {
       clearTimeout(pushTimer);
       pushTimer = window.setTimeout(() => void sync(false), PUSH_DELAY);
     }
@@ -112,11 +117,13 @@ function firebase() {
         if (user) {
           set(SIGNED_IN, '1');
           remove(SIGNING_IN);
-          void sync(true);
+          if (get(DELETING) === user.uid) void finishDelete(user.uid, true); // back from Google's page: go on
+          else void sync(true);
         } else {
           remove(SIGNED_IN);
           // no user and no sign-in window open: also the end of a redirect sign-in the user cancelled
-          if (!signInOpen) {
+          // (after a deletion the message about it stays)
+          if (!signInOpen && !['deleting', 'deleted', 'deleted-elsewhere'].includes(state.status)) {
             remove(SIGNING_IN);
             update({ status: 'idle' });
           }
@@ -191,6 +198,49 @@ export async function signOut() {
   }
   remove(SIGNED_IN);
   update({ user: null, status: 'idle' });
+}
+
+// ---- deleting the account's cloud data ----
+
+/** Is the signed-in account's cloud data being deleted? Then nothing is uploaded. */
+const deletingNow = () => !!state.user && get(DELETING) === state.user.uid;
+
+/** After the account's cloud data is gone: this device is no longer anyone's, and its progress stays as it is. */
+function forgetAccount() {
+  clearTimeout(pushTimer);
+  remove(DELETING);
+  remove(SIGNED_IN);
+  remove(OWNER);
+  remove(LAST_SYNC);
+  pageOwner = null;
+}
+
+/**
+ * Deletes the signed-in account's cloud data: its document in Firestore and then the Firebase user. Progress on this
+ * device stays. True when it is done; false if it failed (status 'delete-failed') or the page is going to Google's.
+ */
+export async function deleteCloudData(): Promise<boolean> {
+  const user = state.user;
+  if (!user) return false;
+  set(DELETING, user.uid); // from now on no sync uploads anything
+  clearTimeout(pushTimer);
+  await running; // a sync already in progress does not write (stillHere), and nothing comes after it
+  return finishDelete(user.uid, false);
+}
+
+async function finishDelete(uid: string, justSignedIn: boolean): Promise<boolean> {
+  update({ status: 'deleting' });
+  try {
+    const fb = await firebase();
+    if ((await fb.deleteAccount(uid, justSignedIn)) === 'redirect') return false;
+  } catch {
+    // DELETING stays: nothing is uploaded for this account until it is deleted (or another account signs in)
+    if (state.user?.uid === uid) update({ status: 'delete-failed' });
+    return false;
+  }
+  forgetAccount();
+  update({ user: null, status: 'deleted', lastSync: null });
+  return true;
 }
 
 // ---- one account at a time ----
@@ -275,8 +325,10 @@ export function sync(reloadOnChange: boolean): Promise<void> {
   }
   running = (async () => {
     const user = state.user;
-    if (!user || !ownData(user.uid)) return;
-    const stillHere = () => state.user?.uid === user.uid && !leaving;
+    if (!user || deletingNow() || !ownData(user.uid)) return;
+    const stillHere = () => state.user?.uid === user.uid && !leaving && !deletingNow();
+    /** This device synced this account before, and now its document is gone: deleted on another device. */
+    let goneElsewhere = false;
     update({ status: 'syncing' });
     try {
       const fb = await firebase();
@@ -285,6 +337,11 @@ export function sync(reloadOnChange: boolean): Promise<void> {
       // may run more than once, when another device writes at the same moment
       await fb.mergeDoc(user.uid, (remoteDoc) => {
         if (!stillHere()) return null;
+        // never bring deleted data back: a device that synced before finds no document only after a deletion
+        if (!remoteDoc && get(LAST_SYNC)) {
+          goneElsewhere = true;
+          return null;
+        }
         const remote: Side = { data: addPrefix(remoteDoc?.data), stamps: addPrefix(remoteDoc?.stamps) };
         // the first sync of this device: what is in the account wins over the settings found here
         local = get(LAST_SYNC) ? localSide() : asNewDevice(localSide());
@@ -296,6 +353,13 @@ export function sync(reloadOnChange: boolean): Promise<void> {
         return next;
       });
       if (!stillHere()) return; // signed out (or another account) meanwhile: this device's data is not touched
+      if (goneElsewhere) {
+        // the account's cloud data was deleted: this device signs out of it and keeps its progress
+        forgetAccount();
+        await fb.signOut().catch(() => {});
+        update({ user: null, status: 'deleted-elsewhere', lastSync: null });
+        return;
+      }
 
       let localChanged = false;
       const stamps = readStamps();

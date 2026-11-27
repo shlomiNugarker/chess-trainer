@@ -99,6 +99,7 @@
 - [x] All progress syncs between devices, merged item by item (`src/syncMerge.ts`, checked in `check-sync`) — nothing is lost even if you played on two devices
 - [x] An "Account" panel: sign in / out, sync status and language
 - [x] Firebase `chess-trainer-18bd8` (free), security rules: every user sees only their own document. Instructions in `docs/google-login-setup.md`
+- [x] "Delete my cloud data" in the account panel (27 Nov 2026): after a question in the app's own dialog it deletes `users/{uid}` and then the Firebase user (an old sign-in is renewed first, before anything is deleted; on phones through Google's page and back). Nothing is uploaded while it runs (`cloud-deleting`), the device signs out and keeps its progress. A device that synced the account before and finds no document signs out of it instead of uploading again. The privacy page says so, in all three languages. Checked in `scripts/qa/sync.py` against the emulators
 
 ## Languages ✅
 - [x] English, Hebrew and Spanish; the default follows the browser's language, and a link can choose one (`?lang=he`, `en`, `es`: it wins, is kept like a choice made in the app, and leaves the address bar; other parameters such as `utm_*` stay). Switched in the "Account" panel (or with the language button, when sync is not configured)
