@@ -161,7 +161,7 @@ export const REPERTOIRES: Repertoire[] = [
           '8...Qb6': 'Black offers a trade.',
           '9.Qxb6': 'Trade: Black is left with doubled pawns on the b-file.',
           '10.Ne5': 'Hits the g4 bishop and takes e5.',
-          '11.Bb5': 'Pins the c6 knight and adds pressure. White is better in this queenless position.',
+          '11.Bb5': 'Pins the c6 knight and adds pressure. White has a tiny edge in this queenless position.',
         },
       },
       {
@@ -174,7 +174,7 @@ export const REPERTOIRES: Repertoire[] = [
           '2.Bf4': 'Against ...Nf6 too — the bishop comes out first.',
           '3.e3': 'As always: support d4.',
           '3...Qb6': 'The queen hits b2, which the c1 bishop no longer guards.',
-          '4.Nc3': 'Development that guards b2 indirectly: if 4...Qxb2?, then 5.Nb5! threatens Nc7+ and Black’s queen is in danger.',
+          '4.Nc3': 'Development that guards b2 indirectly: if 4...Qxb2, then 5.Nb5 threatens Nc7+, and Black has to find 5...Nd5 to hold the balance.',
           '5.Nf3': 'Natural development, guarding d4.',
           '5...a6': 'Black stops Nb5 — now ...Qxb2 is a real threat.',
           '6.Rb1': 'Guard b2 with the rook — simple and safe.',
@@ -311,7 +311,7 @@ export const REPERTOIRES: Repertoire[] = [
           '9...Na5': 'Black hits the bishop and wants to trade it.',
           '10.Bb5': 'The bishop goes to b5 — not b3, where ...Nxb3 would trade it off.',
           '10...a6': 'Pushes the bishop back.',
-          '11.Ba4': 'The bishop stays on the a4-e8 diagonal and keeps the pressure. Later it can drop back to c2.',
+          '11.Ba4': 'The bishop steps back to a4, out of reach of the a5 knight (on b3 or c4 the knight would trade it off). Later it can drop back to c2.',
         },
       },
       {
@@ -339,7 +339,7 @@ export const REPERTOIRES: Repertoire[] = [
       },
       {
         id: 'bishops-opening-the-nd4-trap',
-        name: 'Bishop’s Opening: the ...Nd4 trap',
+        name: 'Italian Game: the ...Nd4 trap',
         moves: 'e4 e5 Bc4 Nc6 Nf3 Nd4 Nxd4 exd4 O-O Nf6 d3 d5 exd5 Be7 Qf3 O-O Nd2 Bg4 Qg3 Re8 Ne4',
         idea: '...Nd4 is a trap: after Nxe5, ...Qg5 wins material. Trade knights instead, and Black is left with a stuck pawn on d4. Later White wins a pawn.',
         notes: {
@@ -355,13 +355,13 @@ export const REPERTOIRES: Repertoire[] = [
           '8.Qf3': 'The queen guards the d5 pawn and presses the f6 knight.',
           '9.Nd2': 'The knight develops on its way to e4.',
           '9...Bg4': 'The bishop attacks the queen.',
-          '10.Qg3': 'The queen drops back and stays facing Black’s king.',
+          '10.Qg3': 'The queen steps away from the bishop and stays on the kingside, hitting the g4 bishop and c7.',
           '11.Ne4': 'Offers to trade the knight that guards Black’s king; White stays a pawn up.',
         },
       },
       {
         id: 'bishops-opening-vs-h6',
-        name: 'Bishop’s Opening vs ...h6',
+        name: 'Italian Game vs 3...h6',
         moves: 'e4 e5 Bc4 Nc6 Nf3 h6 d4 exd4 Nxd4 Nf6 Nc3 d6 Be3 Ng4 Nxc6 bxc6 O-O Qh4 Bf4',
         idea: '...h6 stops Ng5 but wastes time. White opens the center at once with d4 and develops fast.',
         notes: {
@@ -635,7 +635,7 @@ export const REPERTOIRES: Repertoire[] = [
         id: 'sicilian-alapin-vs-nc6',
         name: 'Sicilian: Alapin vs ...Nc6',
         moves: 'e4 c5 c3 Nc6 d4 cxd4 cxd4 d5 exd5 Qxd5 Nf3 e5 Nc3 Bb4 Be2 Nxd4 O-O Nxf3+ Bxf3 Qxd1 Rxd1',
-        idea: 'White gives up the d4 pawn for a lead in development: Black’s king is stuck in the center, and White’s rook lands on the open d-file at once.',
+        idea: 'White gives up the d4 pawn for a lead in development: the queens come off, but Black’s king is still in the center and White’s rook lands on the open d-file at once. The game is about level.',
         notes: {
           '1.e4': 'Takes the center and opens the way for the queen and the f1 bishop.',
           '2.c3': 'The Alapin: prepares d4.',
@@ -693,7 +693,7 @@ export const REPERTOIRES: Repertoire[] = [
           '8...f6': 'Black attacks the head of the chain on e5.',
           '9.Be2': 'Develops, getting ready to castle.',
           '10.O-O': 'The king is safe before the center opens.',
-          '11.Nxe5': 'Take with the knight: it is excellent on e5, and the d4 pawn stays strong.',
+          '11.Nxe5': 'Take with the knight: it is excellent on e5. If Black trades it, the d4 pawn comes to e5, and White keeps a slight edge.',
         },
       },
       {
@@ -935,7 +935,7 @@ export const REPERTOIRES: Repertoire[] = [
         id: 'zaitsev',
         name: 'Closed: 9...Bb7',
         moves: 'e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7 Re1 b5 Bb3 d6 c3 O-O h3 Bb7 d4 Nb8 dxe5',
-        idea: 'Black puts the bishop on b7 against e4. After ...Nb8 White opens the center with dxe5, when the e4 pawn is well defended.',
+        idea: 'Black puts the bishop on b7 against e4. After ...Nb8 White opens the center with dxe5 and keeps a slight edge.',
         notes: {
           '1.e4': 'Takes the center and opens the bishop and the queen.',
           '2.Nf3': 'Develops and attacks e5.',
@@ -1216,7 +1216,7 @@ export const REPERTOIRES: Repertoire[] = [
           '8.Qxd4': 'Takes back with a strong queen in the center.',
           '9.O-O-O': 'Castles long: the rook goes to d1.',
           '10.e5': 'Opens the center against d6.',
-          '11.Qxe5': 'Takes back. Black’s pieces are tied up.',
+          '11.Qxe5': 'Takes back. White has a slight edge, though Black develops with ...Bd6, hitting the queen.',
         },
       },
       {
@@ -5407,7 +5407,7 @@ export const REPERTOIRES: Repertoire[] = [
           '10.e5': 'White pushes to drive the knight away.',
           '10...Qxe5': 'The pawn is not defended: take it.',
           '11.Bf4': 'White hits the queen with tempo.',
-          '11...Qc5': 'The queen is safe, and Black is a pawn up.',
+          '11...Qc5': 'The queen is safe and Black is a pawn up, but White’s lead in development gives White a slight edge.',
         },
       },
       {
@@ -5469,7 +5469,7 @@ export const REPERTOIRES: Repertoire[] = [
           '8...Qc7': 'The queen on the diagonal toward h2, together with ...Bd6.',
           '9...Bd6': 'Develops and presses on h2.',
           '10...O-O': 'The king is safe.',
-          '11...a5': 'Gains space on the queenside and threatens ...a4.',
+          '11...a5': 'Gains space on the queenside and prepares ...a4.',
         },
       },
       {
@@ -5707,7 +5707,7 @@ export const REPERTOIRES: Repertoire[] = [
           '8...bxc6': 'Take toward the center.',
           '9...dxc3': 'Take another pawn.',
           '10...Qxd1+': 'Trade queens.',
-          '11...Ne7': 'Develops, reaching a comfortable endgame.',
+          '11...Ne7': 'Develops: Black is a clean pawn up in the endgame, with a slight edge.',
         },
       },
       {
@@ -5727,7 +5727,7 @@ export const REPERTOIRES: Repertoire[] = [
           '8...a6': 'Asks the bishop a question.',
           '9...b5': 'Pushes the bishop back.',
           '10...O-O': 'The king is safe.',
-          '11.Bg5': 'White pins the f6 knight.',
+          '11.Bg5': 'White puts pressure on the f6 knight.',
           '11...Nd4': 'The knight jumps to the strong d4 square.',
         },
       },
@@ -6132,7 +6132,7 @@ export const REPERTOIRES: Repertoire[] = [
           '8...Qxf6': 'Takes back.',
           '9...Nxe5': 'Trades.',
           '10...Qh4+': 'Check: weakens White’s kingside.',
-          '11...Qd8': 'The queen goes back; e5 is weak.',
+          '11...Qd8': 'The queen goes back; the position is level.',
         },
       },
       {
