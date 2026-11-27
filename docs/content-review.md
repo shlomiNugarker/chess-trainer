@@ -2,7 +2,7 @@
 
 Every idea and note of every repertoire, in English and Hebrew, was reviewed before launch (27 Nov 2026): wrong board facts (pins, threats, "connects the rooks", castling that never happens, doubled pawns that are not), notes that do not match their move, English and Hebrew that say different things, unnatural Hebrew, chess terms (one Hebrew word for a pawn and one for a file everywhere), typos — and evaluations, which must match the engine: under 0.30 is about equal, 0.30–0.70 a slight edge, 0.70–1.50 better, above 1.50 much better. Board facts were checked on the position (chess.js), evaluations with the bundled Stockfish 19.
 
-Clear mistakes were fixed directly. Only real judgement calls the engine does not settle are left for the owner, under **Open questions** in each repertoire.
+Clear mistakes were fixed directly. Only real judgement calls the engine does not settle were left for the owner; the five of the second round were decided on 27 Nov 2026 (below, under each repertoire).
 
 ## The questions of the first round — resolved
 
@@ -54,14 +54,10 @@ No open questions.
 
 Reviewed in the second round: 32 fixes.
 
-**Open questions:**
+**Questions — decided (27 Nov 2026, Stockfish at depth 20):**
 
-- **`g5`, move 10.exd5** — now “Takes.”  
-  Question: Keep 10.exd5, or switch to 10.Ne3 (engine PV ...dxe4 hxg3, about -0.4), which keeps the knight away from ...Bxg4?  
-  Suggestion: Switch to 10.Ne3 if the line is re-recorded; otherwise keep it with the corrected 11.cxd4 note.
-- **`declined-qh4`, move 10.h4** — now “Gains space and takes g5 from the black queen.”  
-  Question: Keep 10.h4 Qf6 11.Qxg3, or take on g3 at once with 10.Qxg3?  
-  Suggestion: 10.Qxg3 is simpler and scores higher; consider it if the line is re-recorded.
+- **`g5`, move 10.exd5** — kept. Stockfish at depth 20: 10.exd5 -0.63, 10.Ne3 -0.60; the difference is too small to change the line.
+- **`declined-qh4`, move 10.h4** — changed to 10.Qxg3 (+0.70, against +0.35 for 10.h4): now 10.Qxg3 Nd7 11.Bg5 Ngf6 12.O-O-O.
 
 ### Vienna Game (White) (`vienna`, 8 lines)
 
@@ -127,11 +123,9 @@ No open questions.
 
 Reviewed in the second round: 34 fixes.
 
-**Open questions:**
+**Questions — decided (27 Nov 2026, Stockfish at depth 20):**
 
-- **`qa5-vs-bd2`, idea** — now “After Bd2 the queen is in a discovered-attack line, so it goes to b6, hitting b2 and d4. Black castles short while White goes long.”  
-  Question: Keep this line as it is (a clear White edge by move 9), or change Black’s play earlier (e.g. 7...e6 / 8...Bb4 order) so the line ends closer to equal?  
-  Suggestion: Check earlier alternatives with the engine (from 5...Qb6 onward); if none is close to equal, keep the line and add a short note that White is better here.
+- **`qa5-vs-bd2`** — the moves stay: from 5...Qb6 on no Black move is closer to equal (move 5: -0.53 at best; 7...c6 -0.63 against 7...e6 -0.78; 8...Be7 -0.76 against 8...Bb4 -0.94). The idea now says that White keeps the better game in this line.
 
 ### French Defense (Black) (`french`, 12 lines)
 
@@ -143,11 +137,9 @@ No open questions.
 
 Reviewed in the second round: 3 fixes.
 
-**Open questions:**
+**Questions — decided (27 Nov 2026, Stockfish at depth 20):**
 
-- **`vs-nf3`, move 8...Bg4** — now “Hits the f3 knight, which guards d4 and e5.”  
-  Question: Keep 8...Bg4 (and the bishop-for-knight plan the idea describes), or switch to 8...Qb6, which the engine rates about 0.3 better?  
-  Suggestion: Consider 8...Qb6 (engine PV: 9.h4 Bh6 10.Qxh6 Ng4 11.Qd2 h5), or keep Bg4 and accept that White ends clearly better.
+- **`vs-nf3`, move 8...Bg4** — changed to 8...Qb6 (-0.59, against -1.05 for 8...Bg4): now 8...Qb6 9.h4 Bxh6 10.Qxh6 Ng4 11.Qd2 h5.
 
 ### Modern Defense (Black) (`modern`, 11 lines)
 
@@ -215,15 +207,13 @@ Reviewed in the second round: 11 fixes.
 
 No open questions.
 
-### Slav Defense (Black) (`slav`, 15 lines)
+### Slav Defense (Black) (`slav`, 16 lines)
 
 Reviewed in the second round: 57 fixes.
 
-**Open questions:**
+**Questions — decided (27 Nov 2026, Stockfish at depth 20):**
 
-- **`knight-to-c3-first`, idea** — now “White develops the b1 knight first. Black plays exactly the same moves — and reaches the position of the quiet system (a transposition). Nothing new to learn.”  
-  Question: Should this line cover 5.cxd5 cxd5 6.Qb3 (the engine's top choice after 4...Bf5), or keep 'Nothing new to learn'?  
-  Suggestion: Either add a short line 5.cxd5 cxd5 6.Qb3 Bc8, or soften to 'Almost nothing new to learn' and mention 5.cxd5 with 6.Qb3.
+- **`knight-to-c3-first`** — a new short line, `knight-to-c3-first-qb3`: 5.cxd5 cxd5 6.Qb3 Bc8 7.Nf3 e6 8.Ne5 Nc6 (6...Bc8 -0.39, the simple way to guard b7; 6...Nc6 gives the pawn for -0.28). The idea of the old line now says “Almost nothing new” and points to it.
 
 ### Queen’s Gambit Accepted (Black) (`qga`, 7 lines)
 

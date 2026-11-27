@@ -1730,7 +1730,7 @@ export const REPERTOIRES: Repertoire[] = [
       {
         id: 'declined-qh4',
         name: '2...Qh4+',
-        moves: 'e4 e5 f4 Qh4+ g3 Qe7 Nc3 exf4 Qe2 fxg3 Nf3 d6 d4 Bg4 h3 Bxf3 Qxf3 c6 h4 Qf6 Qxg3',
+        moves: 'e4 e5 f4 Qh4+ g3 Qe7 Nc3 exf4 Qe2 fxg3 Nf3 d6 d4 Bg4 h3 Bxf3 Qxf3 c6 Qxg3 Nd7 Bg5 Ngf6 O-O-O',
         idea: 'An early check. White blocks with g3, develops, lines up on the e-file with Qe2, and wins a pawn back.',
         notes: {
           '1.e4': 'Takes the center and opens the bishop and the queen.',
@@ -1742,8 +1742,9 @@ export const REPERTOIRES: Repertoire[] = [
           '7.d4': 'The center.',
           '8.h3': 'Asks the bishop.',
           '9.Qxf3': 'Takes back.',
-          '10.h4': 'Gains space and takes g5 from the black queen.',
-          '11.Qxg3': 'Wins a pawn back: still a pawn down, but White has a slight edge.',
+          '10.Qxg3': 'Wins a pawn back at once: still a pawn down, but White is better.',
+          '11.Bg5': 'Develops with tempo on the e7 queen.',
+          '12.O-O-O': 'Castles long: the rook comes to d1 at once, and White keeps the edge.',
         },
       },
     ],
@@ -4460,7 +4461,7 @@ export const REPERTOIRES: Repertoire[] = [
         id: 'qa5-vs-bd2',
         name: '3...Qa5 vs 5.Bd2',
         moves: 'e4 d5 exd5 Qxd5 Nc3 Qa5 d4 Nf6 Bd2 Qb6 Nf3 Bf5 Qe2 e6 O-O-O Bb4 Nh4 O-O Nxf5 exf5 a3 Bxc3',
-        idea: 'After Bd2 the queen is in a discovered-attack line, so it goes to b6, hitting b2 and d4. Black castles short while White goes long.',
+        idea: 'After Bd2 the queen is in a discovered-attack line, so it goes to b6, hitting b2 and d4. Black castles short while White goes long. White keeps the better game here: the engine finds nothing closer to equal for Black from move 5 on.',
         notes: {
           '1...d5': 'Challenges e4 at once. It costs a little against perfect play, but the plans are simple and the same in every line.',
           '2...Qxd5': 'Takes back with the queen: the center pawn is gone.',
@@ -4986,8 +4987,8 @@ export const REPERTOIRES: Repertoire[] = [
       {
         id: 'vs-nf3',
         name: 'vs 2.Nf3',
-        moves: 'e4 d6 Nf3 Nf6 Nc3 g6 d4 Bg7 Be3 c6 Qd2 O-O Bh6 b5 a3 Bg4 h4 Bxf3 gxf3 Nh5 Bxg7 Kxg7',
-        idea: 'The same setup by another order. Against Be3, Qd2 and Bh6 Black plays ...c6 and ...b5, and gives the light bishop to break White’s pawns.',
+        moves: 'e4 d6 Nf3 Nf6 Nc3 g6 d4 Bg7 Be3 c6 Qd2 O-O Bh6 b5 a3 Qb6 h4 Bxh6 Qxh6 Ng4 Qd2 h5',
+        idea: 'The same setup by another order. Against Be3, Qd2 and Bh6 Black plays ...c6 and ...b5, puts the queen on b6 against d4, and trades the dark bishops; after ...Ng4 and ...h5 the knight holds and the king is safe.',
         notes: {
           '1...d6': 'The Pirc: Black lets White build a center and attacks it later from the flanks.',
           '2...Nf6': 'Develops and hits e4.',
@@ -4996,10 +4997,10 @@ export const REPERTOIRES: Repertoire[] = [
           '5...c6': 'Prepares ...b5.',
           '6...O-O': 'The king is safe.',
           '7...b5': 'Space on the queenside.',
-          '8...Bg4': 'Hits the f3 knight, which guards d4 and e5.',
-          '9...Bxf3': 'Breaks White’s pawns.',
-          '10...Nh5': 'The knight is safe from e5 and covers f4.',
-          '11...Kxg7': 'Takes back; the king is safe.',
+          '8...Qb6': 'The queen hits d4 and gets off the d-file; the engine prefers it to ...Bg4, which gives White a clear edge.',
+          '9...Bxh6': 'Trades the dark bishops before White’s attack with h5 starts.',
+          '10...Ng4': 'Hits the queen and comes to a good square.',
+          '11...h5': 'Holds the g4 knight and stops h5: White is only slightly better.',
         },
       },
       {
@@ -7934,7 +7935,7 @@ export const REPERTOIRES: Repertoire[] = [
         id: 'knight-to-c3-first',
         name: 'Knight to c3 first',
         moves: 'd4 d5 c4 c6 Nc3 Nf6 e3 Bf5 Nf3 e6 Nh4 Bg6 Nxg6 hxg6 Bd3 Nbd7 Bd2 Bd6 Qb3 dxc4 Qxc4 O-O',
-        idea: 'White develops the b1 knight first. Black plays exactly the same moves — and reaches the position of the quiet system (a transposition). Nothing new to learn.',
+        idea: 'White develops the b1 knight first. Black plays exactly the same moves — and reaches the position of the quiet system (a transposition). Almost nothing new: only 5.cxd5 cxd5 6.Qb3, which has its own line.',
         notes: {
           '1...d5': 'Takes the center and stops e4.',
           '2...c6': 'Support d5 with a pawn without blocking the c8 bishop.',
@@ -7948,6 +7949,19 @@ export const REPERTOIRES: Repertoire[] = [
           '10.Qb3': 'White attacks b7.',
           '10...dxc4': 'Take on c4: after Qxc4 White’s queen no longer presses on b7.',
           '11...O-O': 'The king is safe and Black’s structure is solid.',
+        },
+      },
+      {
+        id: 'knight-to-c3-first-qb3',
+        name: 'Knight to c3 first: 5.cxd5 and 6.Qb3',
+        moves: 'd4 d5 c4 c6 Nc3 Nf6 e3 Bf5 cxd5 cxd5 Qb3 Bc8 Nf3 e6 Ne5 Nc6',
+        idea: 'White takes on d5 and hits b7 with the queen at once. The bishop goes back to c8 to guard b7; Black plays ...e6 and ...Nc6, and the position is close to equal.',
+        notes: {
+          '5...cxd5': 'Takes back toward the center: the structure of the Exchange Slav.',
+          '6.Qb3': 'Attacks b7, which the f5 bishop left without a guard.',
+          '6...Bc8': 'Back to guard b7. Simple: the bishop comes out again later, often to d7.',
+          '7...e6': 'Opens the f8 bishop; the d5 pawn is solid.',
+          '8...Nc6': 'Develops and hits the e5 knight; Black is close to equal.',
         },
       },
       {
