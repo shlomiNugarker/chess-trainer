@@ -525,9 +525,11 @@ def touch(b):
         r.check(pg.locator('.opening-picker').count() == 0, f'first visit, {locale}: asked once')
         ctx.close()
     # "Not sure? Recommend for me": three openings for a beginner (White, vs 1.e4, vs 1.d4), and Learn opens on the first.
-    # Every chip is readable: nothing cut, and in a right-to-left text no "...e6" at the end (it looks like a name cut short)
+    # Every chip is readable: nothing cut (a long name wraps) and inside the screen; "Sicilian with ...e6" keeps its dots,
+    # as "e6" alone would read as a White move
     CHIPS_JS = r"""() => [...document.querySelectorAll('.opening-picker .chip')].filter(c => c.scrollWidth > c.clientWidth + 1
-      || /^\s*\u2066?\.\.\.|\u2066\.\.\.[^\u2069]*\u2069\s*$/.test(document.dir === 'rtl' ? c.textContent : '')).map(c => c.textContent)"""
+      || c.getBoundingClientRect().left < -0.5 || c.getBoundingClientRect().right > innerWidth + 0.5
+      || (c.dataset.rep === 'sicilian' && !c.textContent.includes('...e6'))).map(c => c.textContent)"""
     for locale in ('en-US', 'he-IL', 'es-ES'):
         for w, h in ((375, 812), (1280, 860)):
             ctx = b.new_context(locale=locale, viewport={'width': w, 'height': h}, is_mobile=w < 600, has_touch=w < 600, first_visit=True)

@@ -1,10 +1,8 @@
 import { useState } from 'react';
-import { REPERTOIRES, type Repertoire } from './repertoire';
-import { dir, msg, tr } from './i18n';
+import { REPERTOIRES } from './repertoire';
+import { msg, tr } from './i18n';
 import { BEGINNER, GROUPS, shortName } from './openingGroups';
 
-/** The picker's label: in a right-to-left text, "...e6" at the end looks like a name cut short, so the dots go. */
-const chipName = (r: Repertoire) => (dir() === 'rtl' ? shortName(r).replace(/⁦\.\.\.([^⁩]+)⁩$/, '⁦$1⁩') : shortName(r));
 const nameOf = (id: string) => shortName(REPERTOIRES.find((r) => r.id === id)!);
 
 /**
@@ -33,8 +31,8 @@ export function OpeningPicker({ onDone }: { onDone: (hidden: string[]) => void }
           <span className="picker-label">{g.label()}</span>
           <div className="chips">
             {REPERTOIRES.filter(g.of).map((r) => (
-              <button key={r.id} className={picked.includes(r.id) ? 'chip active' : 'chip'} aria-pressed={picked.includes(r.id)} onClick={() => flip(r.id)}>
-                {chipName(r)}
+              <button key={r.id} data-rep={r.id} className={picked.includes(r.id) ? 'chip active' : 'chip'} aria-pressed={picked.includes(r.id)} onClick={() => flip(r.id)}>
+                {shortName(r)}
               </button>
             ))}
           </div>
