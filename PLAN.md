@@ -192,7 +192,7 @@
   - The class thresholds are defined in one place, `DROP` in `src/engine.ts`, instead of four
   - Accessibility: ⏮ ⏭ are mirrored in right-to-left languages like ‹ ›; a label for the ⚙ button in Learn
   - Infrastructure: `npm test` and `npm run check` (in CI and in the docs instead of four commands); `engines` (Node 24, as in CI and on Vercel); `stockfish` moved to devDependencies at an exact version (the engine itself is a copy in `public/engine`); the libraries are in a file of their own (`vendor`, kept in the cache between versions; no more 500kB warning); security headers in `vercel.json`; `check-lines` also fails on a translation of a line that does not exist
-  - Left as it is on purpose: no CSP (Google, Firestore, Chess.com and the fonts would have to be listed and maintained); when signing out the data stays on the device (the app works without an account too), and whoever uses the device without signing in sees it; splitting the large components (`Trainer.tsx`, `Learn.tsx`, `Review.tsx`) and shared interface components (move list, stepper) — worth doing when touching them
+  - Left as it is on purpose: no CSP (Google sign-in, Firestore and Chess.com would have to be listed and maintained; see "After launch"); when signing out the data stays on the device (the app works without an account too), and whoever uses the device without signing in sees it; splitting the large components (`Trainer.tsx`, `Learn.tsx`, `Review.tsx`) and shared interface components (move list, stepper) — worth doing when touching them
 
 ## Where things stand and what is next
 - New address (22 Nov 2026): https://opening-trainer-app.vercel.app — another domain of the same Vercel project; the old address (chess-trainer-seven-pink.vercel.app) still works. Sign-in runs on the address the page was opened from (`src/cloudConfig.ts`), so every address must be allowed in three places: Firebase Auth, the API key (website restrictions) and the OAuth client — see the end of `docs/google-login-setup.md`. Progress is kept per address: on a new one you sign in with Google once and it loads from the cloud
@@ -206,6 +206,11 @@
 ---
 
 ## After launch (noticed before launch, not done — the repertoire is frozen until then)
+- [ ] A Content-Security-Policy header: it must allow Firebase Auth (and Google's sign-in window), Firestore, Vercel Analytics, the Chess.com API and `'wasm-unsafe-eval'` for Stockfish — waits because a mistake there breaks sign-in or the engine for everyone, so it needs its own round of checks on the live site
+- [ ] Download the Stockfish engine (1.8MB) on first use instead of keeping it in the cache on the first visit — saves data for visitors who only learn lines, but changes the offline behavior and needs its own testing
+- [ ] Accessibility of the board for screen readers: the squares are buttons without names — a real fix (names, announcing moves) touches every board and is too large for the launch round
+- [ ] `<html lang>` in `index.html` is "en" while the share tags are Hebrew — matters only to search engines; the app sets the language itself when it starts
+- [ ] Dependency updates: all of them are minor and `npm audit` is clean, so nothing is urgent; better done right after launch than right before it
 - [ ] Decide the 5 open questions in `docs/content-review.md` (move choices and whether a line should change: the King's Gambit 10.exd5 and 10.h4, the Scandinavian against 5.Bd2, the Pirc 8...Bg4 against 2.Nf3, the Slav's knight-to-c3-first line). They change moves, so they wait until the repertoire is open again
 - [ ] Engine check again at depth 20: at depth 16 (27 Nov 2026) a few moves of the 1.e4 repertoire give up 3-4% (3.Nf3 against ...c6 3.9%, 10.c3 3.6%, 9.Nbd2 3.2%, and 2.Bc4 itself, the known price of the Bishop's Opening) and two of the Sicilian with ...e6 about 3.1% (2...e6, 3...e6). At depth 20, when they were added, they were under 3%
 - [ ] The order of the openings in the pickers: the Colle sits between the English and the Queen's Gambit; grouping the 1.d4 systems (London, Colle, Trompowsky, Queen's Gambit, Catalan) together would be easier to scan
