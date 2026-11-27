@@ -216,6 +216,19 @@
 - [x] The order of the openings in the pickers (27 Nov 2026): White's 1.d4 systems together (London, Colle, Trompowsky, Queen's Gambit, Catalan), then 1.e4, then the English (`pickerOrder` in `src/openingGroups.ts`)
 - [ ] The puzzle set grew to 740KB (5,959 puzzles); if the first load of Practice is slow on phones, split it (the "from my openings" puzzles in a file of their own)
 
+## After launch — the plan of 27 Nov 2026
+What is still missing, one stage at a time (each its own commit, `npm run check` and the QA of what it touches; the full QA once at the end):
+- [x] The 5 open content questions and the depth-20 recheck (above)
+- [x] Small things: the order in the pickers, `<html lang>`
+- [x] Lines to refresh: a line passed with no mistake comes back to be tested after 3 days, then 7, 14, 30 and 60 as long as each test is clean (`REFRESH_DAYS`, `linesToRefresh` in `src/mastery.ts`); "Refresh N lines" in Today starts the test at once, the line list marks them with 🔁, and after a clean test "Next line to refresh ›" goes on. Checked in `screens.py` (`refresh`) and `scripts/check-mastery.ts`
+- [ ] A link to share a line: opens the same opening and line in Learn
+- [ ] Games from Lichess in My games, beside Chess.com
+- [ ] The board for screen readers
+- [ ] Dependency updates
+- [ ] A Content-Security-Policy, first as Report-Only (it reports and blocks nothing); enforcing it waits for a real Google sign-in on the live site
+- [ ] The engine on first use, and splitting the puzzle file: measured first, done only if the numbers say so
+- Not planned: push reminders (they need a server that keeps a token for every device — against the privacy page's promise that nothing is sent without signing in); a repertoire built from nothing (the PGN import and the branches from your games already cover it)
+
 ## Findings of the code review
 
 Fixed (25 Nov 2026):

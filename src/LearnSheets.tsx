@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { REPERTOIRES, lineText, repName, type Repertoire } from './repertoire';
 import { withCustom } from './customLines';
-import { isMastered, loadMastery } from './mastery';
+import { isMastered, loadMastery, needsRefresh } from './mastery';
 import { loadMistakes } from './mistakes';
 import { lineStats } from './lineStats';
 import { msg, tr } from './i18n';
@@ -135,6 +135,9 @@ export function LineSheet(props: {
               <span className="sheet-row-name">
                 {isMastered(mastery[l.id]) ? '✓ ' : ''}
                 {lineText(rep, l).name}
+                {needsRefresh(mastery[l.id]) && (
+                  <span className="refresh-mark" title={tr('Time to test this line again')}> 🔁</span>
+                )}
               </span>
               <span className={st.rate === null ? 'sheet-row-meta' : st.rate >= 70 ? 'sheet-row-meta rate good' : st.rate >= 40 ? 'sheet-row-meta rate mid' : 'sheet-row-meta rate low'}>
                 {st.rate === null ? tr('Not tested yet') : tr(msg`${`${st.rate}%`} · ${st.clean} of ${st.tries} clean`)}

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard, type Arrow } from 'react-chessboard';
 import { explanationsNote, movesOf, REPERTOIRES, lineMoves, lineText, moveLabel, posKey, repName } from './repertoire';
-import { importPgn, removeCustomLine, useRepertoire, type ImportResult } from './customLines';
+import { importPgn, removeCustomLine, useRepertoire, withCustom, type ImportResult } from './customLines';
 import { hasExplanations, msg, tr, useLang } from './i18n';
 import { saveMistake, todaysMistakes, useMistakeCount } from './mistakes';
 import { dialogOpen } from './useDialog';
@@ -14,7 +14,7 @@ import { useScrollToMove } from './useScrollToMove';
 import { useFitBoard } from './useFitBoard';
 import { useSidePanel } from './useSidePanel';
 import { useStored } from './storage';
-import { hasAnyMastery, hasMastered, isMastered, loadMastery, recordRun } from './mastery';
+import { hasAnyMastery, hasMastered, isMastered, linesToRefresh, loadMastery, recordRun } from './mastery';
 import { InstallCard } from './InstallCard';
 import { setHidden, useHiddenRepertoires } from './hiddenReps';
 import { OpeningPicker } from './OpeningPicker';
@@ -65,6 +65,10 @@ export default function Learn({ onTrain, onDrill }: Props) {
   // "today": the streak and the positions to review, when there are any (the daily puzzles are on the Practice tab)
   const due = useMistakeCount(dueCount);
   const streakDays = useMemo(dayStreak, []); // it changes on another screen
+  // mastered lines whose time to be tested again has come, in the openings shown (this one first)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const toRefresh = useMemo(() => linesToRefresh(visible.map(withCustom), rep.id), [visible, rep, masteryVersion]);
+  const refreshNext = toRefresh.find((x) => x.repId !== rep.id || x.lineIdx !== lineIdx);
   const nextToLearn = [...rep.lines.keys()]
     .map((k) => (lineIdx + 1 + k) % rep.lines.length)
     .find((i) => i !== lineIdx && !isMastered(mastery[rep.lines[i].id]));
@@ -165,6 +169,11 @@ export default function Learn({ onTrain, onDrill }: Props) {
     setPly(0);
     setQuiz({ mistakes: 0 });
   };
+  /** Opens a line to refresh and starts its test at once. */
+  const startRefresh = (x: { repId: string; lineIdx: number }) => {
+    pickLine(x.repId, x.lineIdx);
+    setQuiz({ mistakes: 0 });
+  };
 
   const arrows: Arrow[] = [];
   if (quiz?.wrong) arrows.push(uciToArrow(quiz.wrong.correctUci, GREEN_ARROW));
@@ -215,12 +224,17 @@ export default function Learn({ onTrain, onDrill }: Props) {
 
       {!showGuide && !quiz && offerInstall && <InstallCard />}
 
-      {!showGuide && !quiz && (streakDays > 0 || due > 0) && (
+      {!showGuide && !quiz && (streakDays > 0 || due > 0 || toRefresh.length > 0) && (
         <div className="today">
           <span className="today-title">{tr('Today')}</span>
           {streakDays > 0 && <span className="pill">🔥 {daysLabel(streakDays)}</span>}
           {due > 0 && (
             <button onClick={onDrill}>↻ {due === 1 ? tr('Review 1 position') : tr(msg`Review ${due} positions`)}</button>
+          )}
+          {toRefresh.length > 0 && (
+            <button className="refresh-lines" onClick={() => startRefresh(toRefresh[0])}>
+              🔁 {toRefresh.length === 1 ? tr('Refresh 1 line') : tr(msg`Refresh ${toRefresh.length} lines`)}
+            </button>
           )}
         </div>
       )}
@@ -382,7 +396,12 @@ export default function Learn({ onTrain, onDrill }: Props) {
               <p>{text.idea}</p>
               <div className="buttons">
                 <button className={quiz.mistakes ? 'primary' : 'ghost'} onClick={startQuiz}>↻ {tr('Again')}</button>
-                {nextToLearn !== undefined && (
+                {!quiz.mistakes && refreshNext && (
+                  <button className="primary next-refresh" onClick={() => startRefresh(refreshNext)}>
+                    {tr('Next line to refresh ›')}
+                  </button>
+                )}
+                {nextToLearn !== undefined && !(refreshNext && !quiz.mistakes) && (
                   <button className={quiz.mistakes ? 'ghost' : 'primary'} onClick={() => pickLine(rep.id, nextToLearn)}>
                     {tr('Next line to learn ›')}
                   </button>

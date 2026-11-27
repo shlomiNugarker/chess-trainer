@@ -1,6 +1,6 @@
 """QA: Learn extras, Practice (puzzles, my mistakes), My review, account and language, phone layouts, offline.
 
-    python scripts/qa/screens.py [--url URL] [--only learn,puzzles,mistakes,review,account,phone,touch,lang,offline]
+    python scripts/qa/screens.py [--url URL] [--only learn,puzzles,mistakes,review,account,refresh,phone,touch,lang,offline]
                                  [--chesscom USER] [--account-url URL]
 
 The review section loads real games from Chess.com; the account panel needs a build with Firebase configured,
@@ -727,6 +727,43 @@ def fonts(b):
             ctx.close()
 
 
+@section('refresh')
+def refresh(b):
+    """A mastered line comes back to be tested after a few days: "Refresh 1 line" in Today, a mark in the line list,
+    the button starts the test at once, and a clean test sends it away again (for 7 days)."""
+    lon = data[0]; day = 24 * 3600 * 1000
+    now = int(time.time() * 1000)
+    m = {lon['id']: {lon['lines'][1]['id']: {'tries': 1, 'clean': 1, 'last': 0, 'at': now - 4 * day, 'streak': 1},
+                     lon['lines'][0]['id']: {'tries': 1, 'clean': 0, 'last': 2, 'at': now - 9 * day, 'streak': 0},
+                     lon['lines'][2]['id']: {'tries': 2, 'clean': 2, 'last': 0, 'at': now - 4 * day, 'streak': 2}}}
+    ctx = b.new_context(locale='en-US', viewport={'width': 1280, 'height': 900})
+    ctx.add_init_script("if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1');"
+                        f"localStorage.setItem('chess-trainer:mastery', {json.dumps(json.dumps(m))});"
+                        "localStorage.setItem('chess-trainer:openings-chosen', 'true'); localStorage.setItem('chess-trainer:guide-dismissed', 'true');"
+                        "localStorage.setItem('chess-trainer:screen', '\"learn\"'); }")
+    pg = ctx.new_page(); r.watch(pg, 'refresh'); pg.goto(a.url); pg.wait_for_selector('.learn-header', timeout=60000)
+    btn = pg.locator('.today .refresh-lines')
+    r.check(btn.count() == 1 and 'Refresh 1 line' in btn.inner_text(), 'refresh: Today offers the one line that is due (not the one to learn, not the one tested recently)', text(pg, '.today'))
+    open_opening(pg, lon['id'])
+    pg.click('.line-btn')
+    marks = pg.locator('.pick-sheet .sheet-line')
+    due = [i for i in range(marks.count()) if marks.nth(i).locator('.refresh-mark').count()]
+    r.check(due == [1], 'refresh: the line list marks it', str(due))
+    close_sheet(pg)
+    pg.click('.today .refresh-lines'); time.sleep(0.8)
+    n = len(lon['lines'][1]['uci'])
+    r.check(current_line(pg) == 1 and pg.locator(f'.pill:text-is("Test · 0/{n}")').count() == 1, 'refresh: the button opens the line and starts its test')
+    for k, u in enumerate(lon['lines'][1]['uci']):
+        if k % 2: continue
+        pg.wait_for_selector(f'.pill:text-is("Test · {k}/{n}")', timeout=8000)
+        pg.click(f'.learn .board [data-square="{u[:2]}"]'); pg.click(f'.learn .board [data-square="{u[2:4]}"]')
+    r.check(wait_until(lambda: pg.locator('.card.notice.tone-ok').count() == 1, 10), 'refresh: the test is passed')
+    pg.click('.actions button:has-text("Back to study")'); time.sleep(0.4)
+    rec = pg.evaluate(f"JSON.parse(localStorage.getItem('chess-trainer:mastery'))[{json.dumps(lon['id'])}][{json.dumps(lon['lines'][1]['id'])}]")
+    r.check(pg.locator('.today .refresh-lines').count() == 0 and rec['streak'] == 2, 'refresh: a clean test sends it away, two clean in a row', str(rec))
+    ctx.close()
+
+
 @section('offline')
 def offline(b):
     ctx, pg = open_page(b, 'offline', 'en-US', 1280, 900)
@@ -760,6 +797,6 @@ with sync_playwright() as p:
     if not a.only: tour(pg, 'desktop-en')
     learn(pg); mistakes(pg); puzzles(pg); review(pg)  # mistakes first: the puzzle section adds its own
     ctx.close()
-    install(b); privacy(b); account(b); phone(b); touch(b); languages(b); fonts(b); offline(b)
+    install(b); privacy(b); account(b); refresh(b); phone(b); touch(b); languages(b); fonts(b); offline(b)
     b.close()
 r.done()

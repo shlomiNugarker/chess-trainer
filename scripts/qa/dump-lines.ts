@@ -16,7 +16,7 @@ const out = REPERTOIRES.map((r) => {
       if (user) book[place] = u;
       return u;
     });
-    return { i, name: l.name, uci };
+    return { i, id: l.id, name: l.name, uci };
   });
   return { id: r.id, color: r.userColor, lines, book };
 });

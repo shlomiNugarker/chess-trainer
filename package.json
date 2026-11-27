@@ -21,7 +21,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint src scripts",
-    "test": "node --experimental-strip-types scripts/check-i18n.ts && node --experimental-strip-types scripts/check-lines.ts && node --experimental-strip-types scripts/check-review.ts && node --experimental-strip-types scripts/check-puzzles.ts && node --experimental-strip-types scripts/check-sync.ts",
+    "test": "node --experimental-strip-types scripts/check-i18n.ts && node --experimental-strip-types scripts/check-lines.ts && node --experimental-strip-types scripts/check-review.ts && node --experimental-strip-types scripts/check-puzzles.ts && node --experimental-strip-types scripts/check-sync.ts && node --experimental-strip-types scripts/check-mastery.ts",
     "check": "npm run lint && npm run build && npm test",
     "preview": "vite preview"
   },
