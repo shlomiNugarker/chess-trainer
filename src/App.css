@@ -1032,6 +1032,19 @@ aside {
 
   .brand { display: none; }
 
+  /* the list of openings is long on a phone: its buttons stay in view above the tab bar */
+  .opening-picker .buttons {
+    position: sticky;
+    bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
+    z-index: 5;
+    margin: 4px -12px -12px;
+    padding: 10px 12px 12px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-radius: 0 0 var(--r-md) var(--r-md);
+  }
+  .opening-picker .buttons button { flex: 1; }
+
   .tabs {
     flex: 1;
     height: var(--tabbar-h);
