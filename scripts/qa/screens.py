@@ -915,7 +915,8 @@ def offline(b):
     # Practice is not opened before going offline: the puzzle file is kept by itself a while after the first visit
     kept = r"caches.keys().then(ks => Promise.all(ks.map(k => caches.open(k).then(c => c.keys())))).then(l => l.flat().some(q => /puzzles-v\d+\.json/.test(q.url)))"
     r.check(wait_until(lambda: pg.evaluate(kept), 40), 'offline: the puzzle file is kept after the first visit, without opening Practice')
-    tab(pg, 0); time.sleep(5)  # let the engine load (and get cached)
+    engine = r"caches.keys().then(ks => Promise.all(ks.map(k => caches.open(k).then(c => c.keys())))).then(l => l.flat().map(q => q.url)).then(u => u.some(x => x.endsWith('.wasm')) && u.some(x => x.endsWith('stockfish-19-lite-single.js')))"
+    r.check(wait_until(lambda: pg.evaluate(engine), 40), 'offline: the engine is kept after the first visit too, without opening Play')
     pg.reload(); pg.wait_for_selector('.tabs'); time.sleep(2)
     ctx.set_offline(True)
     pg.reload()

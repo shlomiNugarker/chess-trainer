@@ -6,7 +6,9 @@
 // a new name drops everything cached before: needed when a file changes under the same name (the icons, v3), or to
 // drop entries no longer used (v4: the Google Fonts files of returning users)
 const CACHE = 'chess-trainer-v4';
-const CORE = ['/', '/manifest.webmanifest', '/icon-192.png', '/engine/stockfish-19-lite-single.js', '/engine/stockfish-19-lite-single.wasm'];
+// the engine (1.8MB) is not here: the page asks for it a while after the first visit has loaded (see 'keep' below)
+const CORE = ['/', '/manifest.webmanifest', '/icon-192.png'];
+const KEPT_LATER = /^\/(puzzles-v\d+\.json|engine\/stockfish-19-lite-single\.(js|wasm))$/;
 
 // the hashed js/css that a given index.html points at
 const assetsOf = (html) => [...html.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)].map((m) => m[1]);
@@ -64,11 +66,12 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// the page asks for the puzzle file to be kept, once the first visit has loaded (src/main.tsx), so the puzzles work
-// offline even before Practice was opened
+// the page asks for the engine and the puzzle file to be kept, a while after the first visit has loaded (src/main.tsx),
+// so Play and the puzzles work offline even before they were opened — not while the first page loads, and not with
+// the browser's "save data" (then each is kept when it is first used, by the fetch handler below)
 self.addEventListener('message', (event) => {
   const url = event.data?.type === 'keep' && typeof event.data.url === 'string' ? new URL(event.data.url, location.origin) : null;
-  if (!url || url.origin !== location.origin || !/^\/puzzles-v\d+\.json$/.test(url.pathname)) return;
+  if (!url || url.origin !== location.origin || !KEPT_LATER.test(url.pathname)) return;
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE);

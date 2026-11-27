@@ -31,11 +31,13 @@ if (import.meta.env.PROD && import.meta.env.VITE_ON_VERCEL === '1') void import(
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
-    // the puzzles work offline too: a while after the page has loaded, when the browser is idle, the service worker
-    // keeps the puzzle file (about 0.7MB), not during the first visit's loading. Not with the browser's "save data"
+    // Play and the puzzles work offline too: a while after the page has loaded, when the browser is idle, the service
+    // worker keeps the engine (1.8MB) and the puzzle file (0.7MB), not during the first visit's loading. Not with the
+    // browser's "save data": then each is kept when it is first used
     if ((navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData) return;
+    const LATER = ['/engine/stockfish-19-lite-single.js', '/engine/stockfish-19-lite-single.wasm', PUZZLES_URL];
     const keep = () =>
-      void navigator.serviceWorker.ready.then((reg) => reg.active?.postMessage({ type: 'keep', url: PUZZLES_URL }));
+      void navigator.serviceWorker.ready.then((reg) => LATER.forEach((url) => reg.active?.postMessage({ type: 'keep', url })));
     setTimeout(() => ('requestIdleCallback' in window ? requestIdleCallback(keep, { timeout: 10_000 }) : keep()), 5000);
   });
 }

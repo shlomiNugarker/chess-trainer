@@ -207,14 +207,14 @@
 
 ## After launch (noticed before launch, not done — the repertoire is frozen until then)
 - [ ] A Content-Security-Policy header: it must allow Firebase Auth (and Google's sign-in window), Firestore, Vercel Analytics, the Chess.com API and `'wasm-unsafe-eval'` for Stockfish — waits because a mistake there breaks sign-in or the engine for everyone, so it needs its own round of checks on the live site
-- [ ] Download the Stockfish engine (1.8MB) on first use instead of keeping it in the cache on the first visit — saves data for visitors who only learn lines, but changes the offline behavior and needs its own testing
+- [x] Download the Stockfish engine (1.8MB) later: done 27 Nov 2026 (see the plan below) — saves data for visitors who only learn lines, but changes the offline behavior and needs its own testing
 - [x] Accessibility of the board for screen readers: done 27 Nov 2026 (see the plan below)
 - [x] `<html lang>` is "he", like the share tags (27 Nov 2026); the app still sets the language itself when it starts
 - [x] Dependency updates (done 27 Nov 2026): all of them were minor and `npm audit` is clean, so nothing is urgent; better done right after launch than right before it
 - [x] The 5 open questions in `docs/content-review.md` (27 Nov 2026, Stockfish at depth 20): the King’s Gambit takes on g3 at once (10.Qxg3) and keeps 10.exd5; the Pirc plays 8...Qb6 against 2.Nf3; the Scandinavian against 5.Bd2 keeps its moves and says White is better; the Slav has a new short line for 5.cxd5 cxd5 6.Qb3 Bc8
 - [x] Engine check again at depth 20 (27 Nov 2026): 3.Nf3 against ...c6 gives up 1.0%, 10.c3 against ...Qf6 2.7%, 10.c3 against ...Nf6 and ...c6 nothing, the Sicilian's 2...e6 nothing and 3...e6 1.6%; only 9.Nbd2 against ...h6 lost 3.7% (9.a4 is best), so that line now plays 9.a4 a6 10.Nbd2 Re8 11.b4. 2.Bc4 stays: its note gives the price
 - [x] The order of the openings in the pickers (27 Nov 2026): White's 1.d4 systems together (London, Colle, Trompowsky, Queen's Gambit, Catalan), then 1.e4, then the English (`pickerOrder` in `src/openingGroups.ts`)
-- [ ] The puzzle set grew to 740KB (5,959 puzzles); if the first load of Practice is slow on phones, split it (the "from my openings" puzzles in a file of their own)
+- [x] The puzzle set (740KB, 270KB compressed): measured 27 Nov 2026, stays one file; if the first load of Practice is slow on phones, split it (the "from my openings" puzzles in a file of their own)
 
 ## After launch — the plan of 27 Nov 2026
 What is still missing, one stage at a time (each its own commit, `npm run check` and the QA of what it touches; the full QA once at the end):
@@ -227,7 +227,7 @@ What is still missing, one stage at a time (each its own commit, `npm run check`
 - [x] Dependency updates (27 Nov 2026): vite 8.4.0, @vitejs/plugin-react 6.3.0, react-chessboard 5.12.4, oxlint 1.95.0, @types/react and @types/node (24, like Node); `npm audit` clean. @types/node 26 waits for Node 26
 - [x] A Content-Security-Policy, first as Report-Only (27 Nov 2026, `vercel.json`, not on the `/__/auth/` proxy): it blocks nothing and sends no reports anywhere, a violation only shows in the browser's console. Locally, enforced, the app loads, plays against the engine, opens puzzles, the privacy page and the games from Chess.com and Lichess without a single violation
 - [ ] Enforcing it (rename the header to `Content-Security-Policy`): after the owner signs in with Google on the live site (desktop and phone) with the console open and sees no "[Report Only]" message
-- [ ] The engine on first use, and splitting the puzzle file: measured first, done only if the numbers say so
+- [x] The engine and the puzzle file, measured on the live site (27 Nov 2026, a phone): the page itself is 240KB on a first visit; the service worker then fetched the engine (1.2MB compressed) at install and the puzzles (270KB compressed) 5 s after load. The engine now waits like the puzzles: kept 5 s after the first visit has loaded, when the browser is idle, and not at all with the browser's "save data" (then it is kept when Play first uses it), so Play still works offline from the first visit. The puzzle file stays one file: 270KB compressed does not justify splitting it. `screens.py` (`offline`) checks that both are kept without opening Play or Practice (one run in seven failed to load offline right after; not seen again in six reruns)
 - Not planned: push reminders (they need a server that keeps a token for every device — against the privacy page's promise that nothing is sent without signing in); a repertoire built from nothing (the PGN import and the branches from your games already cover it)
 
 ## Findings of the code review
