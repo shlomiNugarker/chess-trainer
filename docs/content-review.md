@@ -70,7 +70,9 @@ No open questions.
 
 ### Queen's Gambit (White) (`qg`, 17 lines)
 
-**Not reviewed yet.**
+Reviewed in the second round: 74 fixes.
+
+No open questions.
 
 ### Catalan (White) (`catalan`, 13 lines)
 
@@ -156,7 +158,13 @@ No open questions.
 
 ### Slav Defense (Black) (`slav`, 15 lines)
 
-**Not reviewed yet.**
+Reviewed in the second round: 57 fixes.
+
+**Open questions:**
+
+- **`knight-to-c3-first`, idea** — “Nothing new to learn.”  
+  Question: Should this line cover 5.cxd5 cxd5 6.Qb3 (the engine's top choice after 4...Bf5), or keep 'Nothing new to learn'?  
+  Suggestion: Either add a short line 5.cxd5 cxd5 6.Qb3 Bc8, or soften to 'Almost nothing new to learn' and mention 5.cxd5 with 6.Qb3.
 
 ### Queen’s Gambit Accepted (Black) (`qga`, 7 lines)
 
