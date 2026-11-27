@@ -84,7 +84,9 @@ No open questions.
 
 ### 1...e5: Italian, Ruy Lopez & more (Black) (`e5`, 19 lines)
 
-**Not reviewed yet.**
+Reviewed in the second round: 38 fixes.
+
+No open questions.
 
 ### Alekhine Defense (Black) (`alekhine`, 12 lines)
 
@@ -96,11 +98,19 @@ No open questions.
 
 ### Scandinavian Defense (Black) (`scandinavian`, 9 lines)
 
-**Not reviewed yet.**
+Reviewed in the second round: 34 fixes.
+
+**Open questions:**
+
+- **`qa5-vs-bd2`, idea** — “Black castles short while White goes long.”  
+  Question: Keep this line as it is (a clear White edge by move 9), or change Black’s play earlier (e.g. 7...e6 / 8...Bb4 order) so the line ends closer to equal?  
+  Suggestion: Check earlier alternatives with the engine (from 5...Qb6 onward); if none is close to equal, keep the line and add a short note that White is better here.
 
 ### French Defense (Black) (`french`, 12 lines)
 
-**Not reviewed yet.**
+Reviewed in the second round: 19 fixes.
+
+No open questions.
 
 ### Pirc Defense (Black) (`pirc`, 11 lines)
 
@@ -130,7 +140,9 @@ No open questions.
 
 ### King's Indian Defense (Black) (`kid`, 12 lines)
 
-**Not reviewed yet.**
+Reviewed in the second round: 5 fixes.
+
+No open questions.
 
 ### vs 1.c4 and 1.Nf3 (Black) (`flank`, 13 lines)
 
@@ -138,7 +150,9 @@ No open questions.
 
 ### Nimzo-Indian & Queen’s Indian (Black) (`nimzo`, 16 lines)
 
-**Not reviewed yet.**
+Reviewed in the second round: 28 fixes.
+
+No open questions.
 
 ### Grünfeld Defense (Black) (`grunfeld`, 14 lines)
 
@@ -146,7 +160,9 @@ No open questions.
 
 ### Queen's Gambit Declined (Black) (`qgd`, 9 lines)
 
-**Not reviewed yet.**
+Reviewed in the second round: 11 fixes.
+
+No open questions.
 
 ### Benko Gambit (Black) (`benko`, 16 lines)
 
@@ -168,4 +184,6 @@ Reviewed in the second round: 57 fixes.
 
 ### Queen’s Gambit Accepted (Black) (`qga`, 7 lines)
 
-**Not reviewed yet.**
+Reviewed in the second round: 31 fixes.
+
+No open questions.
