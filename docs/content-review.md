@@ -56,10 +56,10 @@ Reviewed in the second round: 32 fixes.
 
 **Open questions:**
 
-- **`g5`, move 10.exd5** — “Takes.”  
+- **`g5`, move 10.exd5** — now “Takes.”  
   Question: Keep 10.exd5, or switch to 10.Ne3 (engine PV ...dxe4 hxg3, about -0.4), which keeps the knight away from ...Bxg4?  
   Suggestion: Switch to 10.Ne3 if the line is re-recorded; otherwise keep it with the corrected 11.cxd4 note.
-- **`declined-qh4`, move 10.h4** — “Opens the h-file.”  
+- **`declined-qh4`, move 10.h4** — now “Gains space and takes g5 from the black queen.”  
   Question: Keep 10.h4 Qf6 11.Qxg3, or take on g3 at once with 10.Qxg3?  
   Suggestion: 10.Qxg3 is simpler and scores higher; consider it if the line is re-recorded.
 
@@ -129,7 +129,7 @@ Reviewed in the second round: 34 fixes.
 
 **Open questions:**
 
-- **`qa5-vs-bd2`, idea** — “Black castles short while White goes long.”  
+- **`qa5-vs-bd2`, idea** — now “After Bd2 the queen is in a discovered-attack line, so it goes to b6, hitting b2 and d4. Black castles short while White goes long.”  
   Question: Keep this line as it is (a clear White edge by move 9), or change Black’s play earlier (e.g. 7...e6 / 8...Bb4 order) so the line ends closer to equal?  
   Suggestion: Check earlier alternatives with the engine (from 5...Qb6 onward); if none is close to equal, keep the line and add a short note that White is better here.
 
@@ -145,7 +145,7 @@ Reviewed in the second round: 3 fixes.
 
 **Open questions:**
 
-- **`vs-nf3`, move 8...Bg4** — “Pins the f3 knight.”  
+- **`vs-nf3`, move 8...Bg4** — now “Hits the f3 knight, which guards d4 and e5.”  
   Question: Keep 8...Bg4 (and the bishop-for-knight plan the idea describes), or switch to 8...Qb6, which the engine rates about 0.3 better?  
   Suggestion: Consider 8...Qb6 (engine PV: 9.h4 Bh6 10.Qxh6 Ng4 11.Qd2 h5), or keep Bg4 and accept that White ends clearly better.
 
@@ -221,7 +221,7 @@ Reviewed in the second round: 57 fixes.
 
 **Open questions:**
 
-- **`knight-to-c3-first`, idea** — “Nothing new to learn.”  
+- **`knight-to-c3-first`, idea** — now “White develops the b1 knight first. Black plays exactly the same moves — and reaches the position of the quiet system (a transposition). Nothing new to learn.”  
   Question: Should this line cover 5.cxd5 cxd5 6.Qb3 (the engine's top choice after 4...Bf5), or keep 'Nothing new to learn'?  
   Suggestion: Either add a short line 5.cxd5 cxd5 6.Qb3 Bc8, or soften to 'Almost nothing new to learn' and mention 5.cxd5 with 6.Qb3.
 
