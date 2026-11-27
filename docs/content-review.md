@@ -46,27 +46,46 @@ No open questions.
 
 ### Scotch Game (White) (`scotch`, 13 lines)
 
-**Not reviewed yet.**
+Reviewed in the second round: 16 fixes.
+
+No open questions.
 
 ### King’s Gambit (White) (`kingsgambit`, 13 lines)
 
-**Not reviewed yet.**
+Reviewed in the second round: 32 fixes.
+
+**Open questions:**
+
+- **`g5`, move 10.exd5** — “Takes.”  
+  Question: Keep 10.exd5, or switch to 10.Ne3 (engine PV ...dxe4 hxg3, about -0.4), which keeps the knight away from ...Bxg4?  
+  Suggestion: Switch to 10.Ne3 if the line is re-recorded; otherwise keep it with the corrected 11.cxd4 note.
+- **`declined-qh4`, move 10.h4** — “Opens the h-file.”  
+  Question: Keep 10.h4 Qf6 11.Qxg3, or take on g3 at once with 10.Qxg3?  
+  Suggestion: 10.Qxg3 is simpler and scores higher; consider it if the line is re-recorded.
 
 ### Vienna Game (White) (`vienna`, 8 lines)
 
-**Not reviewed yet.**
+Reviewed in the second round: 21 fixes.
+
+No open questions.
 
 ### Open Sicilian (White) (`opensic`, 16 lines)
 
-**Not reviewed yet.**
+Reviewed in the second round: 31 fixes.
+
+No open questions.
 
 ### English Opening (White) (`english`, 14 lines)
 
-**Not reviewed yet.**
+Reviewed in the second round: 22 fixes.
+
+No open questions.
 
 ### Colle System (White) (`colle`, 13 lines)
 
-**Not reviewed yet.**
+Reviewed in the second round: 17 fixes.
+
+No open questions.
 
 ### Queen's Gambit (White) (`qg`, 17 lines)
 
@@ -76,11 +95,15 @@ No open questions.
 
 ### Catalan (White) (`catalan`, 13 lines)
 
-**Not reviewed yet.**
+Reviewed in the second round: 8 fixes.
+
+No open questions.
 
 ### Trompowsky Attack (White) (`trompowsky`, 10 lines)
 
-**Not reviewed yet.**
+Reviewed in the second round: 32 fixes.
+
+No open questions.
 
 ### 1...e5: Italian, Ruy Lopez & more (Black) (`e5`, 19 lines)
 
@@ -90,11 +113,15 @@ No open questions.
 
 ### Alekhine Defense (Black) (`alekhine`, 12 lines)
 
-**Not reviewed yet.**
+Reviewed in the second round: 8 fixes.
+
+No open questions.
 
 ### Petrov Defense (Black) (`petrov`, 14 lines)
 
-**Not reviewed yet.**
+Reviewed in the second round: 17 fixes.
+
+No open questions.
 
 ### Scandinavian Defense (Black) (`scandinavian`, 9 lines)
 
@@ -114,11 +141,19 @@ No open questions.
 
 ### Pirc Defense (Black) (`pirc`, 11 lines)
 
-**Not reviewed yet.**
+Reviewed in the second round: 3 fixes.
+
+**Open questions:**
+
+- **`vs-nf3`, move 8...Bg4** — “Pins the f3 knight.”  
+  Question: Keep 8...Bg4 (and the bishop-for-knight plan the idea describes), or switch to 8...Qb6, which the engine rates about 0.3 better?  
+  Suggestion: Consider 8...Qb6 (engine PV: 9.h4 Bh6 10.Qxh6 Ng4 11.Qd2 h5), or keep Bg4 and accept that White ends clearly better.
 
 ### Modern Defense (Black) (`modern`, 11 lines)
 
-**Not reviewed yet.**
+Reviewed in the second round: 12 fixes.
+
+No open questions.
 
 ### Caro-Kann (Black) (`caro`, 6 lines)
 
@@ -146,7 +181,9 @@ No open questions.
 
 ### vs 1.c4 and 1.Nf3 (Black) (`flank`, 13 lines)
 
-**Not reviewed yet.**
+Reviewed in the second round: 34 fixes.
+
+No open questions.
 
 ### Nimzo-Indian & Queen’s Indian (Black) (`nimzo`, 16 lines)
 
@@ -156,7 +193,9 @@ No open questions.
 
 ### Grünfeld Defense (Black) (`grunfeld`, 14 lines)
 
-**Not reviewed yet.**
+Reviewed in the second round: 23 fixes.
+
+No open questions.
 
 ### Queen's Gambit Declined (Black) (`qgd`, 9 lines)
 
@@ -166,11 +205,15 @@ No open questions.
 
 ### Benko Gambit (Black) (`benko`, 16 lines)
 
-**Not reviewed yet.**
+Reviewed in the second round: 28 fixes.
+
+No open questions.
 
 ### Dutch Defense (Black) (`dutch`, 6 lines)
 
-**Not reviewed yet.**
+Reviewed in the second round: 11 fixes.
+
+No open questions.
 
 ### Slav Defense (Black) (`slav`, 15 lines)
 
