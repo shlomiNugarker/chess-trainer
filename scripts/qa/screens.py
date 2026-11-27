@@ -1,6 +1,6 @@
 """QA: Learn extras, Practice (puzzles, my mistakes), My review, account and language, phone layouts, offline.
 
-    python scripts/qa/screens.py [--url URL] [--only learn,puzzles,mistakes,review,account,refresh,share,phone,touch,lang,offline]
+    python scripts/qa/screens.py [--url URL] [--only learn,puzzles,mistakes,review,account,refresh,share,lichess,phone,touch,lang,offline]
                                  [--chesscom USER] [--account-url URL]
 
 The review section loads real games from Chess.com; the account panel needs a build with Firebase configured,
@@ -800,6 +800,67 @@ def share(b):
     ctx.close()
 
 
+@section('lichess')
+def lichess(b):
+    """Games from Lichess, against a stand-in for its API (no network; Lichess also refuses headless browsers): the site
+    switch keeps a username for each site, the games load and are reviewed, the next load asks only for new games, and
+    an unknown user gets a clear message."""
+    day = 24 * 3600 * 1000; now = int(time.time() * 1000)
+    def game(i, white, black, winner, opening, moves, speed='blitz', acc=None):
+        pl = lambda n, r: {'user': {'name': n, 'id': n.lower()}, 'rating': r}
+        g = {'id': f'qa{i:06d}', 'rated': True, 'variant': 'standard', 'speed': speed, 'createdAt': now - (10 - i) * day, 'lastMoveAt': now - (10 - i) * day + 600000,
+             'status': 'resign' if winner else 'draw', 'players': {'white': pl(*white), 'black': pl(*black)},
+             'opening': {'eco': 'A00', 'name': opening}, 'pgn': f'[Event "Rated blitz game"]\n[Site "https://lichess.org/qa{i:06d}"]\n\n{moves} *'}
+        if winner: g['winner'] = winner
+        if acc: g['players']['white']['analysis'] = {'accuracy': acc}
+        return g
+    me, opp = ('QaPlayer', 1500), ('Rival', 1480)
+    first = [game(1, me, opp, 'white', "Queen's Pawn Game: London System", '1. d4 d5 2. Bf4 Nf6 3. e3 e6 4. Nf3 c5 5. c3 Nc6', acc=81),
+             game(2, opp, me, 'black', 'Caro-Kann Defense: Advance Variation', '1. e4 c6 2. d4 d5 3. e5 Bf5 4. Nf3 e6 5. Be2 c5', speed='rapid'),
+             game(3, me, opp, None, 'Italian Game: Two Knights Defense', '1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. d3 Be7 5. O-O O-O')]
+    later = [game(4, opp, me, 'white', 'Sicilian Defense: Najdorf Variation', '1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6')]
+    asked = []
+    def api(route):
+        url = route.request.url; asked.append(url)
+        if '/api/user/nobody' in url: return route.fulfill(status=404, body='{"error":"Not found"}', headers={'access-control-allow-origin': '*'})
+        if '/api/user/' in url: return route.fulfill(status=200, body=json.dumps({'id': 'qaplayer', 'count': {'all': 3 + (len(asked) > 4)}}), headers={'access-control-allow-origin': '*', 'content-type': 'application/json'})
+        games = later if 'since=' in url else first
+        return route.fulfill(status=200, body=''.join(json.dumps(g) + '\n' for g in reversed(games)), headers={'access-control-allow-origin': '*', 'content-type': 'application/x-ndjson'})
+    ctx = b.new_context(locale='en-US', viewport={'width': 1280, 'height': 900})
+    ctx.add_init_script("localStorage.setItem('chess-trainer:openings-chosen', 'true')")
+    ctx.route('https://lichess.org/api/**', api)
+    pg = ctx.new_page(); r.watch(pg, 'lichess')
+    pg.goto(a.url); pg.wait_for_selector('.tabs', timeout=60000); pg.click('[data-tab=review]'); time.sleep(0.5)
+    pg.click('.games-site button:has-text("Lichess")')
+    r.check(pg.input_value('.search input') == '' and 'Your Lichess username' in text(pg, '.search label'), 'lichess: the site switch, with its own (empty) username')
+    pg.fill('.search input', 'QaPlayer'); pg.click('.search button.primary')
+    r.check(wait_until(lambda: pg.locator('.recent-game').count() == 3, 20), 'lichess: three games loaded', str(pg.locator('.recent-game').count()))
+    games_q = next((u for u in asked if '/api/games/user/qaplayer' in u), '')
+    r.check('pgnInJson=true' in games_q and 'opening=true' in games_q and 'since=' not in games_q, 'lichess: the first load asks for the games with their openings', games_q)
+    txt = pg.locator('.review').inner_text()
+    r.check('Your openings as White' in txt and 'London System' in txt and 'Caro Kann Defense' in txt, 'lichess: the review, with the openings named the same way as on Chess.com', txt[:200])
+    pg.click('.games-site button:has-text("Chess.com")'); time.sleep(0.5)
+    r.check(pg.input_value('.search input') == '' and pg.locator('.recent-game').count() == 0, 'lichess: Chess.com keeps its own (empty) username')
+    pg.click('.games-site button:has-text("Lichess")')
+    r.check(wait_until(lambda: pg.locator('.recent-game').count() == 4, 20), 'lichess: back on Lichess, the kept games and the new one', str(pg.locator('.recent-game').count()))
+    r.check(any('since=' in u for u in asked if '/api/games/user/' in u), 'lichess: the next load asks only for games since the last one')
+    pg.locator('.recent-game').first.click(); time.sleep(2)
+    r.check('Lichess' in text(pg, '.game-review-head a'), 'lichess: a game review links to Lichess', text(pg, '.game-review-head a'))
+    pg.click('.game-review-head button'); time.sleep(0.5)
+    pg.fill('.search input', 'nobody'); pg.click('.search button.primary')
+    r.check(wait_until(lambda: 'No Lichess user with this name.' in text(pg, '.review .notice'), 10), 'lichess: an unknown user', text(pg, '.review .notice'))
+    r.errors[:] = [e for e in r.errors if not (e.startswith('[lichess]') and '404' in e)]  # the browser logs the 404 of the unknown user
+    ctx.close()
+    # a phone, in Hebrew: the switch fits
+    ctx = b.new_context(locale='he-IL', viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True)
+    ctx.add_init_script("localStorage.setItem('chess-trainer:openings-chosen', 'true')")
+    pg = ctx.new_page(); r.watch(pg, 'lichess-phone'); pg.goto(a.url + '?lang=he'); pg.wait_for_selector('.tabs', timeout=60000); pg.click('[data-tab=review]'); time.sleep(0.5)
+    box = pg.locator('.games-site').bounding_box()
+    r.check(box and box['x'] >= 0 and box['x'] + box['width'] <= 390 and not hscroll(pg), 'lichess: the site switch fits a phone', str(box))
+    r.shot(pg, 'lichess-phone-he')
+    ctx.close()
+
+
 @section('offline')
 def offline(b):
     ctx, pg = open_page(b, 'offline', 'en-US', 1280, 900)
@@ -833,6 +894,6 @@ with sync_playwright() as p:
     if not a.only: tour(pg, 'desktop-en')
     learn(pg); mistakes(pg); puzzles(pg); review(pg)  # mistakes first: the puzzle section adds its own
     ctx.close()
-    install(b); privacy(b); account(b); refresh(b); share(b); phone(b); touch(b); languages(b); fonts(b); offline(b)
+    install(b); privacy(b); account(b); refresh(b); share(b); lichess(b); phone(b); touch(b); languages(b); fonts(b); offline(b)
     b.close()
 r.done()

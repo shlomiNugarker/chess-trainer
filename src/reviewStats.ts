@@ -61,6 +61,7 @@ const REASONS: Record<string, string> = {
   insufficient: trKey('Insufficient material'),
   timevsinsufficient: trKey('Time vs. insufficient material'),
   '50move': trKey('50-move rule'),
+  draw: trKey('Draw'), // Lichess: a draw of any kind (agreed, repetition, the 50-move rule)
 };
 export const reasonLabel = (reason: string) => (REASONS[reason] ? tr(REASONS[reason]) : reason);
 

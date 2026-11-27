@@ -183,6 +183,7 @@ export default function GameReview({ game, username, active, onClose, onLearn, o
     return { left: `${(col + 1) * 12.5}%`, top: `${row * 12.5}%` };
   })();
   const me = game.color;
+  const onLichess = game.url.startsWith('https://lichess.org/');
   const names = { w: me === 'w' ? username : game.opponent, b: me === 'b' ? username : game.opponent };
   const ratings = { w: me === 'w' ? game.myRating : game.opponentRating, b: me === 'b' ? game.myRating : game.opponentRating };
   const resultText = game.result === 'win' ? tr('Win') : game.result === 'loss' ? tr('Loss') : tr('Draw');
@@ -208,7 +209,7 @@ export default function GameReview({ game, username, active, onClose, onLearn, o
           <strong className="wide-only">{tr('Game review')}</strong>
           <span className={`pill result-${game.result}`}>{resultText}</span>
           <span className="muted game-review-info">{tr('vs')} <bdi>{game.opponent}</bdi><span className="wide-only"> · {formatDate(game.endTime)} · {openingName(game.opening)}</span></span>
-          <a href={game.url} target="_blank" rel="noreferrer" className="small-link">Chess.com ↗</a>
+          <a href={game.url} target="_blank" rel="noreferrer" className="small-link">{onLichess ? 'Lichess' : 'Chess.com'} ↗</a>
         </div>
       </header>
 
@@ -330,7 +331,9 @@ export default function GameReview({ game, username, active, onClose, onLearn, o
               ))}
             </div>
             {game.accuracy !== undefined && (
-              <p className="muted">{tr(msg`Your accuracy on Chess.com: ${pct(game.accuracy)} (a different engine and depth, so the numbers differ).`)}</p>
+              <p className="muted">{onLichess
+                ? tr(msg`Your accuracy on Lichess: ${pct(game.accuracy)} (a different engine and depth, so the numbers differ).`)
+                : tr(msg`Your accuracy on Chess.com: ${pct(game.accuracy)} (a different engine and depth, so the numbers differ).`)}</p>
             )}
           </section>
 

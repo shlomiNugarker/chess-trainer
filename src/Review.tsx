@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { openingName, ChessComError, fetchGames, type GameSummary, type TimeClass } from './chesscom';
+import { fetchLichessGames } from './lichess';
 import { DRILL_DROP, Engine } from './engine';
 import { getAnalysis, saveAnalysis } from './analysisCache';
 import { saveMistake } from './mistakes';
@@ -20,6 +21,8 @@ import { useStored } from './storage';
 import { formatDate, locale, msg, tr, useLang } from './i18n';
 
 const pct = (n: number) => ltr(`${Math.round(n)}%`);
+type Site = 'chesscom' | 'lichess';
+const SITE_NAMES: Record<Site, string> = { chesscom: 'Chess.com', lichess: 'Lichess' };
 const date = formatDate;
 const kindLabel = (k: 'blunder' | 'mistake' | 'inaccuracy') =>
   ({ blunder: tr('Blunders'), mistake: tr('Mistakes'), inaccuracy: tr('Inaccuracies') })[k];
@@ -32,7 +35,11 @@ type Props = {
 };
 
 export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
-  const [username, setUsername] = useStored('chesscom-user', '');
+  // games from Chess.com or Lichess: each site keeps its own username
+  const [site, setSite] = useStored<Site>('games-site', 'chesscom');
+  const [chesscomUser, setChesscomUser] = useStored('chesscom-user', '');
+  const [lichessUser, setLichessUser] = useStored('lichess-user', '');
+  const username = site === 'lichess' ? lichessUser : chesscomUser;
   const [input, setInput] = useState(username);
   const [games, setGames] = useState<GameSummary[] | null>(null);
   const [loading, setLoading] = useState<{ fraction: number; count: number } | null>(null);
@@ -55,7 +62,7 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
 
   useEffect(() => () => deepRun.current?.engine.terminate(), []);
 
-  const load = async (name: string) => {
+  const load = async (name: string, from: Site = site) => {
     const user = name.trim();
     if (!user) return;
     download.current.abort();
@@ -68,9 +75,10 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
     go({ review: null });
     setLoading({ fraction: 0, count: 0 });
     try {
-      const { games: all, partial } = await fetchGames(user, (fraction, count) => !token.signal.aborted && setLoading({ fraction, count }), token.signal);
+      const fetchFrom = from === 'lichess' ? fetchLichessGames : fetchGames;
+      const { games: all, partial } = await fetchFrom(user, (fraction, count) => !token.signal.aborted && setLoading({ fraction, count }), token.signal);
       if (token.signal.aborted) return;
-      setUsername(user);
+      (from === 'lichess' ? setLichessUser : setChesscomUser)(user);
       setGames(all);
       setPartial(partial);
       setTimeClass('all');
@@ -93,6 +101,22 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
     void load(username);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, username]);
+
+  /** The other site: its own username, and its games are loaded when it has one. */
+  const switchSite = (next: Site) => {
+    if (next === site) return;
+    download.current.abort();
+    stopDeep();
+    setSite(next);
+    setGames(null);
+    setDeep(null);
+    setError('');
+    setLoading(null);
+    const name = next === 'lichess' ? lichessUser : chesscomUser;
+    setInput(name);
+    autoLoaded.current = true;
+    if (name) void load(name, next);
+  };
 
   const filtered = useMemo(
     () => (games ?? []).filter((g) => timeClass === 'all' || g.timeClass === timeClass),
@@ -198,8 +222,17 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
           load(input);
         }}
       >
+        <div className="games-site-row">
+          <div className="segmented games-site" role="radiogroup" aria-label={tr('Games from')}>
+            {(['chesscom', 'lichess'] as const).map((s) => (
+              <button key={s} type="button" role="radio" aria-checked={s === site} className={s === site ? 'active' : ''} onClick={() => switchSite(s)}>
+                {SITE_NAMES[s]}
+              </button>
+            ))}
+          </div>
+        </div>
         <label>
-          {tr('Your Chess.com username')}
+          {site === 'lichess' ? tr('Your Lichess username') : tr('Your Chess.com username')}
           <input dir="ltr" value={input} onChange={(e) => setInput(e.target.value)} placeholder="username" autoComplete="off" />
         </label>
         <button className="primary" type="submit" disabled={!input.trim() || !!loading}>
@@ -211,7 +244,9 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
         <div className="card">
           {loading.count
             ? tr(msg`Loading games… ${loading.count.toLocaleString(locale())}`)
-            : tr('Connecting to Chess.com…')}
+            : site === 'lichess'
+              ? tr('Connecting to Lichess…')
+              : tr('Connecting to Chess.com…')}
           <Progress value={loading.fraction} />
         </div>
       )}
@@ -291,7 +326,7 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
             </section>
           )}
 
-          <AccuracyCard chesscom={accuracy.chesscom} own={accuracy.own} ownGames={accuracy.ownGames} />
+          <AccuracyCard site={site} chesscom={accuracy.chesscom} own={accuracy.own} ownGames={accuracy.ownGames} />
 
           <div className="grid2">
             <section className="card">
@@ -531,7 +566,6 @@ function DeepResults({ summary, onDrill }: { summary: ReturnType<typeof summariz
 }
 
 /** Single-series rating line with a hover crosshair + tooltip. */
-/** Accuracy month by month: games reviewed on Chess.com, and games reviewed here. */
 /** The chart's width in CSS pixels (640 until measured): charts are drawn at their real size, so the text stays
  * readable on a phone instead of shrinking with the whole drawing. */
 function useChartWidth() {
@@ -546,7 +580,8 @@ function useChartWidth() {
   return [setEl, w] as const;
 }
 
-function AccuracyCard({ chesscom, own, ownGames }: { chesscom: MonthPoint[]; own: MonthPoint[]; ownGames: number }) {
+/** Accuracy month by month: games reviewed on the site (Chess.com, or analyzed on Lichess), and games reviewed here. */
+function AccuracyCard({ site, chesscom, own, ownGames }: { site: Site; chesscom: MonthPoint[]; own: MonthPoint[]; ownGames: number }) {
   if (!chesscom.length && !own.length) return null;
   const trend = accuracyTrend(chesscom.length >= 2 ? chesscom : own);
   const monthName = (p: MonthPoint) => new Date(p.t).toLocaleDateString(locale(), { month: 'long', year: 'numeric' });
@@ -565,11 +600,13 @@ function AccuracyCard({ chesscom, own, ownGames }: { chesscom: MonthPoint[]; own
         <p className="muted">{tr('Not enough months yet to see a trend.')}</p>
       )}
       <AccuracyChart series={[
-        { key: 'chesscom', label: tr('Chess.com (games you reviewed there)'), points: chesscom },
+        { key: 'chesscom', label: site === 'lichess' ? tr('Lichess (games analyzed there)') : tr('Chess.com (games you reviewed there)'), points: chesscom },
         { key: 'own', label: ownGames === 1 ? tr('Reviewed here (1 game)') : tr(msg`Reviewed here (${ownGames} games)`), points: own },
       ]} />
       <p className="muted">
-        {tr(msg`Monthly average. Chess.com months count from ${MIN_MONTH_GAMES} games. The two engines differ, so the lines are not identical — what matters is where each one goes.`)}
+        {site === 'lichess'
+          ? tr(msg`Monthly average. Lichess months count from ${MIN_MONTH_GAMES} games. The two engines differ, so the lines are not identical — what matters is where each one goes.`)
+          : tr(msg`Monthly average. Chess.com months count from ${MIN_MONTH_GAMES} games. The two engines differ, so the lines are not identical — what matters is where each one goes.`)}
       </p>
     </section>
   );

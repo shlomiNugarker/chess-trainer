@@ -22,7 +22,7 @@ export default function Privacy({ onClose }: { onClose: () => void }) {
           <p>{tr('Chess Trainer needs no account and shows no ads. This is everything it keeps, and where.')}</p>
 
           <h3>{tr('Without signing in')}</h3>
-          <p>{tr('Your progress (lines, puzzles, rating, mistakes and settings, with the Chess.com username you typed) is kept in this browser, on this device. It is not sent anywhere, except as described below.')}</p>
+          <p>{tr('Your progress (lines, puzzles, rating, mistakes and settings, with the Chess.com or Lichess username you typed) is kept in this browser, on this device. It is not sent anywhere, except as described below.')}</p>
 
           <h3>{tr('With Google sign-in')}</h3>
           <p>
@@ -31,6 +31,9 @@ export default function Privacy({ onClose }: { onClose: () => void }) {
 
           <h3>Chess.com</h3>
           <p>{tr('When you load your games, the username you type is sent to the public Chess.com API to get your public games. They are analyzed in your browser.')}</p>
+
+          <h3>Lichess</h3>
+          <p>{tr('When you load your games from Lichess, the username you type is sent to the public Lichess API to get your public games; the games read are kept in this browser, so the next load asks only for new ones. They are analyzed in your browser. The puzzles come from the Lichess puzzle database, but they are part of this site: nothing is sent to Lichess for them.')}</p>
 
           <h3>{tr('Usage counts')}</h3>
           <p>{tr('We count page views with Vercel Web Analytics: anonymous, without cookies, and not across other sites. Everything else the app needs (the font, the chess engine, the puzzles) comes from this site, so there is no other tracking.')}</p>

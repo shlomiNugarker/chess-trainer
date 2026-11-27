@@ -213,7 +213,9 @@ export default function Drill() {
             ? tr('From a puzzle')
             : rep
               ? tr(msg`From training: ${repName(rep)}`)
-              : tr('From one of your Chess.com games')}
+              : current.gameUrl?.startsWith('https://lichess.org/')
+                ? tr('From one of your Lichess games')
+                : tr('From one of your Chess.com games')}
           {current.puzzleId && (
             <>
               {' · '}

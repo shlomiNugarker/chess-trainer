@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { Chess } from 'chess.js';
 import { countMoves, openingFromEco, summarize, type GameSummary } from '../src/chesscom.ts';
 import { findDeviations, movesText } from '../src/deviations.ts';
+import { chesscomStyle, summarizeLichess, type LichessGame } from '../src/lichess.ts';
 import { REPERTOIRES } from '../src/repertoire.ts';
 import { accuracyByMonth, accuracyTrend, buildOverview, buildTips, matchRepertoire, phaseOf, strongestOpenings, summarizeDeep, weakestOpenings, type GameAnalysis, type OpeningRow } from '../src/reviewStats.ts';
 
@@ -346,6 +347,33 @@ assert.deepEqual([dv.mine[0].repId, dv.mine[0].played, dv.mine[0].expected, dv.m
   await analyzePositions(fake, g);
   assert.equal(new Set(searched).size, searched.length); // no search twice
   assert.ok(searched.every((x) => x.includes('depth')));
+}
+
+// Lichess: names written the Chess.com way, so the same openings are matched; a game boiled down like a Chess.com one
+{
+  assert.equal(chesscomStyle("Queen's Gambit Declined: Slav, Exchange"), 'Queens Gambit Declined Slav Exchange');
+  assert.equal(matchRepertoire(chesscomStyle('Caro-Kann Defense: Advance Variation'), 'b'), 'caro');
+  assert.equal(matchRepertoire(chesscomStyle('Caro-Kann Defense: Advance Variation'), 'w'), 'italian');
+  assert.equal(matchRepertoire(chesscomStyle('Grünfeld Defense: Exchange Variation'), 'b'), 'grunfeld');
+  assert.equal(matchRepertoire(chesscomStyle("Petrov's Defense"), 'b'), 'petrov');
+  assert.equal(matchRepertoire(chesscomStyle("Queen's Pawn Game: London System"), 'w'), 'london');
+  assert.equal(matchRepertoire(chesscomStyle('Nimzo-Indian Defense: Classical Variation'), 'b'), 'nimzo');
+  assert.equal(matchRepertoire(chesscomStyle("King's Gambit Accepted"), 'w'), 'kingsgambit');
+  assert.equal(matchRepertoire(chesscomStyle('Owen Defense'), 'w'), 'italian');
+  assert.equal(matchRepertoire(chesscomStyle('Sicilian Defense: Najdorf Variation'), 'b'), 'najdorf');
+  const lg = (over: Partial<LichessGame>): LichessGame => ({
+    id: 'abcd1234', rated: true, variant: 'standard', speed: 'blitz', createdAt: 1_000, lastMoveAt: 2_000, status: 'resign', winner: 'black',
+    players: { white: { user: { name: 'Other', id: 'other' }, rating: 1500 }, black: { user: { name: 'Me', id: 'me' }, rating: 1600, analysis: { accuracy: 88 } } },
+    opening: { eco: 'B12', name: 'Caro-Kann Defense: Advance Variation' }, pgn: '[Event "x"]\n\n1. e4 c6 2. d4 d5 3. e5 Bf5 0-1', ...over,
+  });
+  const g = summarizeLichess(lg({}), 'Me')!;
+  assert.deepEqual([g.url, g.color, g.result, g.reason, g.opponent, g.myRating, g.opening, g.openingFull, g.moveCount, g.accuracy, g.timeClass],
+    ['https://lichess.org/abcd1234', 'b', 'win', 'resigned', 'Other', 1600, 'Caro Kann Defense', 'Caro Kann Defense Advance Variation', 3, 88, 'blitz']);
+  assert.equal(summarizeLichess(lg({ winner: undefined, status: 'draw' }), 'me')!.result, 'draw');
+  assert.equal(summarizeLichess(lg({ variant: 'chess960' }), 'me'), null);
+  assert.equal(summarizeLichess(lg({ status: 'aborted' }), 'me'), null);
+  assert.equal(summarizeLichess(lg({ speed: 'classical' }), 'me')!.timeClass, 'rapid');
+  assert.equal(summarizeLichess(lg({ opening: { eco: 'D02', name: "Queen's Pawn Game: London System" } }), 'me')!.opening, 'London System');
 }
 
 console.log('check-review: all good');
