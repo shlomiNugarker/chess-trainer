@@ -9,6 +9,7 @@ import { startCloud } from './cloud'
 import { langReady } from './i18n'
 import './install'
 import { migrateMastery } from './legacyMastery'
+import { PUZZLES_URL } from './puzzleData'
 
 startCloud() // Google sign-in + sync (only when configured, see docs/google-login-setup.md)
 
@@ -29,5 +30,11 @@ if (import.meta.env.PROD && import.meta.env.VITE_ON_VERCEL === '1') void import(
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
+    // the puzzles work offline too: a while after the page has loaded, when the browser is idle, the service worker
+    // keeps the puzzle file (about 0.7MB), not during the first visit's loading. Not with the browser's "save data"
+    if ((navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData) return;
+    const keep = () =>
+      void navigator.serviceWorker.ready.then((reg) => reg.active?.postMessage({ type: 'keep', url: PUZZLES_URL }));
+    setTimeout(() => ('requestIdleCallback' in window ? requestIdleCallback(keep, { timeout: 10_000 }) : keep()), 5000);
   });
 }

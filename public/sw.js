@@ -64,6 +64,19 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// the page asks for the puzzle file to be kept, once the first visit has loaded (src/main.tsx), so the puzzles work
+// offline even before Practice was opened
+self.addEventListener('message', (event) => {
+  const url = event.data?.type === 'keep' && typeof event.data.url === 'string' ? new URL(event.data.url, location.origin) : null;
+  if (!url || url.origin !== location.origin || !/^\/puzzles-v\d+\.json$/.test(url.pathname)) return;
+  event.waitUntil(
+    (async () => {
+      const cache = await caches.open(CACHE);
+      if (!(await cache.match(url.pathname))) await cache.add(url.pathname).catch(() => {});
+    })(),
+  );
+});
+
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
