@@ -1,6 +1,6 @@
 """QA: Learn extras, Practice (puzzles, my mistakes), My review, account and language, phone layouts, offline.
 
-    python scripts/qa/screens.py [--url URL] [--only learn,puzzles,mistakes,review,account,refresh,phone,touch,lang,offline]
+    python scripts/qa/screens.py [--url URL] [--only learn,puzzles,mistakes,review,account,refresh,share,phone,touch,lang,offline]
                                  [--chesscom USER] [--account-url URL]
 
 The review section loads real games from Chess.com; the account panel needs a build with Firebase configured,
@@ -764,6 +764,42 @@ def refresh(b):
     ctx.close()
 
 
+@section('share')
+def share(b):
+    """"Share this line": a link copied on a desktop opens the same line in Learn for someone else, without the first
+    question of which openings to play, also when that opening is hidden there; the parameter leaves the address bar."""
+    lon, caro = data[0], next(x for x in data if x['id'] == 'caro')
+    ctx = b.new_context(locale='en-US', viewport={'width': 1280, 'height': 900}, permissions=['clipboard-read', 'clipboard-write'])
+    ctx.add_init_script("localStorage.setItem('chess-trainer:openings-chosen', 'true'); localStorage.setItem('chess-trainer:guide-dismissed', 'true')")
+    pg = ctx.new_page(); r.watch(pg, 'share'); pg.goto(a.url); pg.wait_for_selector('.tabs', timeout=60000)
+    pg.click('.tabs [data-tab=learn]'); open_opening(pg, lon['id']); pick_line(pg, 2)
+    pg.click('.share-line button')
+    r.check(wait_until(lambda: 'Link copied' in text(pg, '.share-line'), 5), 'share: the link is copied', text(pg, '.share-line'))
+    url = pg.evaluate('navigator.clipboard.readText()')
+    r.check(f"line={lon['id']}%2F" in url, 'share: the link names the opening and the line', url)
+    open_opening(pg, caro['id']); pick_line(pg, 1); pg.click('.share-line button'); time.sleep(0.3)
+    caro_url = pg.evaluate('navigator.clipboard.readText()')
+    ctx.close()
+    # someone else, on a first visit (Play was their last tab: the link still opens Learn)
+    ctx = b.new_context(locale='en-US', viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True)
+    ctx.add_init_script("if (!sessionStorage.getItem('s')) { sessionStorage.setItem('s', '1'); localStorage.setItem('chess-trainer:screen', '\"play\"'); }")
+    pg = ctx.new_page(); r.watch(pg, 'share-friend'); pg.goto(url + '&utm_source=test'); pg.wait_for_selector('.tabs', timeout=60000); time.sleep(0.5)
+    r.check(pg.locator('.opening-picker').count() == 0 and pg.locator('.learn-header').count() == 1, 'share: a first visit from the link skips the opening question and shows Learn')
+    r.check(lon['id'] and current_line(pg) == 2 and pg.locator(f'.pick-sheet').count() == 0, 'share: the same line is open', str(current_line(pg)))
+    r.check('line=' not in pg.url and 'utm_source=test' in pg.url, 'share: the parameter leaves the address bar, the others stay', pg.url)
+    ctx.close()
+    # the opening is hidden on the device that opens the link: it is shown again
+    ctx = b.new_context(locale='en-US', viewport={'width': 1280, 'height': 900})
+    ctx.add_init_script("if (!sessionStorage.getItem('s')) { sessionStorage.setItem('s', '1'); localStorage.setItem('chess-trainer:openings-chosen', 'true');"
+                        "localStorage.setItem('chess-trainer:guide-dismissed', 'true'); localStorage.setItem('chess-trainer:hidden-repertoires', JSON.stringify(['caro'])); }")
+    pg = ctx.new_page(); r.watch(pg, 'share-hidden'); pg.goto(caro_url); pg.wait_for_selector('.learn-header', timeout=60000); time.sleep(0.5)
+    r.check(caro['lines'][1]['name'][:12] in text(pg, '.line-btn') and current_line(pg) == 1 and 'Caro' in text(pg, '.opening-btn'),
+            'share: a hidden opening is shown again for the link', text(pg, '.opening-btn') + ' | ' + text(pg, '.line-btn'))
+    pg.goto(a.url + '?line=nothing%2Fhere'); pg.wait_for_selector('.tabs', timeout=60000)
+    r.check('line=' not in pg.url, 'share: a link to a line that does not exist opens the app as usual', pg.url)
+    ctx.close()
+
+
 @section('offline')
 def offline(b):
     ctx, pg = open_page(b, 'offline', 'en-US', 1280, 900)
@@ -797,6 +833,6 @@ with sync_playwright() as p:
     if not a.only: tour(pg, 'desktop-en')
     learn(pg); mistakes(pg); puzzles(pg); review(pg)  # mistakes first: the puzzle section adds its own
     ctx.close()
-    install(b); privacy(b); account(b); refresh(b); phone(b); touch(b); languages(b); fonts(b); offline(b)
+    install(b); privacy(b); account(b); refresh(b); share(b); phone(b); touch(b); languages(b); fonts(b); offline(b)
     b.close()
 r.done()

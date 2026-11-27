@@ -219,6 +219,8 @@ const es: Record<string, string> = {
   'You master all lines of {0} 🎉 — now practice them in a game.': 'Dominas todas las líneas de {0} 🎉. Ahora practícalas en una partida.',
   'Again': 'Otra vez',
   'Next line to learn ›': 'Siguiente línea por aprender ›',
+  'Share this line': 'Compartir esta línea',
+  'Link copied': 'Enlace copiado',
   'Refresh 1 line': 'Repasar 1 línea',
   'Refresh {0} lines': 'Repasar {0} líneas',
   'Next line to refresh ›': 'Siguiente línea por repasar ›',

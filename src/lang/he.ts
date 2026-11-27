@@ -228,6 +228,8 @@ const he: Record<string, string> = {
   'Line mastered ✓': 'שולט בקו ✓',
   'Again': 'שוב',
   'Next line to learn ›': 'הקו הבא ללמוד ›',
+  'Share this line': 'שיתוף הקו',
+  'Link copied': 'הקישור הועתק',
   'Refresh 1 line': 'רענון של קו אחד',
   'Refresh {0} lines': 'רענון של {0} קווים',
   'Next line to refresh ›': 'הקו הבא לרענון ›',

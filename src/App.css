@@ -1490,3 +1490,7 @@ button.link.danger { color: var(--error); }
   .learn:has(> .install-card) { display: flex; flex-direction: column; }
   .install-card { order: 1; margin: 12px 0 0; }
 }
+
+/* ---- Learn: share a line ---- */
+.share-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 10px 0 0; font-size: 13px; }
+.share-line input { flex: 1 1 220px; min-width: 0; font-size: 12px; }

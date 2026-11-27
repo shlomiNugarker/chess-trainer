@@ -19,6 +19,7 @@ import { InstallCard } from './InstallCard';
 import { setHidden, useHiddenRepertoires } from './hiddenReps';
 import { OpeningPicker } from './OpeningPicker';
 import { LineSheet, OpeningSheet } from './LearnSheets';
+import { openedFromLink, shareUrl } from './sharedLine';
 
 const START = new Chess().fen();
 
@@ -52,13 +53,14 @@ export default function Learn({ onTrain, onDrill }: Props) {
   const mastery = useMemo(() => loadMastery(rep.id), [rep.id, masteryVersion]);
   const masteredCount = rep.lines.filter((l) => isMastered(mastery[l.id])).length;
   const [importOpen, setImportOpen] = useState(false);
+  const [shared, setShared] = useState<'copied' | string | null>(null); // after Share: copied, or the link to copy by hand
   const [pgnText, setPgnText] = useState('');
   const [imported, setImported] = useState<ImportResult[]>([]);
   const [guideDismissed, setGuideDismissed] = useStored('guide-dismissed', false);
   const anyMastery = useMemo(hasAnyMastery, [masteryVersion]); // eslint-disable-line react-hooks/exhaustive-deps
   // a first visit asks which openings you play (once, on every device of the account: the answer syncs)
   const [openingsChosen, setOpeningsChosen] = useStored('openings-chosen', false);
-  const showPicker = !openingsChosen && !anyMastery && hidden.length === 0;
+  const showPicker = !openingsChosen && !anyMastery && hidden.length === 0 && !openedFromLink;
   const showGuide = !guideDismissed && !anyMastery && !showPicker;
   // not before the app was of use: a line passed without a mistake, or puzzles on two days
   const offerInstall = useMemo(() => hasMastered() || daysPlayed() >= 2, [masteryVersion]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -168,6 +170,21 @@ export default function Learn({ onTrain, onDrill }: Props) {
   const startQuiz = () => {
     setPly(0);
     setQuiz({ mistakes: 0 });
+  };
+  /** A link that opens this line in Learn: the share menu of the phone, or copied; if neither works, shown to copy by hand. */
+  const share = async () => {
+    const url = shareUrl(rep.id, line.id);
+    try {
+      if (navigator.share && matchMedia('(pointer: coarse)').matches) {
+        await navigator.share({ title: `${repName(rep)} — ${text.name}`, url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      setShared('copied');
+      setTimeout(() => setShared(null), 2500);
+    } catch (e) {
+      if ((e as Error).name !== 'AbortError') setShared(url); // AbortError: the share menu was closed
+    }
   };
   /** Opens a line to refresh and starts its test at once. */
   const startRefresh = (x: { repId: string; lineIdx: number }) => {
@@ -485,6 +502,16 @@ export default function Learn({ onTrain, onDrill }: Props) {
               <h3>{tr('The idea of the line')}</h3>
               <p>{text.idea}</p>
             </div>
+          )}
+
+          {!quiz && !line.custom && (
+            <p className="share-line">
+              <button className="link" onClick={() => void share()}>🔗 {tr('Share this line')}</button>
+              {shared === 'copied' && <span className="muted" role="status">{tr('Link copied')}</span>}
+              {shared && shared !== 'copied' && (
+                <input dir="ltr" readOnly value={shared} aria-label={tr('Share this line')} onFocus={(e) => e.target.select()} />
+              )}
+            </p>
           )}
         </aside>
       </main>

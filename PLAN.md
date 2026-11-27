@@ -221,7 +221,7 @@ What is still missing, one stage at a time (each its own commit, `npm run check`
 - [x] The 5 open content questions and the depth-20 recheck (above)
 - [x] Small things: the order in the pickers, `<html lang>`
 - [x] Lines to refresh: a line passed with no mistake comes back to be tested after 3 days, then 7, 14, 30 and 60 as long as each test is clean (`REFRESH_DAYS`, `linesToRefresh` in `src/mastery.ts`); "Refresh N lines" in Today starts the test at once, the line list marks them with 🔁, and after a clean test "Next line to refresh ›" goes on. Checked in `screens.py` (`refresh`) and `scripts/check-mastery.ts`
-- [ ] A link to share a line: opens the same opening and line in Learn
+- [x] A link to share a line: "Share this line" in Learn (the share menu on a phone, copied on a desktop) makes `/?line=<opening>/<line id>`; it opens that line in Learn, skips the first question of which openings you play and shows the opening if it was hidden (`src/sharedLine.ts`, read before `nav.ts`). Checked in `screens.py` (`share`)
 - [ ] Games from Lichess in My games, beside Chess.com
 - [ ] The board for screen readers
 - [ ] Dependency updates

@@ -4,6 +4,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './fonts.css'
 import './index.css'
+import './sharedLine' // before App: a link to a line chooses the tab that nav.ts restores
 import App from './App.tsx'
 import { startCloud } from './cloud'
 import { langReady } from './i18n'
