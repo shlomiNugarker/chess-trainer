@@ -6,7 +6,7 @@ import { loadMistakes } from './mistakes';
 import { lineStats } from './lineStats';
 import { msg, tr } from './i18n';
 import { useDialog } from './useDialog';
-import { GROUPS, shortName } from './openingGroups';
+import { GROUPS, pickerOrder, shortName } from './openingGroups';
 
 /** A panel over the page: a sheet from the bottom on a phone, a centered box on a computer. */
 export function Sheet({ title, onClose, children, className = '' }: { title: string; onClose: () => void; children: ReactNode; className?: string }) {
@@ -60,7 +60,7 @@ export function OpeningSheet(props: {
         {GROUPS.map((g) => (
           <div key={g.label()} className="sheet-group manage-card">
             <span className="picker-label">{g.label()}</span>
-            {REPERTOIRES.filter(g.of).map((r) => {
+            {pickerOrder(REPERTOIRES.filter(g.of)).map((r) => {
               const shown = !hidden.includes(r.id);
               return (
                 <label key={r.id} className="manage-row" data-rep={r.id}>
@@ -78,7 +78,7 @@ export function OpeningSheet(props: {
   return (
     <Sheet title={tr('Choose an opening')} onClose={onClose}>
       {GROUPS.map((g) => {
-        const reps = visible.filter(g.of);
+        const reps = pickerOrder(visible.filter(g.of));
         if (!reps.length) return null;
         return (
           <div key={g.label()} className="sheet-group">

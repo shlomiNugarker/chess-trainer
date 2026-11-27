@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { REPERTOIRES } from './repertoire';
 import { msg, tr } from './i18n';
-import { BEGINNER, GROUPS, shortName } from './openingGroups';
+import { BEGINNER, GROUPS, pickerOrder, shortName } from './openingGroups';
 
 const nameOf = (id: string) => shortName(REPERTOIRES.find((r) => r.id === id)!);
 
@@ -30,7 +30,7 @@ export function OpeningPicker({ onDone }: { onDone: (hidden: string[]) => void }
         <div key={g.label()} className="picker-group">
           <span className="picker-label">{g.label()}</span>
           <div className="chips">
-            {REPERTOIRES.filter(g.of).map((r) => (
+            {pickerOrder(REPERTOIRES.filter(g.of)).map((r) => (
               <button key={r.id} data-rep={r.id} className={picked.includes(r.id) ? 'chip active' : 'chip'} aria-pressed={picked.includes(r.id)} onClick={() => flip(r.id)}>
                 {shortName(r)}
               </button>

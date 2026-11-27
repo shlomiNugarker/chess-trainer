@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Chess, type Move } from 'chess.js';
 import { Chessboard, type Arrow } from 'react-chessboard';
 import { DROP, Engine, whiteWinPercent, winPercent } from './engine';
+import { pickerOrder } from './openingGroups';
 import { REPERTOIRES, buildBook, lineInfo, moveLabel, noteForNext, posKey, repName } from './repertoire';
 import { useHiddenRepertoires, visibleOf } from './hiddenReps';
 import { useRepertoire, withCustom } from './customLines';
@@ -643,7 +644,7 @@ export default function Trainer({ trainRequest, active = true }: { trainRequest?
                   newGame({ repertoireId: e.target.value });
                 }}
               >
-                {REPERTOIRES.filter((r) => r.id === repId || !hiddenReps.includes(r.id)).map((r) => (
+                {pickerOrder(REPERTOIRES.filter((r) => r.id === repId || !hiddenReps.includes(r.id))).map((r) => (
                   <option key={r.id} value={r.id}>{repName(r)}</option>
                 ))}
               </select>

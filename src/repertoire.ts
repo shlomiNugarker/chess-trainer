@@ -294,8 +294,8 @@ export const REPERTOIRES: Repertoire[] = [
       {
         id: 'two-knights-vs-h6',
         name: 'Two Knights vs ...h6',
-        moves: 'e4 e5 Bc4 Nc6 Nf3 Nf6 d3 h6 O-O d6 c3 g6 Re1 Bg7 h3 O-O Nbd2 Na5 Bb5 a6 Ba4',
-        idea: 'Black stops Ng5 and Bg5 with ...h6 and puts the bishop on g7. White keeps the same plan: c3, Re1, h3 and Nbd2.',
+        moves: 'e4 e5 Bc4 Nc6 Nf3 Nf6 d3 h6 O-O d6 c3 g6 Re1 Bg7 h3 O-O a4 a6 Nbd2 Re8 b4',
+        idea: 'Black stops Ng5 and Bg5 with ...h6 and puts the bishop on g7. White keeps the same plan: c3, Re1, h3 and Nbd2, with a4 first, so the bishop has a2 if ...Na5 comes.',
         notes: {
           '1.e4': 'Takes the center and opens the way for the queen and the f1 bishop.',
           '2.Bc4': 'The bishop aims at f7 — Black’s weak point in the opening.',
@@ -307,11 +307,11 @@ export const REPERTOIRES: Repertoire[] = [
           '6...g6': 'Black chooses to fianchetto the bishop.',
           '7.Re1': 'Defends e4 and frees f1 for the knight.',
           '8.h3': 'Stops ...Ng4 and ...Bg4.',
-          '9.Nbd2': 'The knight heads to f1 and g3, as in all the quiet Italian lines.',
-          '9...Na5': 'Black hits the bishop and wants to trade it.',
-          '10.Bb5': 'The bishop goes to b5 — not b3, where ...Nxb3 would trade it off.',
-          '10...a6': 'Pushes the bishop back.',
-          '11.Ba4': 'The bishop steps back to a4, out of reach of the a5 knight (on b3 or c4 the knight would trade it off). Later it can drop back to c2.',
+          '9.a4': 'Space on the queenside, and a2 for the bishop if ...Na5 hits it. The engine prefers it to 9.Nbd2 here.',
+          '9...a6': 'Keeps White’s bishop off b5.',
+          '10.Nbd2': 'Now the knight comes out, heading to f1 or b3.',
+          '10...Re8': 'The rook backs up the e5 pawn.',
+          '11.b4': 'More space: b4 takes a5 and c5 from the c6 knight. The game is about level.',
         },
       },
       {

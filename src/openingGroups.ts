@@ -1,7 +1,15 @@
 // How the openings are grouped in the pickers: White's, and Black's by the first move they answer.
 
-import { repName, type Repertoire } from './repertoire';
+import { REPERTOIRES, repName, type Repertoire } from './repertoire';
 import { msg, tr } from './i18n';
+
+/**
+ * The order in the pickers: White's 1.d4 systems together (the London first, the beginner's choice), then 1.e4, then
+ * the English. Black's openings keep the order of REPERTOIRES, which already goes by the first move they answer.
+ */
+const WHITE_ORDER = ['london', 'colle', 'trompowsky', 'qg', 'catalan', 'italian', 'ruy', 'scotch', 'vienna', 'kingsgambit', 'opensic', 'english'];
+const rank = (r: Repertoire) => (WHITE_ORDER.includes(r.id) ? WHITE_ORDER.indexOf(r.id) : WHITE_ORDER.length + REPERTOIRES.findIndex((x) => x.id === r.id));
+export const pickerOrder = (reps: Repertoire[]) => [...reps].sort((a, b) => rank(a) - rank(b));
 
 /** White's repertoires, and Black's by the first move they answer. */
 export const GROUPS: { label: () => string; of: (r: Repertoire) => boolean }[] = [

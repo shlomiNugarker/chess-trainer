@@ -209,11 +209,11 @@
 - [ ] A Content-Security-Policy header: it must allow Firebase Auth (and Google's sign-in window), Firestore, Vercel Analytics, the Chess.com API and `'wasm-unsafe-eval'` for Stockfish — waits because a mistake there breaks sign-in or the engine for everyone, so it needs its own round of checks on the live site
 - [ ] Download the Stockfish engine (1.8MB) on first use instead of keeping it in the cache on the first visit — saves data for visitors who only learn lines, but changes the offline behavior and needs its own testing
 - [ ] Accessibility of the board for screen readers: the squares are buttons without names — a real fix (names, announcing moves) touches every board and is too large for the launch round
-- [ ] `<html lang>` in `index.html` is "en" while the share tags are Hebrew — matters only to search engines; the app sets the language itself when it starts
+- [x] `<html lang>` is "he", like the share tags (27 Nov 2026); the app still sets the language itself when it starts
 - [ ] Dependency updates: all of them are minor and `npm audit` is clean, so nothing is urgent; better done right after launch than right before it
 - [x] The 5 open questions in `docs/content-review.md` (27 Nov 2026, Stockfish at depth 20): the King’s Gambit takes on g3 at once (10.Qxg3) and keeps 10.exd5; the Pirc plays 8...Qb6 against 2.Nf3; the Scandinavian against 5.Bd2 keeps its moves and says White is better; the Slav has a new short line for 5.cxd5 cxd5 6.Qb3 Bc8
-- [ ] Engine check again at depth 20: at depth 16 (27 Nov 2026) a few moves of the 1.e4 repertoire give up 3-4% (3.Nf3 against ...c6 3.9%, 10.c3 3.6%, 9.Nbd2 3.2%, and 2.Bc4 itself, the known price of the Bishop's Opening) and two of the Sicilian with ...e6 about 3.1% (2...e6, 3...e6). At depth 20, when they were added, they were under 3%
-- [ ] The order of the openings in the pickers: the Colle sits between the English and the Queen's Gambit; grouping the 1.d4 systems (London, Colle, Trompowsky, Queen's Gambit, Catalan) together would be easier to scan
+- [x] Engine check again at depth 20 (27 Nov 2026): 3.Nf3 against ...c6 gives up 1.0%, 10.c3 against ...Qf6 2.7%, 10.c3 against ...Nf6 and ...c6 nothing, the Sicilian's 2...e6 nothing and 3...e6 1.6%; only 9.Nbd2 against ...h6 lost 3.7% (9.a4 is best), so that line now plays 9.a4 a6 10.Nbd2 Re8 11.b4. 2.Bc4 stays: its note gives the price
+- [x] The order of the openings in the pickers (27 Nov 2026): White's 1.d4 systems together (London, Colle, Trompowsky, Queen's Gambit, Catalan), then 1.e4, then the English (`pickerOrder` in `src/openingGroups.ts`)
 - [ ] The puzzle set grew to 740KB (5,959 puzzles); if the first load of Practice is slow on phones, split it (the "from my openings" puzzles in a file of their own)
 
 ## Findings of the code review
