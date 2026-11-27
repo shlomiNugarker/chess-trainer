@@ -203,6 +203,14 @@
 
 ---
 
+## After launch (noticed before launch, not done — the repertoire is frozen until then)
+- [ ] The same content review for the other 25 repertoires (the five most popular were done; method and tools as in `docs/content-review.md`)
+- [ ] One word for a pawn in all the Hebrew explanations: most of the file says "pawn" with the standard term, but about 160 places still use the colloquial one (mostly outside the five reviewed repertoires)
+- [ ] Decide the 14 open questions in `docs/content-review.md`
+- [ ] Engine check again at depth 20: at depth 16 (27 Nov 2026) a few moves of the 1.e4 repertoire give up 3-4% (3.Nf3 against ...c6 3.9%, 10.c3 3.6%, 9.Nbd2 3.2%, and 2.Bc4 itself, the known price of the Bishop's Opening) and two of the Sicilian with ...e6 about 3.1% (2...e6, 3...e6). At depth 20, when they were added, they were under 3%
+- [ ] The order of the openings in the pickers: the Colle sits between the English and the Queen's Gambit; grouping the 1.d4 systems (London, Colle, Trompowsky, Queen's Gambit, Catalan) together would be easier to scan
+- [ ] The puzzle set grew to 740KB (5,959 puzzles); if the first load of Practice is slow on phones, split it (the "from my openings" puzzles in a file of their own)
+
 ## Findings of the code review
 
 Fixed (25 Nov 2026):
