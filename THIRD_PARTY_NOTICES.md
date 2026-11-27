@@ -65,5 +65,5 @@ The MIT and Apache-2.0 license texts are included with each package in `node_mod
 
 ## Loaded at runtime (not in this repository)
 
-- **Heebo font** — SIL Open Font License 1.1, served by Google Fonts.
+- **Heebo font** — SIL Open Font License 1.1, from the `@fontsource/heebo` package and served with the app (Hebrew, Latin and symbols subsets).
 - **Chess.com published-data API** — the review screen reads a player's public games from https://api.chess.com in the browser; nothing from it is stored in this repository.

@@ -111,7 +111,7 @@
 - [x] "Play" settings: only mode, opening and level are visible; the rest is under "More options"
 
 ## Design and experience ✅
-- [x] One dark color scheme (tokens in `src/index.css`), the Heebo font, a green and cream board
+- [x] One dark color scheme (tokens in `src/index.css`), the Heebo font (served from the site itself since 27 Nov 2026, `src/fonts.css`: no request to Google, and it works offline), a green and cream board
 - [x] Cards with a color stripe by the kind of message (blue book, amber "there is better", red mistake, green correct)
 - [x] Mobile: a bottom tab bar, settings in a bottom sheet, confirm buttons under the board without scrolling; tap-to-move in addition to dragging
 - [x] The board's height follows the room left on the screen (no scrolling, at least 320px)

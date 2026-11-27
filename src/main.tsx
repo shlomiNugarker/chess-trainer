@@ -2,6 +2,7 @@
 // Chess Trainer — Copyright (C) 2026 Shlomi Nugarker. See LICENSE and THIRD_PARTY_NOTICES.md.
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import './fonts.css'
 import './index.css'
 import App from './App.tsx'
 import { startCloud } from './cloud'

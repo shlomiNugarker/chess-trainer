@@ -700,6 +700,31 @@ def languages(b):
     ctx.close()
 
 
+@section('fonts')
+def fonts(b):
+    """Heebo is served from the site itself: no request leaves it on load, and Hebrew and Latin are drawn in Heebo."""
+    from urllib.parse import urlparse
+    host = urlparse(a.url).netloc
+    FONT_JS = r"""() => { const c = document.createElement('canvas').getContext('2d'), out = {};
+      for (const w of [400, 500, 700]) for (const [k, t] of [['he', '\u05e4\u05ea\u05d9\u05d7\u05d5\u05ea \u05e9\u05dc\u05d5\u05de\u05d3\u05d9\u05dd \u05e6\u05e2\u05d3 \u05d0\u05d7\u05e8 \u05e6\u05e2\u05d3'], ['en', 'Openings you learn step by step']]) {
+        c.font = `${w} 16px Heebo, monospace`; const heebo = c.measureText(t).width; c.font = `${w} 16px monospace`;
+        out[`${k}${w}`] = document.fonts.check(`${w} 16px Heebo`, t) && Math.abs(heebo - c.measureText(t).width) > 1; }
+      const files = performance.getEntriesByType('resource').map(e => e.name).filter(n => /\.woff2?($|\?)/.test(n));
+      return { out, files }; }"""
+    for locale, lang in (('he-IL', 'he'), ('en-US', 'en')):
+        for w, h in ((390, 844), (1280, 860)):
+            ctx = b.new_context(locale=locale, viewport={'width': w, 'height': h}, is_mobile=w < 600, has_touch=w < 600)
+            pg = ctx.new_page(); r.watch(pg, f'fonts-{lang}-{w}'); away = []
+            pg.on('request', lambda q: urlparse(q.url).netloc not in (host, '') and away.append(q.url[:80]))
+            pg.goto(a.url); pg.wait_for_selector('.tabs', timeout=60000); pg.evaluate('document.fonts.ready'); time.sleep(1)
+            res = pg.evaluate(FONT_JS)
+            want = [k for k in res['out'] if k.startswith(lang)]
+            r.check(not away, f'fonts, {lang}, {w}px: no request leaves the site on load', str(away[:5]))
+            r.check(all(res['out'][k] for k in want) and res['files'] and all(urlparse(f).netloc == host for f in res['files']),
+                    f'fonts, {lang}, {w}px: drawn in Heebo (400/500/700), served from the site', str(res))
+            ctx.close()
+
+
 @section('offline')
 def offline(b):
     ctx, pg = open_page(b, 'offline', 'en-US', 1280, 900)
@@ -721,6 +746,7 @@ def offline(b):
     r.check(pg.locator('.puzzle-rating').count() == 1 and pg.locator('.board [data-piece]').count() > 0, 'offline: puzzles')
     tab(pg, 1)
     r.check(shown_openings(pg) > 1, 'offline: Learn')
+    r.check(pg.evaluate("document.fonts.ready.then(() => document.fonts.check('700 16px Heebo', 'Learn'))"), 'offline: the font (Heebo) is there')
     ctx.close()
 
 
@@ -730,6 +756,6 @@ with sync_playwright() as p:
     if not a.only: tour(pg, 'desktop-en')
     learn(pg); mistakes(pg); puzzles(pg); review(pg)  # mistakes first: the puzzle section adds its own
     ctx.close()
-    install(b); privacy(b); account(b); phone(b); touch(b); languages(b); offline(b)
+    install(b); privacy(b); account(b); phone(b); touch(b); languages(b); fonts(b); offline(b)
     b.close()
 r.done()

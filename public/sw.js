@@ -1,10 +1,11 @@
 // Offline support: the app (and the Stockfish engine) keep working without internet.
 // - pages: network first, so a new version arrives as soon as you are online; the cached copy offline
-// - /assets (hashed names, all of them kept: see cacheIndex), /engine, icons: cache first — their content never changes under the same name
-// - Google Fonts: cached after the first load
-// - everything else (the Chess.com API, Google sign-in, Firestore, Web Analytics) is left alone
-// a new name drops everything cached before: needed when a file changes under the same name (the icons, v3)
-const CACHE = 'chess-trainer-v3';
+// - /assets (hashed names, all of them kept: see cacheIndex — the Heebo font files too), /engine, icons: cache first —
+//   their content never changes under the same name
+// - anything on another site (the Chess.com API, Google sign-in, Firestore) and Web Analytics is left alone
+// a new name drops everything cached before: needed when a file changes under the same name (the icons, v3), or to
+// drop entries no longer used (v4: the Google Fonts files of returning users)
+const CACHE = 'chess-trainer-v4';
 const CORE = ['/', '/manifest.webmanifest', '/icon-192.png', '/engine/stockfish-19-lite-single.js', '/engine/stockfish-19-lite-single.wasm'];
 
 // the hashed js/css that a given index.html points at
@@ -88,9 +89,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  const fonts = url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com';
-  if (url.origin !== location.origin && !fonts) return;
-  if (url.origin === location.origin && url.pathname === '/sw.js') return;
+  if (url.origin !== location.origin) return;
+  if (url.pathname === '/sw.js') return;
 
   event.respondWith(
     (async () => {
@@ -98,7 +98,7 @@ self.addEventListener('fetch', (event) => {
       const hit = await cache.match(req);
       if (hit) return hit;
       const res = await fetch(req);
-      if (res.ok || res.type === 'opaque') cache.put(req, res.clone());
+      if (res.ok) cache.put(req, res.clone());
       return res;
     })(),
   );
