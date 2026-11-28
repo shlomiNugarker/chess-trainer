@@ -20,6 +20,7 @@ python scripts/qa/learn_lines.py      # "Test me" on every line of every reperto
 python scripts/qa/play.py             # Play: training in every repertoire, leaving the line, a regular game, hints and games that must not leak (~4 min)
 python scripts/qa/screens.py          # Learn extras, puzzles (solved to the end), my mistakes, review, account, phone, offline (~4 min)
 python scripts/qa/nav.py              # the Back button, reload, promotion and every way a game ends (by you and by the computer), daily goal, keyboard in dialogs, a slow or missing engine (~3 min)
+python scripts/qa/engine_lines.py     # the content: every move of every line against Stockfish (~30 min the first time, seconds after; see below)
 ```
 
 On Windows you can start and stop the preview server from PowerShell:
@@ -50,9 +51,12 @@ Each script prints every check, ends with a summary, and exits non-zero if a che
 | `--url URL` | all | the app to test (default `http://localhost:4173`; the live site works too, except for `sync`) |
 | `--only a,b` | all but `sync` | a subset: repertoire ids (`london,qga`) for `learn_lines`/`play` (`play` also takes `regular` and `states`), or sections (`learn,puzzles,mistakes,review,account,phone,touch,lang,offline`) for `screens` |
 | `--chesscom USER` | `screens`, `nav` | the Chess.com account the review loads (real API calls); or the `CHESSCOM_USER` environment variable. Needed by the review sections; an account with games reviewed on Chess.com shows the most |
+| `--depth N`, `--limit P`, `--end E`, `--fresh` | `engine_lines` | search depth (16); the most winning chance in % a move may lose to the engine's choice (5); how many pawns a line may end against the user (0.7); ignore the cache |
 | `--account-url URL` | `screens` | a build with Firebase configured, for the account panel (default: the live site, since a local build without `.env.local` has no account panel) |
 
 ## Notes
+
+- `engine_lines.py` checks the content, not the screens: every move the user plays (from the third on) is searched with the app's own Stockfish, in the browser, and compared with the engine's choice; the end of every line too. Results are cached in `out/engine-cache.json` by position, move and depth, so after changing a line only its new positions are searched — run it after every change to `src/repertoire.ts`. A finding at depth 16 deserves a deeper look before a line changes (the engine sometimes prefers another move only until it sees further). Findings checked and kept are listed with their reason in `engine-known.json` and pass; the first list is from `docs/content-review.md` (28 Nov 2026).
 
 - The lines are read from `src/repertoire.ts` on every run (`dump-lines.ts`), so new lines are tested without changes here. Puzzles are read from the newest `public/puzzles-vN.json` (`dump-puzzles.ts`): the script recognizes the puzzle on screen by its board and plays the solution — cleanly, after a hint, and after a wrong move — checking the result and the rating change.
 - The scripts play by tapping squares (`[data-square]`), the same tap-to-move path phone users take. After starting a test, the board animates back to the start for a moment; the scripts wait for it.

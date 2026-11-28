@@ -1,0 +1,21 @@
+{
+  "_": "Findings of engine_lines.py that were checked and kept (docs/content-review.md, 28 Nov 2026). moves: 'opening/line move' -> why; ends: 'opening/line' -> why.",
+  "moves": {
+    "italian/scandinavian-nf6 8.Qb3": "at depth 16 it loses 5.5% to 8.Be3; at depth 20 it is the better move (+1.17 against +0.56)"
+  },
+  "ends": {
+    "scandinavian/qa5-vs-bd2": "-1.04 at depth 20; the idea says White is better (decided 27 Nov 2026)",
+    "pirc/vs-nc3": "-0.67 at depth 20: the price of the Pirc",
+    "pirc/f3": "-0.83 at depth 20: the price of the Pirc",
+    "pirc/austrian": "-0.67 at depth 20: the price of the Pirc",
+    "modern/c4": "-0.80 at depth 20: the price of the Modern",
+    "kingsgambit/fischer": "-0.89 at depth 20: the price of the King's Gambit",
+    "kid/h3-makogonov": "-0.67 at depth 20: the price of the King's Indian",
+    "dutch/leningrad-main": "-0.80 at depth 20: the price of the Leningrad",
+    "benko/declined-nf3": "-0.82 at depth 20: the price of the Benko",
+    "benko/accepted-e3": "-0.70 to -0.75 at depth 16 (it differs between runs), -0.48 at depth 20: within the limit",
+    "benko/accepted-bxa6": "-0.84 at depth 20: the price of the Benko",
+    "alekhine/four-pawns": "-0.76 at depth 20: the price of the Alekhine",
+    "alekhine/exchange": "-0.84 at depth 20: the price of the Alekhine"
+  }
+}
