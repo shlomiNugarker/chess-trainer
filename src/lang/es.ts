@@ -147,6 +147,8 @@ const es: Record<string, string> = {
   'To the end': 'Al final',
   'My next mistake ({0}) · analyzing {1}': 'Mi siguiente error ({0}) · analizando {1}',
   'Analyzing the game… {0}': 'Analizando la partida… {0}',
+  'Games to analyze': 'Partidas para analizar',
+  'Analyzing the game…': 'Analizando la partida…',
   'My next mistake ({0})': 'Mi siguiente error ({0})',
   'No mistakes of yours in this game 🎉': 'No cometiste errores en esta partida 🎉',
   'You': 'Tú',

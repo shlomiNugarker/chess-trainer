@@ -9,7 +9,7 @@
 
   --text: #e8e6e3;
   --text-2: #a7abb3;
-  --text-3: #7d828b;
+  --text-3: #8e939c; /* 4.6:1 on --surface-2, the lowest it sits on */
 
   --accent: #5fb36b; /* primary action, right move */
   --accent-hover: #6fc47b;

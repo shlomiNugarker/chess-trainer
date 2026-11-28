@@ -156,6 +156,8 @@ const he: Record<string, string> = {
   'To the end': 'לסוף',
   'My next mistake ({0}) · analyzing {1}': 'לטעות הבאה שלי ({0}) · מנתח {1}',
   'Analyzing the game… {0}': 'מנתח את המשחק… {0}',
+  'Games to analyze': 'משחקים לניתוח',
+  'Analyzing the game…': 'מנתח את המשחק…',
   'My next mistake ({0})': 'לטעות הבאה שלי ({0})',
   'No mistakes of yours in this game 🎉': 'אין לך טעויות במשחק הזה 🎉',
   'You': 'אתה',

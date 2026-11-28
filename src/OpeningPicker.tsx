@@ -15,7 +15,7 @@ export function OpeningPicker({ onDone }: { onDone: (hidden: string[]) => void }
   const only = (ids: string[]) => onDone(REPERTOIRES.filter((r) => !ids.includes(r.id)).map((r) => r.id));
   const [white, vsE4, vsD4] = BEGINNER;
   return (
-    <div className="card opening-picker">
+    <div className="card opening-picker" role="main">
       <strong>{tr('Which openings do you play?')}</strong>
       <p className="muted">{tr('Only these will show. You can change it any time from the opening button.')}</p>
       <div className="picker-recommend">

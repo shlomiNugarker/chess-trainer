@@ -143,7 +143,7 @@ export default function Drill() {
       setFen(more[0].fen);
     };
     return (
-      <div className="card drill-empty">
+      <div className="card drill-empty" role="main">
         {removedNote}
         <div className="empty-mark" aria-hidden>♞</div>
         <h2>

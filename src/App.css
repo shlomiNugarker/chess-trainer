@@ -10,6 +10,7 @@
 
 a { color: var(--info); text-decoration: none; }
 a:hover { text-decoration: underline; }
+p a, .muted a { text-decoration: underline; text-underline-offset: 2px; }
 
 .muted { color: var(--text-3); font-size: 13px; }
 
@@ -856,7 +857,7 @@ aside {
 
 .recent-games-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
 .recent-games-head h2 { margin: 0; }
-.recent-list { list-style: none; margin: 10px 0 6px; padding: 0; display: grid; gap: 6px; }
+.recent-list { list-style: none; margin: 10px 0 6px; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; } /* a long name or opening is cut with …, it does not widen the list */
 .recent-game {
   width: 100%;
   display: flex;
@@ -1038,7 +1039,8 @@ aside {
     border-top: 1px solid var(--border);
   }
 
-  .brand { display: none; }
+  /* the name stays the page's heading for screen readers */
+  .brand { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
   /* the list of openings is long on a phone: its buttons stay in view above the tab bar */
   .opening-picker .buttons {

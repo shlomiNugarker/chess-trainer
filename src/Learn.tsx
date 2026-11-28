@@ -58,7 +58,7 @@ export default function Learn({ onTrain, onDrill }: Props) {
   const [pgnText, setPgnText] = useState('');
   const [imported, setImported] = useState<ImportResult[]>([]);
   const [guideDismissed, setGuideDismissed] = useStored('guide-dismissed', false);
-  const anyMastery = useMemo(hasAnyMastery, [masteryVersion]); // eslint-disable-line react-hooks/exhaustive-deps
+  const anyMastery = useMemo(() => hasAnyMastery(), [masteryVersion]); // eslint-disable-line react-hooks/exhaustive-deps
   // a first visit asks which openings you play (once, on every device of the account: the answer syncs)
   const [openingsChosen, setOpeningsChosen] = useStored('openings-chosen', false);
   const showPicker = !openingsChosen && !anyMastery && hidden.length === 0 && !openedFromLink;
@@ -67,7 +67,7 @@ export default function Learn({ onTrain, onDrill }: Props) {
   const offerInstall = useMemo(() => hasMastered() || daysPlayed() >= 2, [masteryVersion]); // eslint-disable-line react-hooks/exhaustive-deps
   // "today": the streak and the positions to review, when there are any (the daily puzzles are on the Practice tab)
   const due = useMistakeCount(dueCount);
-  const streakDays = useMemo(dayStreak, []); // it changes on another screen
+  const streakDays = useMemo(() => dayStreak(), []); // it changes on another screen
   // mastered lines whose time to be tested again has come, in the openings shown (this one first)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const toRefresh = useMemo(() => linesToRefresh(visible.map(withCustom), rep.id), [visible, rep, masteryVersion]);

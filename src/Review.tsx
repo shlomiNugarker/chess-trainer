@@ -214,7 +214,7 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
   };
 
   return (
-    <div className="review">
+    <div className="review" role="main">
       <form
         className="search"
         onSubmit={(e) => {
@@ -370,7 +370,7 @@ export default function Review({ active, onTrain, onDrill, onLearn }: Props) {
               {tr('Stockfish goes over each of your moves and finds mistakes. Every big mistake goes to "Practice → My mistakes". It takes 10 to 30 seconds per game; a game already analyzed is not analyzed again.')}
             </p>
             <div className="buttons">
-              <select value={deepCount} onChange={(e) => setDeepCount(Number(e.target.value))} disabled={deepRunning}>
+              <select aria-label={tr('Games to analyze')} value={deepCount} onChange={(e) => setDeepCount(Number(e.target.value))} disabled={deepRunning}>
                 {[5, 10, 20].map((n) => (
                   <option key={n} value={n}>{tr(msg`Last ${n} games`)}</option>
                 ))}

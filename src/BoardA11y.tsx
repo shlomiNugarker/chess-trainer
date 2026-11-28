@@ -44,6 +44,8 @@ function placement(fen: string): Map<string, string> {
 export function BoardA11y({ id, fen, lastMove, label }: { id: string; fen: string; lastMove?: string; label?: string }) {
   const lang = useLang();
   const focused = useRef<string | null>(null); // the square that keeps the Tab stop
+  const byKeyboard = useRef(false); // the square in focus got it from Tab, the arrows or a screen reader — not a click or a tap
+  const pointedAt = useRef(-Infinity); // the last click or tap on the board (a tap gives the focus only when the finger lifts)
 
   useEffect(() => {
     const board = document.getElementById(`${id}-board`);
@@ -61,21 +63,23 @@ export function BoardA11y({ id, fen, lastMove, label }: { id: string; fen: strin
         set(sq, 'role', 'button');
         set(sq, 'tabindex', sq === stop ? '0' : '-1');
         set(sq, 'aria-label', `${sq.dataset.square}, ${piece ? tr(PIECES[piece]) : tr('empty')}`);
-        // the drag handle of the piece: not a second Tab stop, and its "draggable" button is not read
+        // the drag handle of the piece: not a control inside the square's button (no role, no Tab stop), and not read
         for (const h of sq.querySelectorAll('[aria-roledescription]')) {
-          set(h, 'tabindex', '-1');
+          if (h.hasAttribute('role')) h.removeAttribute('role');
+          if (h.hasAttribute('tabindex')) h.removeAttribute('tabindex');
           set(h, 'aria-hidden', 'true');
         }
       }
     };
     apply();
     const watch = new MutationObserver(apply); // the board renders its squares again after a move or a drag
-    watch.observe(board, { childList: true, subtree: true, attributes: true, attributeFilter: ['tabindex', 'aria-hidden'] });
+    watch.observe(board, { childList: true, subtree: true, attributes: true, attributeFilter: ['role', 'tabindex', 'aria-hidden'] });
 
     const onKey = (e: KeyboardEvent) => {
       const sq = (e.target as HTMLElement).closest<HTMLElement>('[data-square]');
-      // a square focused by a click or a tap: the keys stay the screen's (the arrows step through the moves)
-      if (!sq || !sq.matches(':focus-visible')) return;
+      // a square focused by a click or a tap: the keys stay the screen's (the arrows step through the moves). Known
+      // from the pointer when the focus came: a key pressed on a clicked square makes it :focus-visible at once
+      if (!sq || !byKeyboard.current) return;
       const all = squares();
       const i = all.indexOf(sq);
       const step = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -8, ArrowDown: 8 }[e.key];
@@ -96,14 +100,19 @@ export function BoardA11y({ id, fen, lastMove, label }: { id: string; fen: strin
     };
     const onFocus = (e: FocusEvent) => {
       const sq = (e.target as HTMLElement).closest<HTMLElement>('[data-square]');
-      if (sq) focused.current = sq.dataset.square!;
+      if (!sq) return;
+      focused.current = sq.dataset.square!;
+      byKeyboard.current = performance.now() - pointedAt.current > 1500;
     };
+    const onPointer = () => (pointedAt.current = performance.now());
     board.addEventListener('keydown', onKey);
     board.addEventListener('focusin', onFocus);
+    board.addEventListener('pointerdown', onPointer, true);
     return () => {
       watch.disconnect();
       board.removeEventListener('keydown', onKey);
       board.removeEventListener('focusin', onFocus);
+      board.removeEventListener('pointerdown', onPointer, true);
     };
   }, [id, fen, label, lang]);
 

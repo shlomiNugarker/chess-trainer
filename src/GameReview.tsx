@@ -71,7 +71,7 @@ function ClassIcon({ cls, size = 'md' }: { cls: MoveClass; size?: 'sm' | 'md' | 
         <path d="M2 3.2C3.6 2.6 5.6 2.6 7.4 3.6v9.6C5.6 12.3 3.6 12.3 2 12.9zM14 3.2c-1.6-.6-3.6-.6-5.4.4v9.6c1.8-.9 3.8-.9 5.4-.3z" fill="currentColor" />
       </svg>
     ) : cls === 'best' ? '★' : cls === 'good' ? '✓' : cls === 'inaccuracy' ? '?!' : cls === 'mistake' ? '?' : '??';
-  return <span className={`cls-icon cls-${cls} cls-icon-${size}`} title={classLabel(cls)} aria-label={classLabel(cls)}>{glyph}</span>;
+  return <span className={`cls-icon cls-${cls} cls-icon-${size}`} role="img" title={classLabel(cls)} aria-label={classLabel(cls)}>{glyph}</span>;
 }
 
 type Props = {
@@ -244,7 +244,7 @@ export default function GameReview({ game, username, active, onClose, onLearn, o
           {/* fixed height: stepping through the game never moves the buttons below; longer text scrolls inside */}
           <div className={`card coach${current ? ` cls-${current.cls}` : ''}`}>
             {progress && (
-              <div className="review-progress coach-progress" role="progressbar" aria-valuemin={0} aria-valuemax={progress.total} aria-valuenow={progress.done}>
+              <div className="review-progress coach-progress" role="progressbar" aria-label={tr('Analyzing the game…')} aria-valuemin={0} aria-valuemax={progress.total} aria-valuenow={progress.done}>
                 <div style={{ width: `${(progress.done / progress.total) * 100}%` }} />
               </div>
             )}
